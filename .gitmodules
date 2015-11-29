@@ -1,0 +1,3 @@
+[submodule "lib/php-redis"]
+	path = lib/php-redis
+	url = https://github.com/phpredis/phpredis.git

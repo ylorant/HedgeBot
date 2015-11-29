@@ -1,0 +1,3 @@
+!conf/config.ini.sample
+conf/*.ini
+conf/*/*.ini

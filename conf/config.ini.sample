@@ -1,0 +1,19 @@
+[storage.config]
+type = file
+basepath = conf
+backups = true
+
+[storage.data]
+type = memory
+
+[general]
+verbosity = 1
+pluginsDirectory = Plugins
+plugins = Currency
+
+[servers.twitch]
+address = irc.twitch.tv
+port = 6667
+name =
+channels =
+password = 
