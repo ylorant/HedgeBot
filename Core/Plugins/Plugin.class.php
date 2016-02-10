@@ -20,10 +20,7 @@ class Plugin
 
 		// Loading default configuraiton if present
 		if(empty($this->config))
-		{
 			$main->config->set('plugin.'. $pluginName, $defaultConfig);
-			$main->config->writeData();
-		}
 
 		$this->config = $main->config->get('plugin.'.$pluginName);
 

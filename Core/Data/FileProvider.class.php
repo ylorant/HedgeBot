@@ -140,9 +140,6 @@ class FileProvider extends Provider
 		if($data === NULL)
 			$data = $this->config;
 
-		if($root)
-			$out = '['.$root.']'."\n";
-
 		$arrays = array();
 
 		//Process data, saving sub-arrays, putting direct values in config.
@@ -177,8 +174,14 @@ class FileProvider extends Provider
 				$out .= $name.'='.$value."\n";
 		}
 
-		if($out)
-			$out .= "\n";
+        // If the flat data is empty and there isn't any sub-sections, discard the parameter
+        if(empty($out) && empty($arrays))
+            return "";
+
+        if($root)
+            $out = '['.$root.']'."\n". $out;
+
+		$out .= "\n";
 
 		//Processing sub-sections
 		foreach($arrays as $name => $value)
@@ -240,6 +243,7 @@ class FileProvider extends Provider
         }
 
         $currentPath[$varName] = $data;
+        $this->writeData();
         return TRUE;
     }
 
@@ -327,7 +331,7 @@ class FileProvider extends Provider
         $this->wipeDataDirectory();
 
         // Generate files
-        if(!empty($root))
+        if(!$this->emptyRecursive($root))
         {
             $iniRoot = $this->generateINIStringRecursive($root);
             file_put_contents($this->dataDirectory. '/root.ini', $iniRoot);
@@ -355,7 +359,6 @@ class FileProvider extends Provider
         }
     }
 
-
     /** Loads data from the file store in the specified directory.
      *
      */
@@ -363,13 +366,15 @@ class FileProvider extends Provider
     {
         $this->backups = false;
 
-        if(!empty($parameters->backups))
-            $this->backups = true;
-
         // If we're given an object configuration (from the boostrapping storage), load the location from it
         $location = null;
         if($parameters instanceof ObjectAccess)
+        {
             $location = $parameters->basepath;
+
+            if(isset($parameters->backups) && HedgeBot::parseBool($parameters->backups))
+                $this->backups = true;
+        }
         else
             $location = $parameters;
 
@@ -413,14 +418,14 @@ class FileProvider extends Provider
         $baseDir = $this->dataDirectory. "/".$currentDir;
         $backupDir = $this->dataDirectory. "/.backup/". $currentDir;
 
-        if(!is_dir($backupDir))
-            mkdir($backupDir);
-
         $contents = scandir($baseDir);
         foreach($contents as $file)
         {
             if(!in_array($file, array('.', '..', '.backup')))
             {
+                if(!is_dir($backupDir))
+                    mkdir($backupDir);
+
                 if(is_dir($baseDir.'/'.$file))
                     $this->backupData($currentDir.'/'.$file);
                 else
@@ -432,18 +437,18 @@ class FileProvider extends Provider
     /** Wipes the content of the data directory.
      * This method deletes all the files and folders in the current directory.
      */
-    private function wipeDataDirectory($dir = null)
+    private function wipeDataDirectory()
     {
         $wipeDir = $this->dataDirectory;
         if(!empty($dir))
             $wipeDir .= $dir;
 
         $iterator = new RecursiveDirectoryIterator($wipeDir, RecursiveDirectoryIterator::SKIP_DOTS);
-        $files = new RecursiveIteratorIterator($iterator, RecursiveIteratorIterator::CHILD_FIRST);
+        $files = new RecursiveIteratorIterator($iterator, RecursiveIteratorIterator::CHILD_FIRST | RecursiveIteratorIterator::LEAVES_ONLY);
 
         foreach($files as $file)
         {
-            if(strpos($file->getPath(), '.backup') === FALSE)
+            if(strpos($file->getPathname(), '.backup') === FALSE)
             {
                 if ($file->isDir())
                     rmdir($file->getRealPath());
@@ -451,6 +456,26 @@ class FileProvider extends Provider
                     unlink($file->getRealPath());
             }
         }
-        rmdir($dir);
+    }
+
+    /** Checks if an array has no scalar value in it, recursively.
+     * This method checks recursively the content of an array, searching if it has any scalar value saved in it.
+     * If it hasn't, it returns TRUE (behaves like empty()).
+     */
+    private function emptyRecursive($data)
+    {
+        if(!is_array($data))
+            return empty($data);
+
+        $empty = true;
+        foreach($data as $el)
+        {
+            if(!is_array($el))
+                $empty = $empty && empty($el);
+            else
+                $empty = $empty && $this->emptyRecursive($el);
+        }
+
+        return $empty;
     }
 }

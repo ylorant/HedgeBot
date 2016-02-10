@@ -384,6 +384,9 @@ class IRCConnection
 		else
 			$nick = $user = $user[0];
 
+		// Removing case for nickname, since Twitch doesn't care about case
+		$nick = strtolower($nick);
+
 		$command = $cmd[1];
 		if(isset($cmd[2]))
 			$channel = substr($cmd[2], 1); // Remove the # from the channel name

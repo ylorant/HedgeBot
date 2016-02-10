@@ -41,7 +41,7 @@ class HedgeBot
 
 		$configDir = self::DEFAULT_CONFIG_DIR;
 		if(isset($options['config']) || isset($options['c']))
-			$configDir = $options['configDir'];
+			$configDir = !empty($options['config']) ? $options['config'] : $options['c'];
 
 		HedgeBot::message('Starting HedgeBot...');
 		HedgeBot::message('Starting in verbose mode.', null, E_DEBUG);
@@ -58,7 +58,7 @@ class HedgeBot
 
 		if(!$connected)
 			return HedgeBot::message('Cannot locate configuration directory', null, E_ERROR);
-		
+
 		// Loading real storage now
 		$storageConfig = $this->config->storage->config;
 		$dataStorage = $this->config->storage->data;
@@ -91,9 +91,9 @@ class HedgeBot
 		$pluginList = array_map('trim', $pluginList);
 
 		$this->plugins = new PluginManager($this);
-		$this->plugins->loadPlugins($pluginList);
-
 		Plugin::setManager($this->plugins);
+
+		$this->plugins->loadPlugins($pluginList);
 
 		// Loading core events manager
 		$coreEvents = new CoreEvents($this->plugins, $this);

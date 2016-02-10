@@ -16,7 +16,9 @@ class PluginManager extends Events
 	private $_routines = array();
 	private $_regex = array();
 	private $_timeouts = array();
-	private $pluginsDirectory;
+	private $_pluginsDefinition = array(); /// < Reference to plugins definitions
+
+	public $pluginsDirectory; ///< Directory where the plugins are stored.
 
 	const PLUGINS_NAMESPACE = "HedgeBot\\Plugins\\";
 
@@ -46,7 +48,7 @@ class PluginManager extends Events
 	 * \param $list Plugin list to be loaded.
 	 * \return TRUE if all plugins loaded successfully, FALSE otherwise.
 	 */
-	public function loadPlugins($list, $manual = FALSE)
+	public function loadPlugins($list)
 	{
 		if(!is_array($list))
 			return FALSE;
@@ -57,7 +59,7 @@ class PluginManager extends Events
 		{
 			if(!in_array($plugin, $this->getLoadedPlugins()))
 			{
-				$return = $this->loadPlugin($plugin, $manual);
+				$return = $this->loadPlugin($plugin);
 				if($return !== FALSE)
 					$loadedPlugins[] = $plugin;
 				else
@@ -68,7 +70,10 @@ class PluginManager extends Events
 		return TRUE;
 	}
 
-	public function loadPlugin($plugin, $manual = FALSE)
+	/** Loads a plugin.
+	 * This method loads a single plugin. It is called from
+	 */
+	public function loadPlugin($plugin)
 	{
 		HedgeBot::message('Loading plugin $0', array($plugin));
 
@@ -88,10 +93,8 @@ class PluginManager extends Events
 			return FALSE;
 		}
 
-		// Loading the config for the plugin as a storage
-		$pluginConfig = new FileProvider();
-		$config = new ObjectAccess($pluginConfig);
-		$pluginConfig->connect($pluginDirectory);
+		// Loading the definition for the plugin as a storage
+		$config = $this->getPluginDefinition($plugin);
 
 		// Checking that the basic plugin configuration is present
 		if(!$this->checkPluginConfig($config))
@@ -101,10 +104,10 @@ class PluginManager extends Events
 		}
 
 		//Load dependencies if necessary
-		if(!empty($config->pluginDefinition->dependencies) && is_array($pluginConfig->get('pluginDefinition.dependencies')))
+		if(!empty($config->pluginDefinition->dependencies) && is_array($config->get('pluginDefinition.dependencies')))
 		{
 			HedgeBot::message('Loading plugin dependencies for $0.', array($plugin));
-			$ret = $this->loadPlugins($pluginConfig->get('pluginDefinition.dependencies'));
+			$ret = $this->loadPlugins($config->get('pluginDefinition.dependencies'));
 			if(!$ret)
 			{
 				HedgeBot::message('Cannot load plugin dependencies, loading aborted.', array(), E_WARNING);
@@ -112,7 +115,7 @@ class PluginManager extends Events
 			}
 			HedgeBot::message('Loaded plugin dependencies for $0.', array($params['name']));
 		}
-		elseif(!empty($pluginConfig->get('pluginDefinition.dependencies')))
+		elseif(!empty($config->get('pluginDefinition.dependencies')))
 			HedgeBot::message('Dependencies list is not an array.', array(), E_WARNING);
 
 		// Load the main class
@@ -246,6 +249,30 @@ class PluginManager extends Events
 			return $this->_plugins[$name];
 
 		return null;
+	}
+
+	/** Returns the definition of a plugin.
+	 * This method returns the definition for a plugin. Note that the plugin doesn't have to be loaded,
+	 * but a cache is kept to prevent parsing the definition of an already loaded plugin.
+	 *
+	 * \param $name The name of the plugin to load definition from.
+	 *
+	 * \return The plugin definition as an ObjectAccess object.
+	 */
+	public function getPluginDefinition($name)
+	{
+		if(!isset($this->_pluginsDefinition[$name]))
+		{
+			$pluginDirectory = $this->pluginsDirectory. '/'. $name. '/';
+			$pluginConfig = new FileProvider();
+			$config = new ObjectAccess($pluginConfig);
+			$pluginConfig->connect($pluginDirectory);
+
+			$this->_pluginsDefinition[$name] = $config;
+		}
+
+		return $this->_pluginsDefinition[$name];
+
 	}
 
 	/** Adds a routine to the event manager.
