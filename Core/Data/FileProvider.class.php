@@ -368,7 +368,7 @@ class FileProvider extends Provider
 
         // If we're given an object configuration (from the boostrapping storage), load the location from it
         $location = null;
-        if($parameters instanceof ObjectAccess)
+        if(is_object($parameters))
         {
             $location = $parameters->basepath;
 

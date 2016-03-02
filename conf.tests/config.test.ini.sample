@@ -1,0 +1,31 @@
+[storage.config]
+type = file
+basepath = conf.tests
+backups = false
+readonly = true
+
+[storage.data]
+type = memory
+
+[general]
+verbosity = 1
+pluginsDirectory = Plugins
+plugins = TestManager
+
+[servers.twitch]
+address = irc.twitch.tv
+port = 6667
+name =
+channels =
+password =
+
+[plugin.TestManager]
+testedPlugins = Currency
+botName =
+logfile = tests.log
+
+[plugin.TestManager.botConfig]
+type = file
+basepath = conf
+backups = false
+readonly = true
