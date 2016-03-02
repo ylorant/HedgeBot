@@ -271,7 +271,7 @@ class HedgeBot
 	{
 		// Setting up options for CLI parsing
 		$shortOpts = array(
-			"c::",
+			"c:",
 			"v"
 		);
 
