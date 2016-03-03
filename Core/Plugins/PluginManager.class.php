@@ -37,6 +37,8 @@ class PluginManager extends Events
 		$this->addEventListener('server', 'Server');
 		$this->addEventListener('timeout', 'Timeout');
 
+		$this->addRoutine($this, 'timeoutRoutine');
+
 		// Setting plugins directory
 		$this->pluginsDirectory = $this->_main->config->general->pluginsDirectory;
 	}
@@ -165,6 +167,8 @@ class PluginManager extends Events
 
 	/** Unloads a plugin.
 	 * This function unloads a plugin. It does not unload the dependencies with it yet.
+	 *
+	 * FIXME: Currently works with the old plugin structure, adapt to the new one.
 	 *
 	 * \param $plugin The plugin to unload.
 	 *

@@ -146,19 +146,20 @@ class Currency extends Plugin
 		if(count($args) < 2)
 			return IRC::message($param['channel'], 'Insufficient parameters.');
 
-		$account = $this->accounts->get($command['channel']. '.'. $command['nick']);
+		// Lowercasing the username
+		$nick = strtolower($args[0]);
 
 		// Check that the account exists
-		if(!isset($this->accounts[$param['channel']][$command['nick']]))
+		if(!isset($this->accounts[$param['channel']][$nick]))
 			return IRC::message($param['channel'], 'Unknown user.');
 
 		// Perform account operations
 		$sum = (int) $args[1];
 
-		if($this->accounts[$param['channel']][$command['nick']] - $sum > 0)
-			$this->accounts[$param['channel']][$command['nick']] -= $sum;
+		if($this->accounts[$param['channel']][$nick] - $sum > 0)
+			$this->accounts[$param['channel']][$nick] -= $sum;
 		else
-			$this->accounts[$param['channel']][$command['nick']] = 0;
+			$this->accounts[$param['channel']][$nick] = 0;
 
 		$this->data->set('accounts', $this->accounts);
 	}

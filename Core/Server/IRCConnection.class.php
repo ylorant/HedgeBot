@@ -31,7 +31,7 @@ class IRCConnection
 
 	public function disconnect()
 	{
-		fclose($this->_socket);
+		socket_close($this->_socket);
 	}
 
 	public function read()

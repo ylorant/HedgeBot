@@ -28,6 +28,40 @@ class CurrencyTest
         $testData->addedAmount = rand(0, 100);
 
         // Get current user amount
+        $test->send($this->channelConfig->statusCommand)
+             ->getReply()
+             ->match('#'. $this->channelConfig->statusRegexp. '#');
+
+        // Store the amount into a storage object
+        $test->execute(
+            function() use ($test, $testData)
+            {
+                $testData->currentAmount = $test->lastMatch[1];
+                return true;
+            }
+        );
+
+        // Add the money, then get the new total
+        $test->send('!give '. Server::getNick(). ' '. $testData->addedAmount)
+             ->send($this->channelConfig->statusCommand)
+             ->getReply()
+             ->match('#'. $this->channelConfig->statusRegexp. '#');
+
+        // Check that the bot added the correct money amount
+        $test->execute(
+            function() use ($test, $testData)
+            {
+                return $testData->currentAmount + $testData->addedAmount == $test->lastMatch[1];
+            }
+        );
+    }
+
+    public function testCurrencyTake(TestCase $test)
+    {
+        $testData = new stdClass();
+        $testData->removedAmount = rand(0, 100);
+
+        // Get current user amount
         $test
             ->send($this->channelConfig->statusCommand)
             ->getReply()
@@ -43,7 +77,7 @@ class CurrencyTest
             )
 
             // Add the money, then get the new total
-            ->send('!give '. Server::getNick(). ' '. $testData->addedAmount)
+            ->send('!take '. Server::getNick(). ' '. $testData->removedAmount)
             ->send($this->channelConfig->statusCommand)
             ->getReply()
             ->match('#'. $this->channelConfig->statusRegexp. '#')
@@ -52,7 +86,7 @@ class CurrencyTest
             ->execute(
                 function() use ($test, $testData)
                 {
-                    return $testData->currentAmount + $testData->addedAmount == $test->lastMatch[1];
+                    return $testData->currentAmount - $testData->removedAmount == $test->lastMatch[1];
                 }
             );
     }

@@ -17,6 +17,12 @@ class ServerInstance
 		$this->pluginManager = Plugin::getManager();
 	}
 
+	public function disconnect()
+	{
+		$this->IRC->send("QUIT: Quitting...");
+		$this->IRC->disconnect();
+	}
+
 	public function load($config)
 	{
 		$this->config = $config;
@@ -26,7 +32,7 @@ class ServerInstance
 
 		if(!empty($config['password']))
 			$this->IRC->setPassword($config['password']);
-		
+
 		// Send Twitch specific commands
 		$this->IRC->capabilityRequest("twitch.tv/commands");
 		$this->IRC->capabilityRequest("twitch.tv/tags");

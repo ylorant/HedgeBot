@@ -7,6 +7,7 @@ use ReflectionMethod;
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\API\Plugin;
+use HedgeBot\Core\API\Server;
 use HedgeBot\Core\Data\FileProvider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Plugins\PluginManager;
@@ -72,12 +73,27 @@ class TestManager extends PluginBase
         }
     }
 
+    public function ServerJoin($cmd)
+    {
+        // Autostart when first joining the channel if the config option is set
+        if($cmd['nick'] == Server::getNick())
+        {
+            if(!empty($this->config['autostart']) && HedgeBot::parseRBool($this->config['autostart']))
+                $this->CommandExecTests($cmd, array());
+        }
+    }
+
     public function CommandExecTests($cmd, $params)
     {
         $this->testChannel = $cmd['channel'];
         $this->testStats = ["successes" => 0, "failures" => 0];
         $this->buildTests();
         $this->execTests();
+    }
+
+    public function TimeoutTestProcess()
+    {
+        $this->processTestQueue();
     }
 
     public function getTestedBotConfig()
@@ -175,7 +191,12 @@ class TestManager extends PluginBase
                 $this->log('Successes: '. $this->testStats['successes']. '. Failures: '. $this->testStats['failures']. '.');
                 $this->log('Success rate: '. $successRate. '%');
                 $this->log('Total test time: '. round(microtime(true) - $this->startTime, 4). 's');
+
+                if(!empty($this->config['autostop']) && HedgeBot::parseRBool($this->config['autostop']))
+                    HedgeBot::getInstance()->stop();
             }
+            else
+                Plugin::getManager()->setTimeout(1, 'testprocess');
         }
     }
 

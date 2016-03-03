@@ -24,6 +24,8 @@ class HedgeBot
 	public $plugins;
 	public $initialized;
 
+	private $_run;
+
 	private static $instance;
 
 	const VENDOR_NAMESPACE = "HedgeBot"; // Base "vendor" namespace for autoloading
@@ -346,5 +348,10 @@ class HedgeBot
 			$this->plugins->unloadPlugin($plugin);
 
 		return TRUE;
+	}
+
+	public function stop()
+	{
+		$this->_run = false;
 	}
 }
