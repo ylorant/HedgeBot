@@ -15,13 +15,27 @@ class IRCConnection
 	private $_data;
 	private $_floodLimit = false;
 	private $_lastCommand = 0;
+	private $_currentAddress = null;
+	private $_currentPort = null;
 
 	public function connect($addr, $port)
 	{
+		$this->_currentAddress = $addr;
+		$this->_currentPort = $port;
+
+		$this->_channels = array();
+		$this->_users = array();
+
 		$this->_socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-		socket_connect($this->_socket, $addr, $port);
-		socket_set_nonblock($this->_socket);
-		$this->_lastSend = 0;
+		$connected = socket_connect($this->_socket, $addr, $port);
+
+		if($connected)
+		{
+			socket_set_nonblock($this->_socket);
+			$this->_lastSend = 0;
+		}
+
+		return $connected;
 	}
 
 	public function setFloodLimit($value)
@@ -290,8 +304,15 @@ class IRCConnection
 					if(HedgeBot::$verbose >= 2)
 						echo '->['.Server::getName().'] '.$data."\n";
 
-					socket_write($this->_socket, $data."\r\n");
-					unset($this->_buffer[$time]);
+					$bytesWritten = @socket_write($this->_socket, $data."\r\n");
+
+					if($bytesWritten !== false)
+						unset($this->_buffer[$time]);
+					else
+					{
+						HedgeBot::message('Connection to server $0 lost, reconnecting.', array(Server::getName()), E_WARNING);
+						$this->connect($this->_currentAddress, $this->_currentPort);
+					}
 				}
 			}
 			elseif($this->_lastSend + 2 <= time() || !$this->_floodLimit)
@@ -299,9 +320,17 @@ class IRCConnection
 				if(HedgeBot::$verbose >= 2)
 					echo '->['.Server::getName().'] '.$data."\n";
 
-				socket_write($this->_socket, $data."\r\n");
-				unset($this->_buffer[$time]);
-				$this->_lastSend = time();
+				$bytesWritten = @socket_write($this->_socket, $data."\r\n");
+				if($bytesWritten !== false)
+				{
+					unset($this->_buffer[$time]);
+					$this->_lastSend = time();
+				}
+				else
+				{
+					HedgeBot::message('Connection to server $0 lost, reconnecting.', array(Server::getName()), E_WARNING);
+					$this->connect($this->_currentAddress, $this->_currentPort);
+				}
 			}
 		}
 	}

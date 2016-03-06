@@ -28,7 +28,10 @@ class ServerInstance
 		$this->config = $config;
 		$this->_name = HedgeBot::getServerName($this);
 
-		$this->IRC->connect($config['address'], $config['port']);
+		$connected = $this->IRC->connect($config['address'], $config['port']);
+
+		if(!$connected)
+			return false;
 
 		if(!empty($config['password']))
 			$this->IRC->setPassword($config['password']);
@@ -43,6 +46,8 @@ class ServerInstance
 
 		if(isset($config['floodLimit']) && HedgeBot::parseRBool($config['floodLimit']))
 			$this->IRC->setFloodLimit($config['floodLimit']);
+
+		return true;
 	}
 
 	public function getConfig()

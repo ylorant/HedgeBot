@@ -106,14 +106,27 @@ class HedgeBot
 			return HedgeBot::message('No server to connect to. Stopping.', null, E_ERROR);
 
 		HedgeBot::message('Loading servers...');
+		$loadedServers = 0;
 		foreach($servers as $name => $server)
 		{
 			HedgeBot::message('Loading server $0', array($name));
 			$this->servers[$name] = new ServerInstance();
 			IRC::setServer($this->servers[$name]);
 			Server::setServer($this->servers[$name]);
-			$this->servers[$name]->load($server);
+			$loaded = $this->servers[$name]->load($server);
+
+			if(!$loaded)
+			{
+				HedgeBot::message('Cannot connect to server $0.', array($name), E_WARNING);
+				unset($this->servers[$name]);
+				continue;
+			}
+
+			$loadedServers++;
 		}
+
+		if($loadedServers == 0)
+			return HedgeBot::message('Cannot connect to any servers, stopping.', null, E_ERROR);
 
 		HedgeBot::message('Loaded servers.');
 
