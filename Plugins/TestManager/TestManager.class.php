@@ -66,7 +66,7 @@ class TestManager extends PluginBase
 
     public function ServerPrivmsg($cmd)
     {
-        if($cmd['channel'] == $this->testChannel && $cmd['nick'] == $this->botName)
+        if($cmd['channel'] == $this->testChannel && $cmd['nick'] == $this->botName && !empty($this->currentTest))
         {
             $this->currentTest->pushMessage($cmd['message']);
             $this->processTestQueue();
@@ -152,11 +152,13 @@ class TestManager extends PluginBase
 
     protected function processTestQueue()
     {
-        if(empty($this->currentTest))
+        if(empty($this->currentTest) && !empty($this->testQueue))
         {
             $this->currentTest = array_shift($this->testQueue);
             $this->log($this->currentTest->testName. ': ', false);
         }
+        elseif(empty($this->currentTest))
+            return $this->finishTests();
 
         while($this->currentTest->status == TestCase::STATUS_IDLE)
             $this->currentTest->executeStep();
@@ -179,25 +181,28 @@ class TestManager extends PluginBase
 
             // Check for tests end and report if necessary
             if(empty($this->testQueue))
-            {
-                $successRate = 0;
-                if($this->testStats['failures'] > 0)
-                    $successRate = round(($this->testStats['successes'] / $this->testStats['failures'] * 100), 2);
-                else
-                    $successRate = 100;
-
-                $this->log('');
-                $this->log('Tests completed.').
-                $this->log('Successes: '. $this->testStats['successes']. '. Failures: '. $this->testStats['failures']. '.');
-                $this->log('Success rate: '. $successRate. '%');
-                $this->log('Total test time: '. round(microtime(true) - $this->startTime, 4). 's');
-
-                if(!empty($this->config['autostop']) && HedgeBot::parseRBool($this->config['autostop']))
-                    HedgeBot::getInstance()->stop();
-            }
+                $this->finishTests();
             else
                 Plugin::getManager()->setTimeout(1, 'testprocess');
         }
+    }
+
+    protected function finishTests()
+    {
+        $successRate = 0;
+        if($this->testStats['failures'] > 0)
+            $successRate = round(($this->testStats['successes'] / $this->testStats['failures'] * 100), 2);
+        else
+            $successRate = 100;
+
+        $this->log('');
+        $this->log('Tests completed.').
+        $this->log('Successes: '. $this->testStats['successes']. '. Failures: '. $this->testStats['failures']. '.');
+        $this->log('Success rate: '. $successRate. '%');
+        $this->log('Total test time: '. round(microtime(true) - $this->startTime, 4). 's');
+
+        if(!empty($this->config['autostop']) && HedgeBot::parseRBool($this->config['autostop']))
+            HedgeBot::getInstance()->stop();
     }
 
     protected function log($message, $crlf = true)

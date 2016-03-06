@@ -65,49 +65,52 @@ class TestCase
 
     public function executeStep()
     {
-        $step = $this->steps[$this->currentStep];
-
-        switch($step['name'])
+        if(!empty($this->steps[$this->currentStep]))
         {
-            case 'send':
-                IRC::message($this->manager->getChannel(), $step['params'][0]);
-                break;
+            $step = $this->steps[$this->currentStep];
 
-            case 'execute':
-                $res = $step['params'][0]();
-                if($res === false)
-                    $this->status = self::STATUS_FAILED;
-                break;
+            switch($step['name'])
+            {
+                case 'send':
+                    IRC::message($this->manager->getChannel(), $step['params'][0]);
+                    break;
 
-            case 'getReply':
-                $this->status = self::STATUS_WAITREPLY;
-                break;
+                case 'execute':
+                    $res = $step['params'][0]();
+                    if($res === false)
+                        $this->status = self::STATUS_FAILED;
+                    break;
 
-            case 'match':
-                $regexp = $step['params'][0];
+                case 'getReply':
+                    $this->status = self::STATUS_WAITREPLY;
+                    break;
 
-                $found = false;
-                $i = 0;
-                $matches = null;
-                foreach($this->messageStack as $i => $message)
-                {
-                    if(preg_match($regexp, $message, $matches))
+                case 'match':
+                    $regexp = $step['params'][0];
+
+                    $found = false;
+                    $i = 0;
+                    $matches = null;
+                    foreach($this->messageStack as $i => $message)
                     {
-                        $found = true;
-                        $this->lastMatch = $matches;
-                        break;
+                        if(preg_match($regexp, $message, $matches))
+                        {
+                            $found = true;
+                            $this->lastMatch = $matches;
+                            break;
+                        }
                     }
-                }
 
-                if($found)
-                    array_splice($this->messageStack, $i, 1);
-                else
-                    $this->status = self::STATUS_FAILED;
-                break;
+                    if($found)
+                        array_splice($this->messageStack, $i, 1);
+                    else
+                        $this->status = self::STATUS_FAILED;
+                    break;
+            }
+
+            if($this->status != self::STATUS_WAITREPLY)
+                $this->currentStep++;
         }
-
-        if($this->status != self::STATUS_WAITREPLY)
-            $this->currentStep++;
 
         if($this->currentStep >= count($this->steps) && $this->status != self::STATUS_FAILED)
             $this->status = self::STATUS_SUCCESS;

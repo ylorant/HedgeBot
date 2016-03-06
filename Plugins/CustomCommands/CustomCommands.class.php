@@ -1,17 +1,18 @@
 <?php
-class PluginCustomCommands extends Plugin
+namespace HedgeBot\Plugins\CustomCommands;
+
+use HedgeBot\Core\HedgeBot;
+use HedgeBot\Core\Plugins\Plugin;
+use HedgeBot\Core\API\IRC;
+
+class CustomCommands extends Plugin
 {
-	private $commands = array('Commands' => array());
+	private $commands = array();
 
 	public function init()
 	{
-		$this->reloadConfig();
-	}
-
-	public function SystemEventConfigUpdate()
-	{
-		$this->config = HedgeBot::getInstance()->config->get('plugin.'.$pluginName);
-		$this->reloadConfig();
+		if(!empty($this->data->commands))
+			$this->commands = $this->data->commands->toArray();
 	}
 
 	public function ServerPrivmsg($cmd)
@@ -22,12 +23,12 @@ class PluginCustomCommands extends Plugin
 			$message = explode(' ', $message);
 			$command = substr($message[0], 1);
 
-			if(isset($this->commands['Commands'][$command]))
-				return IRC::message($cmd['channel'], $this->commands['Commands'][$command]);
+			if(isset($this->commands[$command]))
+				return IRC::message($cmd['channel'], $this->commands[$command]);
 		}
 	}
 
-	public function CommandAdd($param, $args)
+	public function CommandAddCommand($param, $args)
 	{
 		if(!$param['moderator'])
 			return;
@@ -39,15 +40,15 @@ class PluginCustomCommands extends Plugin
 		$newcommand = $newcommand[0] == '!' ? substr($newcommand, 1) : $newcommand;
 		$message = join(' ', $args);
 
-		if(!empty($this->commands['Commands'][$newcommand]))
+		if(!empty($this->commands[$newcommand]))
 			return IRC::message($param['channel'], "A command with this name already exists. Try again.");
 
-		$this->commands['Commands'][$newcommand] = $message;
-		$this->saveCommands();
+		$this->commands[$newcommand] = $message;
+		$this->data->set('commands', $this->commands);
 		return IRC::message($param['channel'], "New message for command !". $newcommand. " registered.");
 	}
 
-	public function CommandDelete($param, $args)
+	public function CommandRmCommand($param, $args)
 	{
 		if(!$param['moderator'])
 			return;
@@ -58,29 +59,11 @@ class PluginCustomCommands extends Plugin
 		$newcommand = array_shift($args);
 		$newcommand = $newcommand[0] == '!' ? substr($newcommand, 1) : $newcommand;
 
-		if(empty($this->commands['Commands'][$newcommand]))
+		if(empty($this->commands[$newcommand]))
 			return IRC::message($param['channel'], "This command does not exist. Try again.");
 
-		unset($this->commands['Commands'][$newcommand]);
-		$this->saveCommands();
+		unset($this->commands[$newcommand]);
+		$this->data->set('commands', $this->commands);
 		return IRC::message($param['channel'], "Command deleted.");
 	}
-
-
-	public function loadCommands()
-	{
-		$this->commands = HedgeBot::parseINIStringRecursive(file_get_contents($this->config['File']));
-	}
-
-	public function saveCommands()
-	{
-		file_put_contents($this->config['File'], HedgeBot::generateINIStringRecursive($this->commands));
-	}
 }
-
-$this->addPluginData(array(
-'name' => 'customcommands',
-'className' => 'PluginCustomCommands',
-'display' => 'Twitch chat Custom commands plugin',
-'dependencies' => array(),
-'autoload' => TRUE));

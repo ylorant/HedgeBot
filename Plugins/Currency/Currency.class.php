@@ -49,7 +49,9 @@ class Currency extends Plugin
 	/** Plugin initialization */
 	public function init()
 	{
-		$this->accounts = $this->data->accounts->toArray();
+		if(!empty($this->data->accounts))
+			$this->accounts = $this->data->accounts->toArray();
+
 		$this->reloadConfig();
 	}
 

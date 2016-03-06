@@ -92,7 +92,7 @@ class HedgeBot
 		$pluginList = explode(',', $pluginList);
 		$pluginList = array_map('trim', $pluginList);
 
-		$this->plugins = new PluginManager($this);
+		$this->plugins = new PluginManager();
 		Plugin::setManager($this->plugins);
 
 		$this->plugins->loadPlugins($pluginList);
@@ -321,6 +321,10 @@ class HedgeBot
 		return true;
 	}
 
+	/**
+	 * Main loop.
+	 * @return TRUE.
+	 */
 	public function run()
 	{
 		$this->_run = TRUE;

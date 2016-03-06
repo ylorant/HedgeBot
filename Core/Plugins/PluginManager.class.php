@@ -10,13 +10,12 @@ use ReflectionMethod;
 
 class PluginManager extends Events
 {
-
-	private $_main; ///<  Reference to main class
 	private $_plugins; ///< Plugins list
 	private $_routines = array();
 	private $_regex = array();
 	private $_timeouts = array();
-	private $_pluginsDefinition = array(); /// < Reference to plugins definitions
+	private $_pluginsDefinition = array(); ///< Reference to plugins definitions
+	private $_manuallyLoadedPlugins = array(); ///< List of manually loaded plugins, to avoid unloading them as dependencies
 
 	public $pluginsDirectory; ///< Directory where the plugins are stored.
 
@@ -27,9 +26,8 @@ class PluginManager extends Events
 	 *
 	 * \param $main A reference to the main program class (HedgeBot class).
 	 */
-	public function __construct(&$main)
+	public function __construct()
 	{
-		$this->_main = $main;
 		$this->_plugins = array();
 
 		// Creating default event handlers
@@ -40,7 +38,7 @@ class PluginManager extends Events
 		$this->addRoutine($this, 'timeoutRoutine');
 
 		// Setting plugins directory
-		$this->pluginsDirectory = $this->_main->config->general->pluginsDirectory;
+		$this->pluginsDirectory = HedgeBot::getInstance()->config->general->pluginsDirectory;
 	}
 
 	/** Loads plugins from an array.
@@ -50,7 +48,7 @@ class PluginManager extends Events
 	 * \param $list Plugin list to be loaded.
 	 * \return TRUE if all plugins loaded successfully, FALSE otherwise.
 	 */
-	public function loadPlugins($list)
+	public function loadPlugins($list, $manual = TRUE)
 	{
 		if(!is_array($list))
 			return FALSE;
@@ -61,7 +59,7 @@ class PluginManager extends Events
 		{
 			if(!in_array($plugin, $this->getLoadedPlugins()))
 			{
-				$return = $this->loadPlugin($plugin);
+				$return = $this->loadPlugin($plugin, $manual);
 				if($return !== FALSE)
 					$loadedPlugins[] = $plugin;
 				else
@@ -75,7 +73,7 @@ class PluginManager extends Events
 	/** Loads a plugin.
 	 * This method loads a single plugin. It is called from
 	 */
-	public function loadPlugin($plugin)
+	public function loadPlugin($plugin, $manual = TRUE)
 	{
 		HedgeBot::message('Loading plugin $0', array($plugin));
 
@@ -109,7 +107,7 @@ class PluginManager extends Events
 		if(!empty($config->pluginDefinition->dependencies) && is_array($config->get('pluginDefinition.dependencies')))
 		{
 			HedgeBot::message('Loading plugin dependencies for $0.', array($plugin));
-			$ret = $this->loadPlugins($config->get('pluginDefinition.dependencies'));
+			$ret = $this->loadPlugins($config->get('pluginDefinition.dependencies'), FALSE);
 			if(!$ret)
 			{
 				HedgeBot::message('Cannot load plugin dependencies, loading aborted.', array(), E_WARNING);
@@ -136,6 +134,9 @@ class PluginManager extends Events
 		}
 
 		$this->_plugins[$plugin] = $pluginObj;
+
+		if($manual)
+			$this->_manuallyLoadedPlugins[$plugin] = $plugin;
 
 		HedgeBot::message('Loaded plugin $0', array($plugin));
 
@@ -186,54 +187,65 @@ class PluginManager extends Events
 		}
 
 		//Searching plugins that depends on the one we want to unload
-		foreach($this->_plugins as $pluginName => &$pluginData)
+		foreach($this->_pluginsDefinition as $pluginName => $pluginData)
 		{
-			if(in_array($plugin, $pluginData['dependencies']))
+			if($pluginName != $plugin)
 			{
-				HedgeBot::message('Plugin $0 depends on plugin $1. Cannot unload plugin $1.', array($pluginName, $plugin), E_WARNING);
-				return FALSE;
+				$dependencies = $pluginData->get('dependencies');
+				if(is_array($dependencies) && in_array($plugin, $dependencies))
+				{
+					HedgeBot::message('Plugin $0 depends on plugin $1. Cannot unload plugin $1.', array($pluginName, $plugin), E_WARNING);
+					return FALSE;
+				}
 			}
 		}
 
-		//Deleting routines
-		if(isset($this->_routines[$this->_plugins[$plugin]['className']]))
+		// Starting of unloading procedure
+		$this->_plugins[$plugin]->destroy();
+
+		// Getting routines linked to the plugin classes
+		$pluginNamespace = self::PLUGINS_NAMESPACE. $pluginName;
+		$pluginNames = array_keys($this->_routines);
+
+		$routinesClasses = array();
+		foreach($pluginNames as $pluginName)
 		{
-			foreach($this->_routines[$this->_plugins[$plugin]['className']] as $eventName => $event)
-				$this->deleteRoutine($this->_plugins[$plugin]['obj'], $eventName);
+			if(strpos($pluginName, $pluginNamespace) === 0)
+				$routinesClasses[] = $pluginName;
 		}
 
-		//Deleting server events
-		foreach($this->_serverEvents as $eventName => $eventList)
+		//Deleting routines for all the needed classes of the plugin
+		if(!empty($routinesClasses))
 		{
-			if(isset($eventList[$this->_plugins[$plugin]['className']]))
-				$this->deleteServerEvent($eventName, $this->_plugins[$plugin]['obj']);
+			foreach($routinesClasses as $pluginClass)
+			{
+				foreach($this->_routines[$pluginClass] as $eventName => $event)
+					$this->deleteRoutine($this->_plugins[$plugin], $eventName);
+			}
 		}
 
-		//Deleting commands
-		foreach($this->_commands as $eventName => $eventList)
-		{
-			if(isset($eventList[$this->_plugins[$plugin]['className']]))
-				$this->deleteCommand($eventName, $this->_plugins[$plugin]['obj']);
-		}
+		// Deleting all the autoloaded events for the plugin
+		$reflectionClass = new ReflectionClass($this->_plugins[$plugin]);
+		$this->deleteEventsById($reflectionClass->getName());
 
-		$dependencies = $this->_plugins[$plugin]['dependencies'];
-
-		$this->_plugins[$plugin]['obj']->destroy();
-		unset($this->_plugins[$plugin]['obj']);
 		unset($this->_plugins[$plugin]);
+		unset($this->_manuallyLoadedPlugins[$plugin]);
 
 		//Cleaning automatically loaded dependencies
-		foreach($dependencies as $dep)
+		$dependencies = $this->_pluginsDefinition[$plugin]->get('dependencies');
+		if(is_array($dependencies))
 		{
-			if($this->_plugins[$dep]['manual'] == FALSE)
+			foreach($dependencies as $dep)
 			{
-				HedgeBot::message('Unloading automatically loaded dependency $0.', array($dep));
-				$this->unloadPlugin($dep);
+				if(!empty($this->_plugins[$dep]) && !isset($this->_manuallyLoadedPlugins[$dep]))
+				{
+					HedgeBot::message('Unloading automatically loaded dependency $0.', array($dep));
+					$this->unloadPlugin($dep);
+				}
 			}
 		}
 
 		HedgeBot::message('Plugin $0 unloaded successfully', array($plugin));
-
 		return TRUE;
 	}
 

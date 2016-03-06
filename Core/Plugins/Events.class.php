@@ -214,7 +214,7 @@ class Events
 	{
 		$reflectionClass = new ReflectionClass($object);
 		$methods = $reflectionClass->getMethods(); //Get all class methods for plugin
-		
+
 		//Analyse all class methods
 		foreach($methods as $method)
 		{
@@ -226,11 +226,41 @@ class Events
 				{
 					$event = strtolower(preg_replace('#'.$prefix.'(.+)#', '$1', $methodName));
 					HedgeBot::message('Binding method $0::$1 on event $2/$3', array($reflectionClass->getShortName(), $methodName, $listener, $event), E_DEBUG);
-					$this->addEvent($listener, $reflectionClass->getShortName(), $event, array($object, $methodName));
+					$this->addEvent($listener, $reflectionClass->getName(), $event, array($object, $methodName));
 				}
 			}
 		}
 
 		return TRUE;
+	}
+
+	/** Deletes events by their callee ID.
+	 * This method deletes all events with a given callee function ID, regardless of its
+	 * listener.
+	 *
+	 * \param $id The id to search and delete from.
+	 *
+	 * \return NULL.
+	 */
+	public function deleteEventsById($id)
+	{
+		$callbacksToDelete = array();
+		foreach($this->_events as $listenerName => $events)
+		{
+			foreach($events as $eventName => $callbacks)
+			{
+				foreach($callbacks as $callbackId => $callback)
+				{
+					if($id == $callbackId)
+						$callbacksToDelete[] = array($listenerName, $eventName);
+				}
+			}
+		}
+
+		// Delete the events' callbacks
+		foreach($callbacksToDelete as $callback)
+			unset($this->_events[$callback[0]][$callback[1]][$id]);
+
+		return null;
 	}
 }
