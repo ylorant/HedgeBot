@@ -116,7 +116,7 @@ class FileProvider extends Provider
 				foreach($section as $el)
 					$edit = &$edit[$el];
 
-				$edit = $content;
+				$edit = str_replace('\\"', '"', $content);
 			}
 			else
 				HedgeBot::message('Orphan config parameter : $0', array($section), E_WARNING);
@@ -170,7 +170,9 @@ class FileProvider extends Provider
 				$arrays[$name] = $value;
 			elseif(is_bool($value))
 				$out .= $name.'='.($value ? 'yes' : 'no')."\n";
-			else
+			elseif(is_string($value) && !is_numeric($value))
+                $out .= $name.'="'. str_replace('"','\\"', $value). "\"\n";
+            else
 				$out .= $name.'='.$value."\n";
 		}
 
