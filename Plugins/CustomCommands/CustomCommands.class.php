@@ -23,8 +23,8 @@ class CustomCommands extends Plugin
 			$message = explode(' ', $message);
 			$command = substr($message[0], 1);
 
-			if(isset($this->commands[$command]))
-				return IRC::message($cmd['channel'], $this->commands[$command]);
+			if(isset($this->commands[$cmd['channel']][$command]))
+				return IRC::message($cmd['channel'], $this->commands[$cmd['channel']][$command]);
 		}
 	}
 
@@ -36,16 +36,16 @@ class CustomCommands extends Plugin
 		if(count($args) < 2)
 			return IRC::message($param['channel'], "Insufficient parameters.");
 
-		$newcommand = array_shift($args);
-		$newcommand = $newcommand[0] == '!' ? substr($newcommand, 1) : $newcommand;
+		$newCommand = array_shift($args);
+		$newCommand = $newCommand[0] == '!' ? substr($newCommand, 1) : $newCommand;
 		$message = join(' ', $args);
 
-		if(!empty($this->commands[$newcommand]))
+		if(!empty($this->commands[$param['channel']][$newCommand]))
 			return IRC::message($param['channel'], "A command with this name already exists. Try again.");
 
-		$this->commands[$newcommand] = $message;
+		$this->commands[$param['channel']][$newCommand] = $message;
 		$this->data->set('commands', $this->commands);
-		return IRC::message($param['channel'], "New message for command !". $newcommand. " registered.");
+		return IRC::message($param['channel'], "New message for command !". $newCommand. " registered.");
 	}
 
 	public function CommandRmCommand($param, $args)
@@ -56,13 +56,13 @@ class CustomCommands extends Plugin
 		if(count($args) == 0)
 			return IRC::message($param['channel'], "Insufficient parameters.");
 
-		$newcommand = array_shift($args);
-		$newcommand = $newcommand[0] == '!' ? substr($newcommand, 1) : $newcommand;
+		$deletedCommand = array_shift($args);
+		$deletedCommand = $deletedCommand[0] == '!' ? substr($deletedCommand, 1) : $deletedCommand;
 
-		if(empty($this->commands[$newcommand]))
+		if(empty($this->commands[$param['channel']][$deletedCommand]))
 			return IRC::message($param['channel'], "This command does not exist. Try again.");
 
-		unset($this->commands[$newcommand]);
+		unset($this->commands[$param['channel']][$deletedCommand]);
 		$this->data->set('commands', $this->commands);
 		return IRC::message($param['channel'], "Command deleted.");
 	}

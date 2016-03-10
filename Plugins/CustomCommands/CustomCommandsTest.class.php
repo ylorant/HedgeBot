@@ -44,6 +44,7 @@ class CustomCommandsTest
     {
         $test->send('!rmcommand '. $this->testData->randomCommand)
              ->send($this->testData->randomCommand)
-             ->getReply();
+             ->getReply()
+             ->match('#Command deleted\.#');
     }
 }

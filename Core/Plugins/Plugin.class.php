@@ -53,14 +53,4 @@ class Plugin
 	{
 		return TRUE;
 	}
-
-	public function addRegexEvent($regex, $callback)
-	{
-		$this->_plugins->addRegexEvent($regex, $callback);
-	}
-
-	public function execRegexEvents($cmd, $string)
-	{
-		$this->_plugins->execRegexEvents($cmd, $string);
-	}
 }
