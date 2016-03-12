@@ -426,10 +426,7 @@ class PluginManager extends Events
 	 */
 	public function setTimeout($time, $event)
 	{
-		if(!empty($this->_timeouts[$event]))
-			return false;
-
-		$this->_timeouts[$event] = array("time" => time() + $time, "delay" => $time, "event" => $event);
+		$this->_timeouts[] = array("time" => time() + $time, "delay" => $time, "event" => $event);
 
 		return true;
 	}
@@ -474,11 +471,19 @@ class PluginManager extends Events
 	 */
 	public function timeoutRoutine()
 	{
+		$timeoutsToRemove = array();
 		$time = time();
-		foreach($this->_timeouts as $timeout)
+		foreach($this->_timeouts as $i => $timeout)
 		{
 			if($timeout["time"] >= $time)
+			{
+				$timeoutsToRemove[] = $i;
 				$this->callEvent('timeout', $timeout["event"]);
+			}
 		}
+
+		rsort($timeoutsToRemove);
+		foreach($timeoutsToRemove as $key)
+			unset($this->_timeouts[$key]);
 	}
 }
