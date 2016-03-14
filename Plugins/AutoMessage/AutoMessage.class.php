@@ -2,11 +2,11 @@
 namespace HedgeBot\Plugins\AutoMessage;
 
 use HedgeBot\Core\HedgeBot;
-use HedgeBot\Core\Plugins\Plugin;
-use HedgeBot\Core\API\Plugin as PluginAPI;
+use HedgeBot\Core\Plugins\Plugin as PluginBase;
+use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 
-class AutoMessage extends Plugin
+class AutoMessage extends PluginBase
 {
     private $messages = array();
     private $nextSendQueue = array();
@@ -15,7 +15,7 @@ class AutoMessage extends Plugin
     {
         $this->reloadConfig();
 
-        $pluginManager = PluginAPI::getManager();
+        $pluginManager = Plugin::getManager();
         $pluginManager->addRoutine($this, 'RoutineSendMessages');
         $pluginManager->addRoutine($this, 'RoutinePopulateQueue', 30);
     }
