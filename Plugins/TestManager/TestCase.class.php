@@ -11,18 +11,19 @@ class TestCase
     private $messageStack = [];
     private $testInfo = [];
     private $manager = null;
-    private $lastActionTime = null;
 
+    public $lastActionTime = null;
     public $lastMatch = null;
     public $status = self::STATUS_IDLE;
     public $testName = '';
 
-    const ALLOWED_STEPS = ['send', 'execute', 'getReply', 'match'];
+    const ALLOWED_STEPS = ['send', 'execute', 'wait', 'getReply', 'match'];
 
     const STATUS_IDLE = 0;
     const STATUS_WAITREPLY = 1;
-    const STATUS_FAILED = 2;
-    const STATUS_SUCCESS = 3;
+    const STATUS_WAIT = 2;
+    const STATUS_FAILED = 3;
+    const STATUS_SUCCESS = 4;
 
     public function __construct(TestManager $manager)
     {
@@ -38,6 +39,7 @@ class TestCase
     {
         $this->testInfo = [];
         $this->testName = $method->name;
+        $this->lastActionTime = time();
     }
 
     public function addStep($stepName, $parameters)
@@ -85,6 +87,13 @@ class TestCase
                     $this->status = self::STATUS_WAITREPLY;
                     break;
 
+                case 'wait':
+                    if($this->lastActionTime + $step['params'][0] <= time())
+                        $this->status = self::STATUS_IDLE;
+                    else
+                        $this->status = self::STATUS_WAIT;
+                    break;
+
                 case 'match':
                     $regexp = $step['params'][0];
 
@@ -107,9 +116,12 @@ class TestCase
                         $this->status = self::STATUS_FAILED;
                     break;
             }
+        }
 
-            if($this->status != self::STATUS_WAITREPLY)
-                $this->currentStep++;
+        if(!in_array($this->status, array(self::STATUS_WAITREPLY, self::STATUS_WAIT)))
+        {
+            $this->currentStep++;
+            $this->lastActionTime = time();
         }
 
         if($this->currentStep >= count($this->steps) && $this->status != self::STATUS_FAILED)

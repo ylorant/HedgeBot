@@ -57,11 +57,22 @@ class TestManager extends PluginBase
                 return false;
             }
         }
+
+        Plugin::getManager()->addRoutine($this, 'RoutineWaitStatus');
     }
 
     public function getChannel()
     {
         return $this->testChannel;
+    }
+
+    /**
+     * This routine checks the status of the current test to unlock it when it's waiting for too long or on purpose.
+     */
+    public function RoutineWaitStatus()
+    {
+        if(!empty($this->currentTest))
+            $this->processTestQueue();
     }
 
     public function ServerPrivmsg($cmd)
@@ -160,8 +171,11 @@ class TestManager extends PluginBase
         elseif(empty($this->currentTest))
             return $this->finishTests();
 
-        while($this->currentTest->status == TestCase::STATUS_IDLE)
+        do
+        {
             $this->currentTest->executeStep();
+        }
+        while($this->currentTest->status == TestCase::STATUS_IDLE);
 
         if(in_array($this->currentTest->status, array(TestCase::STATUS_FAILED, TestCase::STATUS_SUCCESS)))
         {
