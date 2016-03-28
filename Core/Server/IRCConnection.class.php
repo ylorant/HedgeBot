@@ -70,20 +70,22 @@ class IRCConnection
 
 	public function joinChannels($channels)
 	{
-		$chans = $channels;
-		if(is_array($channels))
-			$chans = join(',', $channels);
-		else
+		if(!is_array($channels))
 			$channels = explode(',', str_replace(' ', '', $channels));
+
+		foreach($channels as &$channel)
+			$channel = strtolower($channel);
 
 		$this->_channels = array_merge($this->_channels, $channels);
 
-		str_replace(' ', '', $chans);
-		$this->send('JOIN #'.$chans);
+		foreach($channels as $channel)
+			$this->send('JOIN #'. $channel);
 	}
 
 	public function joinChannel($chan)
 	{
+		$chan = strtolower($chan);
+
 		$this->_channels = array_merge($this->_channels, array($chan));
 		$this->send('JOIN #'.$chan);
 	}
