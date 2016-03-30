@@ -2,8 +2,10 @@
 namespace HedgeBot\Plugins\Currency;
 
 use HedgeBot\Core\HedgeBot;
-use HedgeBot\Core\Plugins\Plugin;
+use HedgeBot\Core\Plugins\Plugin as PluginBase;
+use HedgeBot\Core\Plugins\PropertyConfigMapping;
 use HedgeBot\Core\API\Server;
+use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 
 /**
@@ -26,25 +28,43 @@ use HedgeBot\Core\API\IRC;
  * misses from the per-channel config, then it is taken from the global config.
  * It is advised to define both, to avoid having situations where the default ones are used.
  */
-class Currency extends Plugin
+class Currency extends PluginBase
 {
 	private $accounts = array(); // Accounts, by channel
-	private $currencyName = array(); // Money names, by channel
-	private $currencyNamePlural = array(); // Money plural name, by channel
-	private $statusCommand = array(); // Money status command names, by channel
-	private $statusMessage = array(); // Money status command message, by channel
-	private $initialAmount = array(); // Initial money amount, by channel
-	private $globalCurrencyName; // Global money name, used if no money name is overridden for the channel
-	private $globalCurrencyNamePlural; // Global money plural name, ditto
-	private $globalStatusCommand; // Global money command, ditto
-	private $globalStatusMessage; // Global money message, ditto
-	private $globalInitialAmount; // Global initial money amount, ditto
+	private $activityTimes = array(); // Last activity times for channels users
+	private $giveTimes = array(); // Last times money was given to users
+
+	// Plugin configuration variables by channel
+	private $currencyName = array(); // Money names
+	private $currencyNamePlural = array(); // Money plural name
+	private $statusCommand = array(); // Money status command names
+	private $statusMessage = array(); // Money status command message
+	private $initialAmount = array(); // Initial money amount
+	private $giveInterval = array(); // Money giving interval
+	private $giveAmount = array(); // Money giving amount
+	private $timeoutThreshold = array(); // Money giving timeout threshold
+
+	// Global plugin configuration variables, used if no money name is overridden for the channel
+	private $globalCurrencyName; // Global money name
+	private $globalCurrencyNamePlural; // Global money plural name
+	private $globalStatusCommand; // Global money command
+	private $globalStatusMessage; // Global money message
+	private $globalInitialAmount; // Global initial money amount
+	private $globalGiveInterval; // Global money giving interval
+	private $globalGiveAmount; // Global money giving amout
+	private $globalTimeoutThreshold; // Global money giving timeout threshold, by channel
 
 	const DEFAULT_CURRENCY_NAME = 'coin';
 	const DEFAULT_CURRENCY_NAME_PLURAL = 'coins';
 	const DEFAULT_STATUS_COMMAND = 'coins';
 	const DEFAULT_STATUS_MESSAGE  = '@name, you currently have @total @currency';
 	const DEFAULT_INITIAL_AMOUNT = 0;
+	const DEFAULT_GIVE_INTERVAL = 120;
+	const DEFAULT_GIVE_AMOUNT = 5;
+	const DEFAULT_TIMEOUT_THRESHOLD = 1800;
+
+	// Traits
+	use PropertyConfigMapping;
 
 	/** Plugin initialization */
 	public function init()
@@ -53,12 +73,49 @@ class Currency extends Plugin
 			$this->accounts = $this->data->accounts->toArray();
 
 		$this->reloadConfig();
+
+        Plugin::getManager()->addRoutine($this, 'RoutineAddMoney', 10);
+		var_dump($this);
 	}
 
 	public function SystemEventConfigUpdate()
 	{
 		$this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
 		$this->reloadConfig();
+	}
+
+	/** Add money to guys standing on the chat for a certain time */
+	public function RoutineAddMoney()
+	{
+		$currentTime = time();
+
+		foreach($this->activityTimes as $channel => $channelTimes)
+		{
+			// Get the good interval config value
+			$giveInterval = $this->getConfigParameter($channel, 'giveInterval');
+
+			// Check that the give interval between money giving is elapsed, if not, go to next iteration
+			if(!empty($this->giveTimes[$channel]) && $this->giveTimes[$channel] + $giveInterval > $currentTime)
+				continue;
+
+			// Get configuration settings
+			$timeoutThreshold = $this->getConfigParameter($channel, 'timeoutThreshold');
+			$giveAmount = $this->getConfigParameter($channel, 'giveAmount');
+
+			// Setting any configuration value to specifically 0 skips giving money
+			if((!empty($this->giveAmount[$channel]) && $this->giveAmount[$channel] === 0) || $giveAmount === 0)
+				continue;
+
+			// Finally, giving to people their money
+			foreach($channelTimes as $name => $time)
+			{
+				if($time + $timeoutThreshold > $currentTime)
+					$this->accounts[$channel][$name] += $giveAmount;
+			}
+
+			// Aand saving the accounts
+			$this->data->set('accounts', $this->accounts);
+		}
 	}
 
 	/** Initializes an account on join */
@@ -69,19 +126,23 @@ class Currency extends Plugin
 
 		$serverConfig = Server::getConfig();
 		if(strtolower($command['nick']) == strtolower($serverConfig['name']))
+		{
+			$this->activityTimes[$channel] = array();
+			$this->giveTimes[$channel] = time();
 			return;
+		}
 
-		$initialAmount = 0;
-		if(!empty($this->initialAmount[$command['channel']]))
-			$initialAmount = $this->initialAmount[$command['channel']];
-		else
-			$initialAmount = $this->globalInitialAmount;
+		$initialAmount = $this->getConfigParameter($command['channel'], 'initialAmount');
 
 		$this->accounts[$command['channel']][$command['nick']] = $initialAmount;
 		$this->data->set('accounts', $this->accounts);
 	}
 
-	/** Does the same as above, if an user talks before the join notice hase come over */
+	/**
+	 * Initializes accounts for user that talk before the join notice comes in.
+	 * Handles status command calls too.
+	 * Updates last activity time for the user.
+	 */
 	public function ServerPrivmsg($command)
 	{
 		$this->ServerJoin($command);
@@ -90,15 +151,12 @@ class Currency extends Plugin
 		if($cmd[0][0] == '!')
 		{
 			$cmd = substr($cmd[0], 1);
-			if(!empty($this->statusCommand[$command['channel']]))
-			{
-				if($this->statusCommand[$command['channel']] == $cmd)
-					$this->RealCommandAccount($command, array());
-			}
-			elseif($this->globalStatusCommand == $cmd)
+			$statusCommand = $this->getConfigParameter($command['channel'], 'statusCommand');
+			if($statusCommand == $cmd)
 				$this->RealCommandAccount($command, array());
 		}
 
+		$this->activityTimes[$command['channel']][$command['nick']] = time();
 	}
 
 	/** Mod function: adds a given amount of money to a given player */
@@ -169,46 +227,32 @@ class Currency extends Plugin
 	/** Real account show command, shows the current amount of currency for the user */
 	public function RealCommandAccount($param, $args)
 	{
-		$message = null;
-		if(!empty($this->statusMessage[$param['channel']]))
-			$message = $this->statusMessage[$param['channel']];
-		else
-			$message = $this->globalStatusMessage;
-
+		$message = $this->getConfigParameter($param['channel'], 'statusMessage');
 		IRC::message($param['channel'], $this->formatMessage($message, $param['channel'], $param['nick']));
 	}
 
 	/** Reloads configuration variables */
 	public function reloadConfig()
 	{
-		$parameters = array('currencyName', 'currencyNamePlural', 'statusCommand', 'statusMessage', 'initialAmount');
+		$parameters = array('currencyName',
+							'currencyNamePlural',
+							'statusCommand',
+							'statusMessage',
+							'initialAmount',
+							'giveInterval',
+							'giveAmount',
+							'timeoutThreshold');
 
 		$this->globalCurrencyName = self::DEFAULT_CURRENCY_NAME;
 		$this->globalCurrencyNamePlural = self::DEFAULT_CURRENCY_NAME_PLURAL;
 		$this->globalStatusCommand = self::DEFAULT_STATUS_COMMAND;
 		$this->globalStatusMessage = self::DEFAULT_STATUS_MESSAGE;
 		$this->globalInitialAmount = self::DEFAULT_INITIAL_AMOUNT;
+		$this->globalGiveInterval = self::DEFAULT_GIVE_INTERVAL;
+		$this->globalGiveAmount = self::DEFAULT_GIVE_AMOUNT;
+		$this->globalTimeoutThreshold = self::DEFAULT_TIMEOUT_THRESHOLD;
 
-		// Handling global config parameters
-		foreach($this->config as $name => $value)
-		{
-			$varParameter = 'global'. ucfirst($name);
-			if(in_array($name, $parameters))
-				$this->$varParameter = $value;
-		}
-
-		// Handling per-channel config parameters
-		if(!empty($this->config['channel']))
-		{
-			foreach($this->config['channel'] as $channel => $configElement)
-			{
-				foreach($configElement as $name => $value)
-				{
-					if(in_array($name, $parameters))
-						$this->{$name}[$channel] = $configElement[$name];
-				}
-			}
-		}
+		$this->mapConfig($this->config, $parameters);
 	}
 
 	/** Formats a currency message, with plural forms and everything. */

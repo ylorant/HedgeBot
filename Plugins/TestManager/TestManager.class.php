@@ -58,7 +58,7 @@ class TestManager extends PluginBase
             }
         }
 
-        Plugin::getManager()->addRoutine($this, 'RoutineWaitStatus');
+        Plugin::getManager()->addRoutine($this, 'RoutineProcessQueue');
     }
 
     public function getChannel()
@@ -69,7 +69,7 @@ class TestManager extends PluginBase
     /**
      * This routine checks the status of the current test to unlock it when it's waiting for too long or on purpose.
      */
-    public function RoutineWaitStatus()
+    public function RoutineProcessQueue()
     {
         if(!empty($this->currentTest))
             $this->processTestQueue();
@@ -78,10 +78,7 @@ class TestManager extends PluginBase
     public function ServerPrivmsg($cmd)
     {
         if($cmd['channel'] == $this->testChannel && $cmd['nick'] == $this->botName && !empty($this->currentTest))
-        {
             $this->currentTest->pushMessage($cmd['message']);
-            $this->processTestQueue();
-        }
     }
 
     public function ServerJoin($cmd)

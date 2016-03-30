@@ -85,6 +85,11 @@ class TestCase
 
                 case 'getReply':
                     $this->status = self::STATUS_WAITREPLY;
+
+                    if($this->lastActionTime + 15 <= time()) // Handle timeout for message wait
+                        $this->status = self::STATUS_FAILED;
+                    else if(!empty($this->messageStack)) // We received a message ?
+                        $this->status = self::STATUS_IDLE;
                     break;
 
                 case 'wait':
