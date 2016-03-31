@@ -75,7 +75,6 @@ class Currency extends PluginBase
 		$this->reloadConfig();
 
         Plugin::getManager()->addRoutine($this, 'RoutineAddMoney', 10);
-		var_dump($this);
 	}
 
 	public function SystemEventConfigUpdate()
@@ -127,8 +126,8 @@ class Currency extends PluginBase
 		$serverConfig = Server::getConfig();
 		if(strtolower($command['nick']) == strtolower($serverConfig['name']))
 		{
-			$this->activityTimes[$channel] = array();
-			$this->giveTimes[$channel] = time();
+			$this->activityTimes[$command['channel']] = array();
+			$this->giveTimes[$command['channel']] = time();
 			return;
 		}
 
