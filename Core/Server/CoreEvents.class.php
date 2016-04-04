@@ -54,8 +54,8 @@ class CoreEvents
 		foreach(ServerList::get() as $server)
 		{
 			$srv = ServerList::getServer($server);
-			IRC::setServer($srv);
-			Server::setServer($srv);
+			IRC::setObject($srv->getIRC());
+			Server::setObject($srv);
 
 			IRC::ping();
 		}

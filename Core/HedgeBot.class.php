@@ -75,8 +75,8 @@ class HedgeBot
 		if(!$storageLoaded)
 			return HedgeBot::message('Cannot load data storage.', null, E_ERROR);
 
-		Data::setStorage($this->data);
-		Config::setStorage($this->config);
+		Data::setObject($this->data);
+		Config::setObject($this->config);
 
 		// Setting verbosity
 		if(HedgeBot::$verbose == 1 && !empty($this->config->general->verbosity))
@@ -111,8 +111,8 @@ class HedgeBot
 		{
 			HedgeBot::message('Loading server $0', array($name));
 			$this->servers[$name] = new ServerInstance();
-			IRC::setServer($this->servers[$name]);
-			Server::setServer($this->servers[$name]);
+			IRC::setObject($this->servers[$name]);
+			Server::setObject($this->servers[$name]);
 			$loaded = $this->servers[$name]->load($server);
 
 			if(!$loaded)
@@ -347,8 +347,8 @@ class HedgeBot
 			foreach($this->servers as $name => $server)
 			{
 				//Setting servers for static inner API
-				IRC::setServer($this->servers[$name]);
-				Server::setServer($this->servers[$name]);
+				IRC::setObject($this->servers[$name]->getIRC());
+				Server::setObject($this->servers[$name]);
 
 				$this->servers[$name]->step();
 				usleep(1000);

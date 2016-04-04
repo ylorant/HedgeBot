@@ -24,7 +24,7 @@ class Plugin
 
 		$this->config = $main->config->get('plugin.'.$pluginName);
 
-		$dataStorage = Data::getStorage();
+		$dataStorage = Data::getObject();
 		if(empty($dataStorage->plugin))
 			$dataStorage->plugin = array();
 
