@@ -87,6 +87,7 @@ class Currency extends PluginBase
 	public function RoutineAddMoney()
 	{
 		$currentTime = time();
+		$accountsModified = false;
 
 		foreach($this->activityTimes as $channel => $channelTimes)
 		{
@@ -109,11 +110,18 @@ class Currency extends PluginBase
 			foreach($channelTimes as $name => $time)
 			{
 				if($time + $timeoutThreshold > $currentTime)
+				{
 					$this->accounts[$channel][$name] += $giveAmount;
+					$accountsModified = true;
+				}
 			}
 
-			// Aand saving the accounts
-			$this->data->set('accounts', $this->accounts);
+			// Updating the give time
+			$this->giveTimes[$channel] = time();
+
+			// And saving the accounts
+			if($accountsModified)
+				$this->data->set('accounts', $this->accounts);
 		}
 	}
 
