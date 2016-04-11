@@ -8,7 +8,7 @@ abstract class Provider
     public $readonly = false; ///< Boolean, prevents writing to the data storage.
 
     const STORAGE_NAME = "";
-    
+
     /** Loads a key from the storage.
      * The implemented method will allow to load data from the storage, in a transparent manner. The user only has to provide
      * the key to retrieve, and the storage should be able to retrieve the data and all its children.
@@ -84,7 +84,7 @@ abstract class Provider
         return false;
     }
 
-    public function getName()
+    public static function getName()
     {
         return static::STORAGE_NAME;
     }
