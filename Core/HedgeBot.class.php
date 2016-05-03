@@ -7,12 +7,14 @@ use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Config;
 use HedgeBot\Core\API\Plugin;
+use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\Server\ServerInstance;
 use HedgeBot\Core\Data\FileProvider;
 use HedgeBot\Core\Data\Provider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Server\CoreEvents;
+use HedgeBot\Core\Twitch\Kraken;
 
 class HedgeBot
 {
@@ -81,6 +83,12 @@ class HedgeBot
 		// Setting verbosity
 		if(HedgeBot::$verbose == 1 && !empty($this->config->general->verbosity))
 			HedgeBot::$verbose = $this->config->general->verbosity;
+
+		// Initializing Twitch API connector
+		HedgeBot::message("Discovering available Twitch services...", null, E_DEBUG);
+		$kraken = new Kraken();
+		$kraken->discoverServices();
+		Twitch::setObject($kraken);
 
 		// Loading plugins
 		HedgeBot::message('Loading plugins...');
