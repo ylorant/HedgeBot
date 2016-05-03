@@ -101,6 +101,21 @@ class IRCConnection
 		$this->send('PASS '. $password);
 	}
 
+	/**
+	 * Automatic reply. Sends a whisper or a channel message according to the incoming message.
+	 * @param $fromCmd The original command to reply to. Should be using IRCConnection::parseMsg() format.
+	 * @param $message The message to reply.
+	 */
+	public function reply($fromCmd, $message)
+	{
+		if($fromCmd["command"] == "WHISPER") // Whisper
+			$this->whisper($fromCmd["nick"], $message);
+		elseif($fromCmd["channel"][0] == "#") // Channel message
+			$this->message($fromCmd["channel"], $message);
+		else // Direct message, never happens on Twitch
+			$this->message($fromCmd["nick"], $message);
+	}
+
 	public function message($to, $message)
 	{
 		$this->send('PRIVMSG #'.$to.' :'.$message);
@@ -109,6 +124,11 @@ class IRCConnection
 	public function timedMessage($to, $message, $time)
 	{
 		$this->send('PRIVMSG #'.$to.' :'.$message, $time);
+	}
+
+	public function whisper($to, $message)
+	{
+		$this->send('PRIVMSG '. $to. ' :/w '. $to. ' '. $message);
 	}
 
 	public function notice($to, $message)

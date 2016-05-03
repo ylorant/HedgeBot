@@ -47,6 +47,8 @@ class ServerInstance
 		if(isset($config['floodLimit']) && HedgeBot::parseRBool($config['floodLimit']))
 			$this->IRC->setFloodLimit($config['floodLimit']);
 
+		$this->config['channel'] = trim($this->config['channel']);
+
 		return true;
 	}
 
@@ -79,21 +81,25 @@ class ServerInstance
 		{
 			if(HedgeBot::$verbose >= 2)
 				echo '<-['.Server::getName().'] '.$command."\n";
+
 			$command = $this->IRC->parseMsg($command);
+
+			// Force channel for whispers if there is only one configured for this server
+			if($command['command'] == 'WHISPER' && strpos(',', $this->config['channels']) === FALSE)
+				$command['channel'] = $this->config['channels'];
+
 			$this->pluginManager->callEvent('server', strtolower($command['command']), $command);
 
-			if(in_array($command['command'], array('PRIVMSG', 'NOTICE')))
+			if(in_array($command['command'], array('PRIVMSG', 'NOTICE', 'WHISPER')))
 			{
 				$message = explode(' ', $command['message']);
 				if(strlen($message[0]))
 				{
-					$message[0] = str_replace(':', '', $message[0]);
-					if($message[0] == $this->config['name'])
-			        {
-						array_shift($message);
-						$string = trim(join(' ', $message));
-			            $this->pluginManager->execRegexEvents($command, $string);
-			        }
+					if($message[0][0] == ":")
+						$message[0] = substr($message[0], 1);
+
+		            $this->pluginManager->execRegexEvents($command, $command['message']);
+
 					switch($message[0][0])
 					{
 						case '!': //Command
