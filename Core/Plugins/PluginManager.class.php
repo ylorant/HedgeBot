@@ -281,6 +281,7 @@ class PluginManager extends Events
 		{
 			$pluginDirectory = $this->pluginsDirectory. '/'. $name. '/';
 			$pluginConfig = new FileProvider();
+			$pluginConfig->readonly = true; // Ensure that we don't try to save the plugin definition.
 			$config = new ObjectAccess($pluginConfig);
 			$pluginConfig->connect($pluginDirectory);
 
