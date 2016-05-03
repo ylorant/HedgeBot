@@ -166,76 +166,84 @@ class Currency extends PluginBase
 		$this->activityTimes[$command['channel']][$command['nick']] = time();
 	}
 
+	/**
+	 * Handles whispers as regular messages for money status command.
+	 */
+	public function ServerWhisper($command)
+	{
+		$this->ServerPrivmsg($command);
+	}
+
 	/** Mod function: adds a given amount of money to a given player */
-	public function CommandGive($param, $args)
+	public function CommandGive($command, $args)
 	{
 		// Check rights
-		if(!$param['moderator'])
+		if(!$command['moderator'])
 			return;
 
 		// Check that arguments are there
 		if(count($args) < 2)
-			return IRC::message($param['channel'], 'Insufficient parameters.');
+			return IRC::reply($command, 'Insufficient parameters.');
 
 		// Lowercasing the username
 		$nick = strtolower($args[0]);
 
 		// Check that the account exists
-		if(!isset($this->accounts[$param['channel']][$nick]))
-			return IRC::message($param['channel'], 'Unknown user.');
+		if(!isset($this->accounts[$command['channel']][$nick]))
+			return IRC::reply($command, 'Unknown user.');
 
-		$this->accounts[$param['channel']][$nick] += (int) $args[1];
+		$this->accounts[$command['channel']][$nick] += (int) $args[1];
 		$this->data->set('accounts', $this->accounts);
 	}
 
 	/** Mod function: show another user's status */
-	public function CommandCheck($param, $args)
+	public function CommandCheck($command, $args)
 	{
-		if(!$param['moderator'])
+		if(!$command['moderator'])
 			return;
 
-		$channelUsers = IRC::getChannelUsers($param['channel']);
-		if(isset($this->accounts[$param['channel']][$nick]))
+		$channelUsers = IRC::getChannelUsers($command['channel']);
+		if(isset($this->accounts[$command['channel']][$nick]))
 		{
-			$message = $this->formatMessage("Admin check(@name): @total @currency", $param['channel'], $param['nick']);
-			IRC::message($param['channel'], $message);
+			$message = $this->formatMessage("Admin check(@name): @total @currency", $command['channel'], $command['nick']);
+			IRC::reply($command, $message);
 		}
 	}
 
 	/** Mod function: removes a given amount of money from a given player */
-	public function CommandTake($param, $args)
+	public function CommandTake($command, $args)
 	{
 		// Check rights
-		if(!$param['moderator'])
+		if(!$command['moderator'])
 			return;
 
 		// Check that arguments are there
 		if(count($args) < 2)
-			return IRC::message($param['channel'], 'Insufficient parameters.');
+			return IRC::reply($command, 'Insufficient parameters.');
 
 		// Lowercasing the username
 		$nick = strtolower($args[0]);
 
 		// Check that the account exists
-		if(!isset($this->accounts[$param['channel']][$nick]))
-			return IRC::message($param['channel'], 'Unknown user.');
+		if(!isset($this->accounts[$command['channel']][$nick]))
+			return IRC::reply($command, 'Unknown user.');
 
 		// Perform account operations
 		$sum = (int) $args[1];
 
-		if($this->accounts[$param['channel']][$nick] - $sum > 0)
-			$this->accounts[$param['channel']][$nick] -= $sum;
+		if($this->accounts[$command['channel']][$nick] - $sum > 0)
+			$this->accounts[$command['channel']][$nick] -= $sum;
 		else
-			$this->accounts[$param['channel']][$nick] = 0;
+			$this->accounts[$command['channel']][$nick] = 0;
 
 		$this->data->set('accounts', $this->accounts);
 	}
 
 	/** Real account show command, shows the current amount of currency for the user */
-	public function RealCommandAccount($param, $args)
+	public function RealCommandAccount($command, $args)
 	{
-		$message = $this->getConfigParameter($param['channel'], 'statusMessage');
-		IRC::message($param['channel'], $this->formatMessage($message, $param['channel'], $param['nick']));
+		$message = $this->getConfigParameter($command['channel'], 'statusMessage');
+		IRC::reply($command, $this->formatMessage($message, $command['channel'], $command['nick']));
 	}
 
 	/** Reloads configuration variables */
