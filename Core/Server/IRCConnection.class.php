@@ -110,10 +110,8 @@ class IRCConnection
 	{
 		if($fromCmd["command"] == "WHISPER") // Whisper
 			$this->whisper($fromCmd["nick"], $message);
-		elseif($fromCmd["channel"][0] == "#") // Channel message
+		else // Channel message
 			$this->message($fromCmd["channel"], $message);
-		else // Direct message, never happens on Twitch
-			$this->message($fromCmd["nick"], $message);
 	}
 
 	public function message($to, $message)
