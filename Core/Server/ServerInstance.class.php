@@ -47,8 +47,8 @@ class ServerInstance
 		if(isset($config['floodLimit']) && HedgeBot::parseRBool($config['floodLimit']))
 			$this->IRC->setFloodLimit($config['floodLimit']);
 
-		$this->config['channel'] = trim($this->config['channel']);
-
+		$this->config['channels'] = trim($this->config['channels']);
+		
 		return true;
 	}
 
