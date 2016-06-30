@@ -6,6 +6,5 @@ conf.*/*/*.ini
 data/
 data/*.ini
 data/*/*.ini
-!Tests/conf/config.ini.sample
-Tests/conf/*.ini
-Tests/conf/*/*.ini
+doc/*
+*.log
