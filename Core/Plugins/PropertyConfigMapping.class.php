@@ -10,19 +10,42 @@ trait PropertyConfigMapping
     /** Gets a config property with channel scope resolution.
      * This method gets the value for a configuration value, taking it from the channel scope if possible, or else taking
      * it from the global scope (prefixed with the "global" keyword).
+     * You can use dots in the var name to traverse arrays parameters.
      *
      * \param $channel The channel to get the parameter from.
      * \param $name The parameter name to get.
      */
     public function getConfigParameter($channel, $name)
     {
+        $nameParts = explode('.', $name);
+        $name = array_shift($nameParts);
+
         $globalName = 'global'. ucfirst($name);
 
         $configValue = null;
-        if(isset($this->timeoutThreshold[$channel]))
+        if(isset($this->{$name}[$channel]))
             $configValue = $this->{$name}[$channel];
         elseif(isset($this->$globalName))
             $configValue = $this->$globalName;
+
+        if(is_array($configValue) && !empty($nameParts))
+        {
+            if(isset($this->$globalName))
+                $backupConfigValue = $this->$globalName;
+
+            foreach($nameParts as $part)
+            {
+                if(isset($configValue[$part]))
+                    $configValue = $configValue[$part];
+                elseif(isset($backupConfigValue[$part]))
+                    $configValue = $backupConfigValue[$part];
+                else
+                    return null;
+
+                if(isset($backupConfigValue[$part]))
+                    $backupConfigValue = $backupConfigValue[$part];
+            }
+        }
 
         return $configValue;
     }
@@ -33,9 +56,11 @@ trait PropertyConfigMapping
      * using the first-level key "channel", and globally. Global config settings are prefixed by the keyword "global" if
      * there is an already existing property defined as an array, and a property with the "global" keyword exists.
      * It keeps the camelCase when using the "global" keyword, e.g. "statusCommand" becomes "globalStatusCommand".
+     * For global config settings, another check is done: if the setting is an array, then the value is merged with
+     * the previous value in the configuration (assumed as the default value), recursively.
      *
      * tl;dr Parses config into properties, per channel. Global settings are prefixed by the keyword "global" if channel var
-     * 		 with the same name exists.
+     * 		 with the same name exists. Arrays are merged instead of replaced.
      *
      * \param $config The key/value array given to walk through. Refer to the above boring text to understand how it works.
      * \param $parameters The parameter names to keep.
@@ -52,7 +77,12 @@ trait PropertyConfigMapping
 			    $varParameter = $globalName;
 
 			if($name != "channel" && (empty($parameters) || in_array($name, $parameters)))
-				$this->$varParameter = $value;
+            {
+                if(is_array($this->$varParameter) && is_array($value))
+                    $this->$varParameter = array_merge_recursive($this->$varParameter, $value);
+                else
+                    $this->$varParameter = $value;
+            }
 		}
 
 		// Handling per-channel config parameters
@@ -63,9 +93,70 @@ trait PropertyConfigMapping
 				foreach($configElement as $name => $value)
 				{
 					if(in_array($name, $parameters))
-						$this->{$name}[$channel] = $configElement[$name];
+                        $this->{$name}[$channel] = $configElement[$name];
 				}
 			}
 		}
+    }
+
+    /** Gets a parameter from a defined dataset.
+     * This method allows a plugin to fetch a specific value for a channel (allowing fallback), using a given
+     * set of data as database.
+     *
+     * \param $data The data to use as database.
+     * \param $channel The channel to filter on.
+     * \param $valName The parameter value name to fetch.
+     * \param $defaultValue The default value to return if nothing has been found.
+     *
+     * \return The value from the config if found, the default value otherwise.
+     */
+    public function getParameterFromData($data, $channel, $valName, $defaultValue = null)
+    {
+        $valNameParts = explode('.', $valname);
+        $valName = array_shift($valNameParts);
+
+        if(isset($data['channel'][$channel][$valName]))
+        {
+            $value = $data['channel'][$channel][$valName];
+            if(empty($valNameParts))
+                return $value;
+
+            foreach($valNameParts as $part)
+            {
+                if(is_array($value) && !empty($value[$part]))
+                    $value = $value[$part];
+                else
+                {
+                    $value = null;
+                    break;
+                }
+            }
+
+            if(!empty($value))
+                return $value;
+        }
+
+        if(isset($data[$valName]))
+        {
+            $value = $data[$valName];
+            if(empty($valNameParts))
+                return $value;
+
+            foreach($valNameParts as $part)
+            {
+                if(is_array($value) && !empty($value[$part]))
+                    $value = $value[$part];
+                else
+                {
+                    $value = null;
+                    break;
+                }
+            }
+
+            if(!empty($value))
+                return $value;
+        }
+
+        return $defaultValue;
     }
 }

@@ -199,13 +199,13 @@ class Currency extends PluginBase
 	/** Mod function: show another user's status */
 	public function CommandCheck($command, $args)
 	{
-		if(!$command['moderator'])
+		if(!$command['moderator'] || count($args) < 1)
 			return;
 
-		$channelUsers = IRC::getChannelUsers($command['channel']);
+		$nick = strtolower($args[0]);
 		if(isset($this->accounts[$command['channel']][$nick]))
 		{
-			$message = $this->formatMessage("Admin check(@name): @total @currency", $command['channel'], $command['nick']);
+			$message = $this->formatMessage("Admin check (@name): @total @currency", $command['channel'], $nick);
 			IRC::reply($command, $message);
 		}
 	}
@@ -246,30 +246,6 @@ class Currency extends PluginBase
 		IRC::reply($command, $this->formatMessage($message, $command['channel'], $command['nick']));
 	}
 
-	/** Reloads configuration variables */
-	public function reloadConfig()
-	{
-		$parameters = array('currencyName',
-							'currencyNamePlural',
-							'statusCommand',
-							'statusMessage',
-							'initialAmount',
-							'giveInterval',
-							'giveAmount',
-							'timeoutThreshold');
-
-		$this->globalCurrencyName = self::DEFAULT_CURRENCY_NAME;
-		$this->globalCurrencyNamePlural = self::DEFAULT_CURRENCY_NAME_PLURAL;
-		$this->globalStatusCommand = self::DEFAULT_STATUS_COMMAND;
-		$this->globalStatusMessage = self::DEFAULT_STATUS_MESSAGE;
-		$this->globalInitialAmount = self::DEFAULT_INITIAL_AMOUNT;
-		$this->globalGiveInterval = self::DEFAULT_GIVE_INTERVAL;
-		$this->globalGiveAmount = self::DEFAULT_GIVE_AMOUNT;
-		$this->globalTimeoutThreshold = self::DEFAULT_TIMEOUT_THRESHOLD;
-
-		$this->mapConfig($this->config, $parameters);
-	}
-
 	/** Formats a currency message, with plural forms and everything. */
 	private function formatMessage($message, $channel, $name)
 	{
@@ -295,5 +271,83 @@ class Currency extends PluginBase
 								$message);
 
 		return $message;
+	}
+
+	// API methods
+
+	/** Reloads configuration variables */
+	public function reloadConfig()
+	{
+		$parameters = array('currencyName',
+							'currencyNamePlural',
+							'statusCommand',
+							'statusMessage',
+							'initialAmount',
+							'giveInterval',
+							'giveAmount',
+							'timeoutThreshold');
+
+		$this->globalCurrencyName = self::DEFAULT_CURRENCY_NAME;
+		$this->globalCurrencyNamePlural = self::DEFAULT_CURRENCY_NAME_PLURAL;
+		$this->globalStatusCommand = self::DEFAULT_STATUS_COMMAND;
+		$this->globalStatusMessage = self::DEFAULT_STATUS_MESSAGE;
+		$this->globalInitialAmount = self::DEFAULT_INITIAL_AMOUNT;
+		$this->globalGiveInterval = self::DEFAULT_GIVE_INTERVAL;
+		$this->globalGiveAmount = self::DEFAULT_GIVE_AMOUNT;
+		$this->globalTimeoutThreshold = self::DEFAULT_TIMEOUT_THRESHOLD;
+
+		$this->mapConfig($this->config, $parameters);
+	}
+
+	/** Gets a persons' account balance, inside a channel.
+	 *
+	 * \param $channel The channel to search the user from.
+	 * \param $name The user to get the balance of.
+	 *
+	 * \return The balance if found, null otherwise.
+	 */
+	public function getBalance($channel, $name)
+	{
+		if(empty($this->accounts[$channel]))
+			return null;
+
+		if(empty($this->accounts[$channel][$name]))
+			return null;
+
+		return $this->accounts[$channel][$name];
+	}
+
+	/** Gives money to someone on a channel.
+	 *
+	 * \param $channel The channel on which execute the operation.
+	 * \param $name The name of the person to give money to.
+	 * \return The new balance if the money has been given, false otherwise.
+	 */
+	public function giveAmount($channel, $name, $amount)
+	{
+		if(empty($this->getBalance($channel, $name)))
+			return false;
+
+		$this->accounts[$channel][$name] += $amount;
+		$this->data->set('accounts', $this->accounts);
+
+		return $this->accounts[$channel][$name];
+	}
+
+	/** Takes money from someone on a channel.
+	 *
+	 * \param $channel The channel on which execute the operation.
+	 * \param $name The name of the person to take money from.
+	 * \return The new balance if the money has been taken, false otherwise.
+	 */
+	public function takeAmount($channel, $name, $amount)
+	{
+		if(empty($this->getBalance($channel, $name)))
+			return false;
+
+		$this->accounts[$channel][$name] -= $amount;
+		$this->data->set('accounts', $this->accounts);
+
+		return $this->accounts[$channel][$name];
 	}
 }

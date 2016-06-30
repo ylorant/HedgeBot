@@ -9,6 +9,8 @@ use stdClass;
 
 class CurrencyTest
 {
+    use PropertyConfigMapping;
+
     private $pluginConfig;
     private $channelConfig;
     private $testManager;
@@ -95,44 +97,16 @@ class CurrencyTest
     {
         $currentChannel = $this->testManager->getChannel();
         $config = new stdClass();
-        $currency = array(null, null);
-        $statusCommand = null;
 
-        // Getting status command from the configuration
-        if(isset($this->pluginConfig['channel'][$currentChannel]['statusCommand']))
-            $statusCommand = $this->pluginConfig['channel'][$currentChannel]['statusCommand'];
-        elseif(isset($this->pluginConfig['statusCommand']))
-            $statusCommand = $this->pluginConfig['statusCommand'];
-        else
-            $statusCommand = Currency::DEFAULT_STATUS_COMMAND;
-
-        // Getting currency name from the configuration
-        if(isset($this->pluginConfig['channel'][$currentChannel]['currencyName']))
-            $currency[0] = $this->pluginConfig['channel'][$currentChannel]['currencyName'];
-        elseif(isset($this->pluginConfig['currencyName']))
-            $currency[0] = $this->pluginConfig['currencyName'];
-        else
-            $currency[0] = Currency::DEFAULT_CURRENCY_NAME;
-
-        // Getting currency plural name from the configuration
-        if(isset($this->pluginConfig['channel'][$currentChannel]['currencyNamePlural']))
-            $currency[1] = $this->pluginConfig['channel'][$currentChannel]['currencyNamePlural'];
-        elseif(isset($this->pluginConfig['currencyNamePlural']))
-            $currency[1] = $this->pluginConfig['currencyNamePlural'];
-        else
-            $currency[1] = Currency::DEFAULT_CURRENCY_NAME_PLURAL;
-
-        // Get status message from the configuration
-        if(isset($this->pluginConfig['channel'][$currentChannel]['statusMessage']))
-            $msgRegexp = $this->pluginConfig['channel'][$currentChannel]['statusMessage'];
-        elseif(isset($this->pluginConfig['statusMessage']))
-            $msgRegexp = $this->pluginConfig['statusMessage'];
-        else
-            $msgRegexp = Currency::DEFAULT_STATUS_MESSAGE;
+        // Getting settings from the configuration
+        $config->statusCommand = '!'.$this->getParameterFromData($this->pluginConfig, $currentChannel, 'statusCommand', Currency::DEFAULT_STATUS_COMMAND);
+        $config->currencyName = $this->getParameterFromData($this->pluginConfig, $currentChannel, 'currencyName', Currency::DEFAULT_CURRENCY_NAME);
+        $config->currencyNamePlural = $this->getParameterFromData($this->pluginConfig, $currentChannel, 'currencyNamePlural', Currency::DEFAULT_CURRENCY_NAME_PLURAL);
+        $msgRegexp = $this->getParameterFromData($this->pluginConfig, $currentChannel, 'statusMessage', Currency::DEFAULT_STATUS_MESSAGE);
 
         // Setting status message regexp
         $msgRegexp = str_replace(array('@name', '@total', '@currency'),
-                                 array(Server::getNick(), '([0-9]+)', join('|', $currency)),
+                                 array(Server::getNick(), '([0-9]+)', join('|', [$config->currencyName, $config->currencyNamePlural])),
                                  preg_quote($msgRegexp, '#'));
 
         $config->statusRegexp = $msgRegexp;
