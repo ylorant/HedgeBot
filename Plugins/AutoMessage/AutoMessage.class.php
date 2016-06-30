@@ -30,7 +30,7 @@ class AutoMessage extends PluginBase
                 list($channel, $name) = explode('.', $message);
                 IRC::message($channel, $this->messages[$channel][$name]->message);
                 $this->messages[$channel][$name]->lastSend = $time;
-                    HedgeBot::message("Sent $0.", [$name]);
+                    HedgeBot::message('Sent auto message "$0".', [$name], E_DEBUG);
             }
 
             unset($this->nextSendQueue[$time]);
@@ -39,7 +39,7 @@ class AutoMessage extends PluginBase
 
     public function RoutinePopulateQueue()
     {
-        HedgeBot::message("Populating autosend queue...");
+        HedgeBot::message("Populating autosend queue...", null, E_DEBUG);
 
         $threshold = time() + 30;
 
