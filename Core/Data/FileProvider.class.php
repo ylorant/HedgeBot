@@ -357,7 +357,11 @@ class FileProvider extends Provider
             $iniSection = $this->generateINIStringRecursive($section);
             $iniSection = "[". $name. "]\n". $iniSection;
 
-            file_put_contents($this->dataDirectory. '/'. $filename, $iniSection);
+            // If there is already a file, add a line jump before writing
+            if(is_file($this->dataDirectory. '/'. $filename))
+                $iniSection = "\n\n". $iniSection;
+
+            file_put_contents($this->dataDirectory. '/'. $filename, $iniSection, FILE_APPEND);
         }
     }
 
