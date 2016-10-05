@@ -8,6 +8,7 @@ use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Config;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Twitch;
+use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\Server\ServerInstance;
 use HedgeBot\Core\Data\FileProvider;
@@ -15,6 +16,8 @@ use HedgeBot\Core\Data\Provider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Server\CoreEvents;
 use HedgeBot\Core\Twitch\Kraken;
+use HedgeBot\Core\Tikal\Server as TikalServer;
+use HedgeBot\Core\Tikal\CoreAPI as TikalCoreAPI;
 
 class HedgeBot
 {
@@ -25,6 +28,7 @@ class HedgeBot
 	public static $verbose;
 	public $plugins;
 	public $initialized;
+	public $tikalServer;
 
 	private $_run;
 
@@ -90,6 +94,17 @@ class HedgeBot
 		$kraken->discoverServices();
 		Twitch::setObject($kraken);
 
+		// Initializing "Tikal" API server
+		if(!empty($this->config->tikal) && $this->config->tikal->enabled == true)
+		{
+			HedgeBot::message("Initializing Tikal API server...");
+			$this->tikalServer = new TikalServer($this->config->tikal);
+			Tikal::setObject($this->tikalServer);
+
+			// Binding core API to the server
+			Tikal::addEndpoint('/', new TikalCoreAPI());
+		}
+
 		// Loading plugins
 		HedgeBot::message('Loading plugins...');
 
@@ -137,6 +152,10 @@ class HedgeBot
 			return HedgeBot::message('Cannot connect to any servers, stopping.', null, E_ERROR);
 
 		HedgeBot::message('Loaded servers.');
+
+		// Start the Tikal API Server
+		if(!empty($this->tikalServer))
+			$this->tikalServer->start();
 
 		return true;
 	}
@@ -364,6 +383,10 @@ class HedgeBot
 
 			if($this->initialized)
 				$this->plugins->callAllRoutines();
+
+			// Process Tikal API calls if there are some
+			if(!empty($this->tikalServer))
+				$this->tikalServer->process();
 		}
 
 		foreach($this->servers as $name => $server)
