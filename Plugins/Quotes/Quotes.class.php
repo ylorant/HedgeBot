@@ -67,12 +67,12 @@ class Quotes extends PluginBase
         
         IRC::reply($command, "Quote #". $quoteID. " updated.");
     }
-
-	/**
-	 * Mod function: Deletes a quote
-	 */
-	public function CommadnDelquote($command, $args)
-	{
+    
+    /**
+     * Mod function: Deletes a quote
+     */
+    public function CommadnDelquote($command, $args)
+    {
         if(!$command['moderator'])
             return;
         
@@ -92,13 +92,13 @@ class Quotes extends PluginBase
         $this->data->set('quotes', $this->quotes);
         
         IRC::reply($command, "Quote deleted.");
-	}
+    }
 	
-	/**
-	 * Shows a quote. Quote ID can be given as parameter, or if not given, one will be chosen randomly.
-	 */
-	public function CommandQuote($command, $args)
-	{
+    /**
+     * Shows a quote. Quote ID can be given as parameter, or if not given, one will be chosen randomly.
+     */
+    public function CommandQuote($command, $args)
+    {
         // If there isn't any quote for this channel, don't do anything
         if(empty($this->quotes[$command['channel']]))
             return;
@@ -114,5 +114,5 @@ class Quotes extends PluginBase
             return IRC::reply($command, "This quote doesn't exist.");
         
         IRC::reply($command, "[#". ($quoteID + 1). "] ". $this->quotes[$command['channel']][$quoteID]);
-	}
+    }
 }
