@@ -5,6 +5,11 @@ use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\API\IRC;
 
+/**
+ * Quote manager plugin.
+ * Handles a quote storage system in the bot, allowing users to call-out quotes saved to highlight
+ * famous moments of the stream's history, or just to make fun of the streamer.
+ */
 class Quotes extends PluginBase
 {
     private $quotes = []; // Quotes, by channel
