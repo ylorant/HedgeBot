@@ -278,14 +278,16 @@ class Currency extends PluginBase
 	/** Reloads configuration variables */
 	public function reloadConfig()
 	{
-		$parameters = array('currencyName',
-							'currencyNamePlural',
-							'statusCommand',
-							'statusMessage',
-							'initialAmount',
-							'giveInterval',
-							'giveAmount',
-							'timeoutThreshold');
+		$parameters = [ 
+		                'currencyName',
+						'currencyNamePlural',
+						'statusCommand',
+						'statusMessage',
+						'initialAmount',
+						'giveInterval',
+                        'giveAmount',
+						'timeoutThreshold'
+					  ];
 
 		$this->globalCurrencyName = self::DEFAULT_CURRENCY_NAME;
 		$this->globalCurrencyNamePlural = self::DEFAULT_CURRENCY_NAME_PLURAL;
