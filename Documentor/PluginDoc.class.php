@@ -39,7 +39,7 @@ class PluginDoc
         $doc = "";
         
         // Start by the plugin title
-        $doc .= "#". ucfirst($this->name). " Plugin\n\n";
+        $doc .= "# ". ucfirst($this->name). " Plugin\n\n";
         
         // Show the plugin general info (tokens represented as paragraphs)
         foreach($this->pluginInfo['description'] as $description)
