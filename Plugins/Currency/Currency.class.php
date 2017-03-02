@@ -9,19 +9,22 @@ use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 
 /**
- * Currency plugin
+ * @plugin Currency
+ * 
  * Holds a currency system on the bot, per channel.
- *
- * Configuation vars:
- *
- * - currencyName: Currency singular name (default: coin)
- * - currencyNamePlural: Currency plural name (default: coins)
- * - statusCommand: The command the bot will respond to display user status (default: coins)
- * - statusMessage: The message to be shown when the status command is requested. Message vars:
- * 		* @name: The name of the person who requested the message.
- * 		* @total: The current total of his/her account.
- * 		* @currency: The currency name. Plural form is computed automatically.
- * - initialAmount: The initial amount each viewer/chatter is given when initially joining the chat.
+ * 
+ * @configvar currencyName  Currency singular name (default: coin)
+ * @configvar currencyNamePlural Plural Currency plural name (default: coins)
+ * @configvar statusCommand The command the bot will respond to display user status (default: coins)
+ * @configvar statusMessage The message to be shown when the status command is requested. Message vars:
+ *                          - @name: The name of the person who requested the message.
+ *                          - @total: The current total of his/her account.
+ *                          - @currency: The currency name. Plural form is computed automatically.
+ * 
+ * @configvar initialAmount The initial amount each viewer/chatter is given when initially joining the chat.
+ * @configvar giveInterval  Interval of time after which each active user in the channel will receive a money amount.
+ * @configvar giveAmount    The amount of money being given at each interval.
+ * @configvar timeoutThreshold Threshold of inactivity time after which an user will no longer receive money.
  *
  * These config vars are definable in a global manner using the config namespace "plugin.Currency",
  * and per-channel, using the config namespaces "plugin.Currency.channel.<channel-name>". If one config parameter
