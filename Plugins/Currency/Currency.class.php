@@ -10,9 +10,13 @@ use HedgeBot\Core\API\IRC;
 
 /**
  * @plugin Currency
- * 
- * Holds a currency system on the bot, per channel.
- * 
+ *
+ * Holds a currency system on the bot, per channel. Upon joining the chat for the first time,
+ * each user is given a "bank account" with an initial amount of money. Then, this money can
+ * be used on functionalities implemented by other plugins (for example the Blackjack plugin),
+ * modified by moderators (by adding and removing some), or money can be given periodically to
+ * users on the stream to reward them for their fidelity.
+ *
  * @configvar currencyName  Currency singular name (default: coin)
  * @configvar currencyNamePlural Plural Currency plural name (default: coins)
  * @configvar statusCommand The command the bot will respond to display user status (default: coins)
@@ -20,13 +24,13 @@ use HedgeBot\Core\API\IRC;
  *                          - @name: The name of the person who requested the message.
  *                          - @total: The current total of his/her account.
  *                          - @currency: The currency name. Plural form is computed automatically.
- * 
+ *
  * @configvar initialAmount The initial amount each viewer/chatter is given when initially joining the chat.
  * @configvar giveInterval  Interval of time after which each active user in the channel will receive a money amount.
  * @configvar giveAmount    The amount of money being given at each interval.
  * @configvar timeoutThreshold Threshold of inactivity time after which an user will no longer receive money.
  *
- * These config vars are definable in a global manner using the config namespace "plugin.Currency",
+ * Config vars are definable in a global manner using the config namespace "plugin.Currency",
  * and per-channel, using the config namespaces "plugin.Currency.channel.<channel-name>". If one config parameter
  * misses from the per-channel config, then it is taken from the global config.
  * It is advised to define both, to avoid having situations where the default ones are used.
@@ -177,7 +181,15 @@ class Currency extends PluginBase
 		$this->ServerPrivmsg($command);
 	}
 
-	/** Mod function: adds a given amount of money to a given player */
+	/**
+	 * Adds a given amount of money to a given user.
+	 *
+	 * @access moderator
+	 *
+	 * @parameter user   The person on the chat you want to give money to.
+	 * @parameter amount The amount you want to give.
+	 *
+	 */
 	public function CommandGive($command, $args)
 	{
 		// Check rights
@@ -199,7 +211,13 @@ class Currency extends PluginBase
 		$this->data->set('accounts', $this->accounts);
 	}
 
-	/** Mod function: show another user's status */
+	/**
+	 * Checks the current amount of money an user has.
+     * 
+     * @access moderator
+     * 
+     * @parameter user The username of the person to check the money on.
+	 */
 	public function CommandCheck($command, $args)
 	{
 		if(!$command['moderator'] || count($args) < 1)
@@ -213,7 +231,14 @@ class Currency extends PluginBase
 		}
 	}
 
-	/** Mod function: removes a given amount of money from a given player */
+	/** 
+	 * Removes a given amount of money from an user.
+	 *
+	 * @access moderator
+	 * 
+	 * @parameter user   The username of the person to take money from.
+	 * @parameter amount The amount of money to take from that user.
+     */
 	public function CommandTake($command, $args)
 	{
 		// Check rights
@@ -281,7 +306,7 @@ class Currency extends PluginBase
 	/** Reloads configuration variables */
 	public function reloadConfig()
 	{
-		$parameters = [ 
+		$parameters = [
 		                'currencyName',
 						'currencyNamePlural',
 						'statusCommand',

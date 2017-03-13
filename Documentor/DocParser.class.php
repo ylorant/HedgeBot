@@ -69,7 +69,7 @@ class DocParser
                 $parsedTokens[$command[0]][] = $commandContent;
             }
             else // If it's not recognized as a command, add it as a description token
-                $currentDescToken .= $line. "\n";
+                $currentDescToken .= $line. " ";
         }
         
         return $parsedTokens;
@@ -77,6 +77,9 @@ class DocParser
     
     private static function trimLine($line)
     {
-        return trim($line, "* \n\t\r\0\x0B");
+        $line = trim($line, "* \n\t\r\0\x0B");
+        $line = preg_replace('#\s+#', ' ', $line);
+        
+        return $line;
     }
 }
