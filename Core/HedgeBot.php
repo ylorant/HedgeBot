@@ -181,9 +181,9 @@ class HedgeBot
 		{
 			if(is_dir($currentDir. $comp))
 				$currentDir .= $comp."/";
-			elseif(is_file($currentDir.$comp.".class.php"))
+			elseif(is_file($currentDir.$comp.".php"))
 			{
-				$path = $currentDir. $comp. ".class.php";
+				$path = $currentDir. $comp. ".php";
 				break;
 			}
 			else

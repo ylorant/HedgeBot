@@ -72,7 +72,7 @@ abstract class Provider
             if(!is_file(__DIR__. '/'. $file))
                 continue;
 
-            $className = str_replace('.class.php', '', $file);
+            $className = str_replace('.php', '', $file);
             if(in_array($className, $ignoreClasses))
                 continue;
 

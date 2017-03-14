@@ -5,7 +5,7 @@ use HedgeBot\Documentor\Documentor;
 use HedgeBot\Core\HedgeBot;
 
 define('E_DEBUG', 32768);
-include('Core/HedgeBot.class.php');
+include('Core/HedgeBot.php');
 spl_autoload_register("HedgeBot\Core\HedgeBot::autoload");
 
 $options = getopt("v", ["verbose"]);
