@@ -37,8 +37,8 @@ use ReflectionClass;
  */
 class Events
 {
-	protected $_events = array(); ///< Events storage
-	protected $_autoMethods = array(); ///< Method prefixes for automatic event recognition
+	protected $events = []; ///< Events storage
+	protected $autoMethods = []; ///< Method prefixes for automatic event recognition
 
 	/** Adds a custom event listener, with its auto-binding method prefix.
 	 * This function adds a new event listener to the event system. It allows a plugin to create his own space of events, which it cans trigger after, allowing better
@@ -51,14 +51,14 @@ class Events
 	 */
 	public function addEventListener($name, $autoMethodPrefix)
 	{
-		if(isset($this->_events[$name]))
+		if(isset($this->events[$name]))
 		{
 			HedgeBot::message('Error : Already defined Event Listener: $0', $name, E_DEBUG);
 			return FALSE;
 		}
 
-		$this->_events[$name] = array();
-		$this->_autoMethods[$name] = $autoMethodPrefix;
+		$this->events[$name] = [];
+		$this->autoMethods[$name] = $autoMethodPrefix;
 
 		return TRUE;
 	}
@@ -72,13 +72,13 @@ class Events
 	 */
 	public function deleteEventListener($name)
 	{
-		if(!isset($this->_events[$name]))
+		if(!isset($this->events[$name]))
 		{
 			HedgeBot::message('Error : Undefined Event Listener: $0', $name, E_DEBUG);
 			return FALSE;
 		}
 
-		unset($this->_events[$name]);
+		unset($this->events[$name]);
 
 		return TRUE;
 	}
@@ -96,16 +96,19 @@ class Events
 	 */
 	public function addEvent($listener, $id, $event, $callback)
 	{
-		if(!isset($this->_events[$listener]))
+		// Normalize event name
+		$event = $this->normalize($event);
+
+		if(!isset($this->events[$listener]))
 		{
 			HedgeBot::message('Error: Undefined Event Listener: $0', $listener, E_DEBUG);
 			return FALSE;
 		}
 
-		if(!isset($this->_events[$listener][$event]))
-			$this->_events[$listener][$event] = array();
+		if(!isset($this->events[$listener][$event]))
+			$this->events[$listener][$event] = [];
 
-		if(isset($this->_events[$listener][$event][$id]))
+		if(isset($this->events[$listener][$event][$id]))
 		{
 			HedgeBot::message('Error: Already defined identifier: $0', $id, E_DEBUG);
 			return FALSE;
@@ -113,11 +116,11 @@ class Events
 
 		if(!method_exists($callback[0], $callback[1])) //Check if method exists
 		{
-			HedgeBot::message('Error : Target method does not exists.', array(), E_DEBUG);
+			HedgeBot::message('Error : Target method does not exists.', [], E_DEBUG);
 			return FALSE;
 		}
 
-		$this->_events[$listener][$event][$id] = $callback;
+		$this->events[$listener][$event][$id] = $callback;
 
 		return TRUE;
 	}
@@ -133,25 +136,25 @@ class Events
 	 */
 	public function deleteEvent($listener, $event, $id)
 	{
-		if(!isset($this->_events[$listener]))
+		if(!isset($this->events[$listener]))
 		{
 			HedgeBot::message('Error: Undefined Event Listener: $0', $listener, E_DEBUG);
 			return FALSE;
 		}
 
-		if(!isset($this->_events[$listener][$event]))
+		if(!isset($this->events[$listener][$event]))
 		{
 			HedgeBot::message('Error: Undefined Event: $0', $id, E_DEBUG);
 			return FALSE;
 		}
 
-		if(!isset($this->_events[$listener][$event][$id]))
+		if(!isset($this->events[$listener][$event][$id]))
 		{
 			HedgeBot::message('Error: Already defined identifier: $0', $id, E_DEBUG);
 			return FALSE;
 		}
 
-		unset($this->_events[$listener][$event][$id]);
+		unset($this->events[$listener][$event][$id]);
 
 		return TRUE;
 	}
@@ -165,7 +168,7 @@ class Events
 	 */
 	public function getEvents($listener)
 	{
-		return array_keys($this->_events[$listener]);
+		return array_keys($this->events[$listener]);
 	}
 
 	/** Calls an event for an event listener.
@@ -179,24 +182,22 @@ class Events
 	 *
 	 * \return TRUE if event has been called correctly, FALSE otherwise.
 	 */
-	public function callEvent($listener, $event)
+	public function callEvent($listener, $event, ...$params)
 	{
-		if(!isset($this->_events[$listener]))
+		if(!isset($this->events[$listener]))
 		{
 			HedgeBot::message('Error: Undefined Event Listener: $0', $listener, E_DEBUG);
 			return FALSE;
 		}
 
-		if(!isset($this->_events[$listener][$event]) || !$this->_events[$listener][$event])
+		// Normalize event name
+		$event = $this->normalize($event);
+
+		if(!isset($this->events[$listener][$event]) || !$this->events[$listener][$event])
 			return FALSE;
-
-		//Get additionnal parameters given to the method to give them to the callbacks
-		$params = func_get_args();
-		array_shift($params);
-		array_shift($params);
-
+		
 		//Calling back
-		foreach($this->_events[$listener][$event] as $id => $callback)
+		foreach($this->events[$listener][$event] as $id => $callback)
 			call_user_func_array($callback, $params);
 
 		return TRUE;
@@ -220,13 +221,13 @@ class Events
 		{
 			$methodName = $method->getName();
 			//Checks for plugin-defined events
-			foreach($this->_autoMethods as $listener => $prefix)
+			foreach($this->autoMethods as $listener => $prefix)
 			{
 				if(preg_match('#^'.$prefix.'#', $methodName))
 				{
-					$event = strtolower(preg_replace('#'.$prefix.'(.+)#', '$1', $methodName));
-					HedgeBot::message('Binding method $0::$1 on event $2/$3', array($reflectionClass->getShortName(), $methodName, $listener, $event), E_DEBUG);
-					$this->addEvent($listener, $reflectionClass->getName(), $event, array($object, $methodName));
+					$event = $this->normalize(preg_replace('#'.$prefix.'(.+)#', '$1', $methodName));
+					HedgeBot::message('Binding method $0::$1 on event $2/$3', [$reflectionClass->getShortName(), $methodName, $listener, $event], E_DEBUG);
+					$this->addEvent($listener, $reflectionClass->getName(), $event, [$object, $methodName]);
 				}
 			}
 		}
@@ -244,8 +245,8 @@ class Events
 	 */
 	public function deleteEventsById($id)
 	{
-		$callbacksToDelete = array();
-		foreach($this->_events as $listenerName => $events)
+		$callbacksToDelete = [];
+		foreach($this->events as $listenerName => $events)
 		{
 			foreach($events as $eventName => $callbacks)
 			{
@@ -259,8 +260,18 @@ class Events
 
 		// Delete the events' callbacks
 		foreach($callbacksToDelete as $callback)
-			unset($this->_events[$callback[0]][$callback[1]][$id]);
+			unset($this->events[$callback[0]][$callback[1]][$id]);
 
 		return null;
+	}
+
+	/**
+	 * Normalizes an event name. For now, it only returns it in full lower case.
+	 * \param  string  $name The event name to normalize
+	 * \return string        The normalized event name.
+	 */
+	public function normalize($name)
+	{
+		return strtolower($name);
 	}
 }
