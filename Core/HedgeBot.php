@@ -120,7 +120,7 @@ class HedgeBot
 
 		$this->plugins->loadPlugins($pluginList);
 
-		// Loading core events manager
+		// Loading core events handler
 		$coreEvents = new CoreEvents($this->plugins, $this);
 
 		$servers = $this->config->get('servers');
