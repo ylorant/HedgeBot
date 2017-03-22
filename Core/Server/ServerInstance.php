@@ -10,11 +10,34 @@ class ServerInstance
 	private $IRC;
 	private $pluginManager;
 	private $config;
+	private $name;
+	private $connected;
 
 	public function __construct()
 	{
 		$this->IRC = new IRCConnection(); // Init IRC connection handler
 		$this->pluginManager = Plugin::getManager();
+	}
+
+	public function connect()
+	{
+		$this->connected = $this->IRC->connect($this->config['address'], $this->config['port']);
+
+		if(!$this->connected)
+			return false;
+
+		if(!empty($this->config['password']))
+			$this->IRC->setPassword($this->config['password']);
+
+		$this->IRC->setNick($this->config['name'], $this->config['name']);
+
+		// Send Twitch specific commands
+		$this->IRC->capabilityRequest("twitch.tv/commands");
+		$this->IRC->capabilityRequest("twitch.tv/tags");
+		$this->IRC->capabilityRequest("twitch.tv/membership");
+
+		if(isset($this->config['floodLimit']) && HedgeBot::parseRBool($this->config['floodLimit']))
+			$this->IRC->setFloodLimit($this->config['floodLimit']);
 	}
 
 	public function disconnect()
@@ -23,32 +46,29 @@ class ServerInstance
 		$this->IRC->disconnect();
 	}
 
+	public function reconnect()
+	{
+		$this->disconnect();
+		$this->connect();
+	}
+
+	public function isConnected()
+	{
+		return (bool) $this->connected;
+	}
+
 	public function load($config)
 	{
 		$this->config = $config;
-		$this->_name = HedgeBot::getServerName($this);
+		$this->name = HedgeBot::getServerName($this);
 
-		$connected = $this->IRC->connect($config['address'], $config['port']);
+		$this->connect();
 
-		if(!$connected)
+		if(!$this->connected)
 			return false;
 
-		if(!empty($config['password']))
-			$this->IRC->setPassword($config['password']);
-
-		// Send Twitch specific commands
-		$this->IRC->capabilityRequest("twitch.tv/commands");
-		$this->IRC->capabilityRequest("twitch.tv/tags");
-		$this->IRC->capabilityRequest("twitch.tv/membership");
-
-
-		$this->IRC->setNick($config['name'], $config['name']);
-
-		if(isset($config['floodLimit']) && HedgeBot::parseRBool($config['floodLimit']))
-			$this->IRC->setFloodLimit($config['floodLimit']);
-
 		$this->config['channels'] = trim($this->config['channels']);
-		
+
 		return true;
 	}
 
@@ -59,7 +79,7 @@ class ServerInstance
 
 	public function getName()
 	{
-		return $this->_name;
+		return $this->name;
 	}
 
 	public function getNick()
@@ -88,6 +108,7 @@ class ServerInstance
 			if($command['command'] == 'WHISPER' && strpos(',', $this->config['channels']) === FALSE)
 				$command['channel'] = $this->config['channels'];
 
+			$this->pluginManager->callEvent('core', 'serverMessage', $command);
 			$this->pluginManager->callEvent('server', strtolower($command['command']), $command);
 
 			if(in_array($command['command'], array('PRIVMSG', 'NOTICE', 'WHISPER')))
