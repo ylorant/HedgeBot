@@ -196,7 +196,7 @@ class BlackJack extends PluginBase
         // The game cannot start if there is no player entered.
         if(count($this->games[$channel]->getPlayers()) == 0)
             return IRC::message($channel, $this->getConfigParameter($channel, 'messages.noPlayer'));
-        
+
         IRC::message($channel, $this->getConfigParameter($channel, 'messages.gameStarted'));
 
         $game = $this->games[$channel];
@@ -269,7 +269,7 @@ class BlackJack extends PluginBase
     /**
      * Event on configuration update detection. Reloads the configuration.
      */
-	public function SystemEventConfigUpdate()
+	public function CoreEventConfigUpdate()
 	{
 		$this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
 		$this->reloadConfig();

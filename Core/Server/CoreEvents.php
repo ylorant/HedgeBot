@@ -32,8 +32,6 @@ class CoreEvents
 
 		$events->addRoutine($this, 'RoutinePingServer', 60);
 		$events->addRoutine($this, 'RoutineCheckStorages', 2);
-
-		$events->addEventListener('systemEvent', 'SystemEvent');
 	}
 
 	public function RoutineCheckStorages()
@@ -42,11 +40,11 @@ class CoreEvents
 
 		$updated = Config::checkUpdate();
 		if($updated)
-			$events->callEvent('systemEvent', 'ConfigUpdate');
+			$events->callEvent('core', 'ConfigUpdate');
 
 		$updated = Data::checkUpdate();
 		if($updated)
-			$events->callEvent('systemEvent', 'DataUpdate');
+			$events->callEvent('core', 'DataUpdate');
 	}
 
 	public function RoutinePingServer()
