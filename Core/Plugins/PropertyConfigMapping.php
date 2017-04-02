@@ -73,7 +73,7 @@ trait PropertyConfigMapping
             // Defining property name to map
             $globalName = 'global'. ucfirst($name);
             $varParameter = $name;
-            if(is_array($this->$name) && isset($this->$globalName))
+            if(isset($this->$name) && is_array($this->$name) && isset($this->$globalName))
 			    $varParameter = $globalName;
 
 			if($name != "channel" && (empty($parameters) || in_array($name, $parameters)))
