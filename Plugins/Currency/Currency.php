@@ -84,7 +84,7 @@ class Currency extends PluginBase
         Plugin::getManager()->addRoutine($this, 'RoutineAddMoney', 10);
 	}
 
-	public function SystemEventConfigUpdate()
+	public function CoreEventConfigUpdate()
 	{
 		$this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
 		$this->reloadConfig();
@@ -213,9 +213,9 @@ class Currency extends PluginBase
 
 	/**
 	 * Checks the current amount of money an user has.
-     * 
+     *
      * @access moderator
-     * 
+     *
      * @parameter user The username of the person to check the money on.
 	 */
 	public function CommandCheck($command, $args)
@@ -231,11 +231,11 @@ class Currency extends PluginBase
 		}
 	}
 
-	/** 
+	/**
 	 * Removes a given amount of money from an user.
 	 *
 	 * @access moderator
-	 * 
+	 *
 	 * @parameter user   The username of the person to take money from.
 	 * @parameter amount The amount of money to take from that user.
      */

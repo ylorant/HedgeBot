@@ -152,7 +152,7 @@ class IRCConnection
 
 	public function getChannels()
 	{
-		return array_keys($this->_channels);
+		return $this->_channels;
 	}
 
 	public function getChannelUsers($channel)
@@ -322,7 +322,13 @@ class IRCConnection
 				if(substr($time, 5) == time())
 				{
 					if(HedgeBot::$verbose >= 2)
-						echo '->['.Server::getName().'] '.$data."\n";
+					{
+						// Hide password when debugging
+						if(substr($data, 0, 4) == "PASS")
+							echo '->['.Server::getName().'] PASS ******'."\n";
+						else
+							echo '->['.Server::getName().'] '.$data."\n";
+					}
 
 					$bytesWritten = @socket_write($this->_socket, $data."\r\n");
 
@@ -338,9 +344,16 @@ class IRCConnection
 			elseif($this->_lastSend + 2 <= time() || !$this->_floodLimit)
 			{
 				if(HedgeBot::$verbose >= 2)
-					echo '->['.Server::getName().'] '.$data."\n";
+				{
+					// Hide password when debugging
+					if(substr($data, 0, 4) == "PASS")
+						echo '->['.Server::getName().'] PASS ******'."\n";
+					else
+						echo '->['.Server::getName().'] '.$data."\n";
+				}
 
-				$bytesWritten = @socket_write($this->_socket, $data."\r\n");
+				$bytesWritten = socket_write($this->_socket, $data."\r\n");
+
 				if($bytesWritten !== false)
 				{
 					unset($this->_buffer[$time]);

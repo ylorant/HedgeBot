@@ -120,7 +120,7 @@ class HedgeBot
 
 		$this->plugins->loadPlugins($pluginList);
 
-		// Loading core events manager
+		// Loading core events handler
 		$coreEvents = new CoreEvents($this->plugins, $this);
 
 		$servers = $this->config->get('servers');
@@ -377,7 +377,10 @@ class HedgeBot
 				IRC::setObject($this->servers[$name]->getIRC());
 				Server::setObject($this->servers[$name]);
 
-				$this->servers[$name]->step();
+				// Only try to process server if it's connected
+				if($this->servers[$name]->isConnected())
+					$this->servers[$name]->step();
+
 				usleep(1000);
 			}
 

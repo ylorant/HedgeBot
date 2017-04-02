@@ -31,6 +31,7 @@ class PluginManager extends Events
 		$this->_plugins = array();
 
 		// Creating default event handlers
+		$this->addEventListener('core', 'CoreEvent');
 		$this->addEventListener('command', 'Command');
 		$this->addEventListener('server', 'Server');
 		$this->addEventListener('timeout', 'Timeout');

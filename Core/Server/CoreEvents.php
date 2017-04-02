@@ -9,18 +9,24 @@ use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Config;
 use HedgeBot\Core\HedgeBot;
 
+/**
+ * Core Events handler class.
+ * This class handles basic server events, and as such, it handles the basic workflow
+ * for the bot connection lifecycle (authentication against the server and things).
+ */
 class CoreEvents
 {
-	private $_main;
-	private $_events;
-	private $_names;
+	private $names;
+	private $lastMessages = [];
 
 	public function __construct()
 	{
-		$this->_names = array();
+		$this->names = [];
 
 		$events = Plugin::getManager();
 
+		// Server commands the bot is supposed to answer to
+		// TODO: Use autoloading question mark ?
 		$events->addEvent('server', 'coreevents', '001', array($this, 'ServerConnected'));
 		$events->addEvent('server', 'coreevents', 'kick', array($this, 'ServerKick'));
 		$events->addEvent('server', 'coreevents', 'ping', array($this, 'ServerPing'));
@@ -30,10 +36,13 @@ class CoreEvents
 		$events->addEvent('server', 'coreevents', 'join', array($this, 'ServerJoin'));
 		$events->addEvent('server', 'coreevents', 'part', array($this, 'ServerPart'));
 
+		// Core events
+		$events->addEvent('core', 'coreevents', 'ServerMessage', array($this, 'CoreEventServerMessage'));
+
+		// Routines
 		$events->addRoutine($this, 'RoutinePingServer', 60);
 		$events->addRoutine($this, 'RoutineCheckStorages', 2);
-
-		$events->addEventListener('systemEvent', 'SystemEvent');
+		$events->addRoutine($this, 'RoutineReconnect', 5);
 	}
 
 	public function RoutineCheckStorages()
@@ -42,23 +51,51 @@ class CoreEvents
 
 		$updated = Config::checkUpdate();
 		if($updated)
-			$events->callEvent('systemEvent', 'ConfigUpdate');
+			$events->callEvent('core', 'ConfigUpdate');
 
 		$updated = Data::checkUpdate();
 		if($updated)
-			$events->callEvent('systemEvent', 'DataUpdate');
+			$events->callEvent('core', 'DataUpdate');
 	}
 
 	public function RoutinePingServer()
 	{
+		$time = time();
+
 		foreach(ServerList::get() as $server)
 		{
 			$srv = ServerList::getServer($server);
 			IRC::setObject($srv->getIRC());
 			Server::setObject($srv);
 
+			// Before pinging, check if last message from server isn't older than 90 secs (timeout)
+			if(!empty($this->lastMessages[$server]) && $this->lastMessages[$server] < ($time - 90))
+			{
+				HedgeBot::message('Connection to server $0 lost, reconnecting.', array(Server::getName()), E_WARNING);
+				Server::reconnect();
+
+				continue;
+			}
+
 			IRC::ping();
 		}
+	}
+
+	public function RoutineReconnect()
+	{
+		foreach(ServerList::get() as $server)
+		{
+			$srv = ServerList::getServer($server);
+
+			if(!$srv->isConnected())
+				$srv->connect();
+		}
+	}
+
+	public function CoreEventServerMessage($command)
+	{
+		$serverName = Server::getName();
+		$this->lastMessages[$serverName] = time();
 	}
 
 	public function ServerConnected($command)
@@ -117,16 +154,16 @@ class CoreEvents
 	{
 		$channel = substr($command['additionnal'][1], 1);
 
-		if(!isset($this->_names[$channel]))
-			$this->_names[$channel] = array();
-		$this->_names[$channel] = array_merge($this->_names[$channel], explode(' ', $command['message']));
+		if(!isset($this->names[$channel]))
+			$this->names[$channel] = array();
+		$this->names[$channel] = array_merge($this->names[$channel], explode(' ', $command['message']));
 	}
 
 	public function ServerEndOfNames($command)
 	{
 		$channel = substr($command['additionnal'][0], 1);
-		IRC::setChannelUsers($channel, $this->_names[$channel]);
-		unset($this->_names[$channel]);
+		IRC::setChannelUsers($channel, $this->names[$channel]);
+		unset($this->names[$channel]);
 	}
 
 	public function ServerUserstate($command)
