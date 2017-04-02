@@ -34,7 +34,7 @@ Plugins :
 - [IN PROGRESS] Spam regulation plugin, timing out users for unwanted words in messages, links, walltexts and/or other things
 - Auto hosting, allowing your channel to automatically host streaming people based on a list, and for a set amount of time
 - Donation alerts, with StreamLabs API
-- Update 
+- Update Twitch API integration to v5
 - Cooldown feature, as a core feature (allowing cooldown per user type and per command).
 - Logger core feature, allowing logging actions from every plugin
 - Statistics plugin, gathering real time stats from chat
