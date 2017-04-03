@@ -39,6 +39,7 @@ Plugins :
 - Logger core feature, allowing logging actions from every plugin
 - Statistics plugin, gathering real time stats from chat
 - Discord API integration
+- Horaro API integration
 - Raffle plugin
 - [IN PROGRESS] Web admin
 - Update all plugins' comments to fit Documentor standards (like on the Currency plugin).
