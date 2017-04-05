@@ -30,7 +30,7 @@ class HedgeBot
 	public $initialized;
 	public $tikalServer;
 
-	private $_run;
+	private $run;
 
 	private static $instance;
 
@@ -367,9 +367,9 @@ class HedgeBot
 	 */
 	public function run()
 	{
-		$this->_run = TRUE;
+		$this->run = TRUE;
 
-		while($this->_run)
+		while($this->run)
 		{
 			foreach($this->servers as $name => $server)
 			{
@@ -403,6 +403,6 @@ class HedgeBot
 
 	public function stop()
 	{
-		$this->_run = false;
+		$this->run = false;
 	}
 }
