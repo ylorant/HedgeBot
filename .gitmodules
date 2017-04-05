@@ -1,6 +1,0 @@
-[submodule "lib/php-redis"]
-	path = lib/php-redis
-	url = https://github.com/phpredis/phpredis.git
-[submodule "lib/random_compat"]
-	path = lib/random_compat
-	url = https://github.com/paragonie/random_compat
