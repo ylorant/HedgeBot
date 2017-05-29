@@ -77,26 +77,22 @@ class Server
     {
         $response = new HttpResponse($request);
         $url = $request->requestURI;
-
-        // Remove the initial / in the request uri if it isn't the only character
-        if($url != "/")
-            $url = ltrim($url, '/');
-
+        
         if(!$this->tokenlessMode && (empty($request->headers['X-Token']) || $request->headers['X-Token'] != $this->token))
             return $this->sendErrorResponse($response, HttpResponse::UNAUTHORIZED);
-
+        
         if(!$this->hasEndpoint($url)) // Endpoint not found, return a 404
             return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
-
+        
         if($request->method == "POST") // Only handle POST requests as JSON-RPC requests
         {
             // Checking that we have JSON.
             if($request->contentType != "application/json")
                 return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
-
+            
             $request->setRequestURI($url); // Putting back formatted URL into request URI to avoid an extra parameter
             $result = $this->RPCExec($request, $response);
-
+            
             if($result)
                 $this->httpServer->send($response);
         }
@@ -198,7 +194,7 @@ class Server
      */
     private function sendErrorResponse(HttpResponse $response, $code)
     {
-        $response->statusCode = HttpResponse::BAD_REQUEST;
+        $response->statusCode = $code;
         $response->data = HttpResponse::STATUS_MESSAGES[$response->statusCode];
         $this->httpServer->send($response);
 
