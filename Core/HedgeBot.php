@@ -17,7 +17,8 @@ use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Server\CoreEvents;
 use HedgeBot\Core\Twitch\Kraken;
 use HedgeBot\Core\Tikal\Server as TikalServer;
-use HedgeBot\Core\Tikal\CoreAPI as TikalCoreAPI;
+use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
+use HedgeBot\Core\Tikal\Endpoint\PluginEndpoint as TikalPluginEndpoint;
 
 class HedgeBot
 {
@@ -102,7 +103,8 @@ class HedgeBot
 			Tikal::setObject($this->tikalServer);
 
 			// Binding core API to the server
-			Tikal::addEndpoint('/', new TikalCoreAPI());
+			Tikal::addEndpoint('/', new TikalCoreEndpoint());
+			Tikal::addEndpoint('/plugin', new TikalPluginEndpoint());
 		}
 
 		// Loading plugins
