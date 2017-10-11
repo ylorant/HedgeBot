@@ -16,9 +16,19 @@ class Documentor
 	private $outputDir;
 	private $pluginDocs = [];
 
-	public function __construct($outputDir = self::DEFAULT_OUTPUT_DIRECTORY)
+	/**
+	 * Constructs a documentor.
+	 * @constructor
+	 */
+	public function __construct()
 	{
-		$this->outputDir = $outputDir;
+		$this->outputDir = self::DEFAULT_OUTPUT_DIRECTORY;
+	}
+
+	public function setOutputDirectory($outputDirectory)
+	{
+		if(!is_dir($outputDirectory) && !)
+			throw new Exception('Output directory does not exist and is not creatable');
 	}
 
 	/**

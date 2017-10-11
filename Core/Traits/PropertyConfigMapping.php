@@ -1,5 +1,5 @@
 <?php
-namespace HedgeBot\Core\Plugins;
+namespace HedgeBot\Core\Traits;
 
 /** Allows property mapping for configuration.
  * This trait adds a property mapping functionality to a plugin, allowing it to bind configuration values

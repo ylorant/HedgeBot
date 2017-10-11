@@ -3,6 +3,7 @@ namespace HedgeBot\Core\Server;
 
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\API\Server;
+use HedgeBot\Core\Events\ServerEvent;
 
 class IRCConnection
 {
@@ -103,15 +104,15 @@ class IRCConnection
 
 	/**
 	 * Automatic reply. Sends a whisper or a channel message according to the incoming message.
-	 * @param $fromCmd The original command to reply to. Should be using IRCConnection::parseMsg() format.
-	 * @param $message The message to reply.
+	 * @param ServerEvent $ev      The original server (or any inheriting) event that sent the message.
+	 * @param string      $message The message to reply.
 	 */
-	public function reply($fromCmd, $message)
+	public function reply(ServerEvent $ev, $message)
 	{
-		if($fromCmd["command"] == "WHISPER") // Whisper
-			$this->whisper($fromCmd["nick"], $message);
+		if($ev->command == "WHISPER") // Whisper
+			$this->whisper($ev->nick, $message);
 		else // Channel message
-			$this->message($fromCmd["channel"], $message);
+			$this->message($ev->channel, $message);
 	}
 
 	public function message($to, $message)

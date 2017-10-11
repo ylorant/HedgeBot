@@ -7,6 +7,8 @@ use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\ServerList;
 use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Config;
+use HedgeBot\Core\Events\CoreEvent;
+use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\HedgeBot;
 
 /**
@@ -27,17 +29,17 @@ class CoreEvents
 
 		// Server commands the bot is supposed to answer to
 		// TODO: Use autoloading question mark ?
-		$events->addEvent('server', 'coreevents', '001', array($this, 'ServerConnected'));
-		$events->addEvent('server', 'coreevents', 'kick', array($this, 'ServerKick'));
-		$events->addEvent('server', 'coreevents', 'ping', array($this, 'ServerPing'));
-		$events->addEvent('server', 'coreevents', '353', array($this, 'ServerNamesReply'));
-		$events->addEvent('server', 'coreevents', '366', array($this, 'ServerEndOfNames'));
-		$events->addEvent('server', 'coreevents', 'mode', array($this, 'ServerMode'));
-		$events->addEvent('server', 'coreevents', 'join', array($this, 'ServerJoin'));
-		$events->addEvent('server', 'coreevents', 'part', array($this, 'ServerPart'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', '001', array($this, 'ServerConnected'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'kick', array($this, 'ServerKick'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'ping', array($this, 'ServerPing'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', '353', array($this, 'ServerNamesReply'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', '366', array($this, 'ServerEndOfNames'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'mode', array($this, 'ServerMode'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'join', array($this, 'ServerJoin'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'part', array($this, 'ServerPart'));
 
 		// Core events
-		$events->addEvent('core', 'coreevents', 'ServerMessage', array($this, 'CoreEventServerMessage'));
+		$events->addEvent(CoreEvent::getType(), 'coreevents', 'ServerMessage', array($this, 'CoreEventServerMessage'));
 
 		// Routines
 		$events->addRoutine($this, 'RoutinePingServer', 60);
@@ -51,11 +53,11 @@ class CoreEvents
 
 		$updated = Config::checkUpdate();
 		if($updated)
-			$events->callEvent('core', 'ConfigUpdate');
+			$events->callEvent(new CoreEvent('ConfigUpdate'));
 
 		$updated = Data::checkUpdate();
 		if($updated)
-			$events->callEvent('core', 'DataUpdate');
+			$events->callEvent(new CoreEvent('DataUpdate'));
 	}
 
 	public function RoutinePingServer()
@@ -92,13 +94,13 @@ class CoreEvents
 		}
 	}
 
-	public function CoreEventServerMessage($command)
+	public function CoreEventServerMessage(CoreEvent $ev)
 	{
 		$serverName = Server::getName();
 		$this->lastMessages[$serverName] = time();
 	}
 
-	public function ServerConnected($command)
+	public function ServerConnected(ServerEvent $ev)
 	{
 		$config = Server::getConfig();
 
@@ -113,62 +115,62 @@ class CoreEvents
 		HedgeBot::getInstance()->initialized = TRUE;
 	}
 
-	public function ServerKick($command)
+	public function ServerKick(ServerEvent $ev)
 	{
-		if($command['additionnal'][0] == Server::getNick())
-			IRC::joinChannel($command['channel']);
+		if($ev->additionnal[0] == Server::getNick())
+			IRC::joinChannel($ev->channel);
 	}
 
-	public function ServerPing($command)
+	public function ServerPing(ServerEvent $ev)
 	{
-		IRC::send('PONG :'.$command['additionnal']);
+		IRC::send('PONG :'.$ev->additionnal);
 	}
 
-	public function ServerJoin($command)
+	public function ServerJoin(ServerEvent $ev)
 	{
-		if(strtolower($command['nick']) != strtolower(Server::getNick()))
+		if(strtolower($ev->nick) != strtolower(Server::getNick()))
 		{
-			if($command['message'] && !$command['channel'])
-				$command['channel'] = $command['message'];
-			IRC::userJoin($command['channel'], $command['nick']);
+			if($ev->message && !$ev->channel)
+				$ev->channel = $ev->message;
+			IRC::userJoin($ev->channel, $ev->nick);
 		}
 	}
 
-	public function ServerPart($command)
+	public function ServerPart(ServerEvent $ev)
 	{
-		IRC::userPart($command['channel'], $command['nick']);
+		IRC::userPart($ev->channel, $ev->nick);
 	}
 
-	public function ServerMode($command)
+	public function ServerMode(ServerEvent $ev)
 	{
-		if(preg_match('/(\+|-).*(v|o)/', $command['additionnal'][0], $matches) && isset($command['additionnal'][1]))
+		if(preg_match('/(\+|-).*(v|o)/', $ev->additionnal[0], $matches) && isset($ev->additionnal[1]))
 		{
 			if($matches[1] == '+')
-				IRC::userModeAdd($command['channel'], $command['additionnal'][1], $matches[2]);
+				IRC::userModeAdd($ev->channel, $ev->additionnal[1], $matches[2]);
 			else
-				IRC::userModeRemove($command['channel'], $command['additionnal'][1], $matches[2]);
+				IRC::userModeRemove($ev->channel, $ev->additionnal[1], $matches[2]);
 		}
 	}
 
-	public function ServerNamesReply($command)
+	public function ServerNamesReply(ServerEvent $ev)
 	{
-		$channel = substr($command['additionnal'][1], 1);
+		$channel = substr($ev->additionnal[1], 1);
 
 		if(!isset($this->names[$channel]))
 			$this->names[$channel] = array();
-		$this->names[$channel] = array_merge($this->names[$channel], explode(' ', $command['message']));
+		$this->names[$channel] = array_merge($this->names[$channel], explode(' ', $ev->message));
 	}
 
-	public function ServerEndOfNames($command)
+	public function ServerEndOfNames(ServerEvent $ev)
 	{
-		$channel = substr($command['additionnal'][0], 1);
+		$channel = substr($ev->additionnal[0], 1);
 		IRC::setChannelUsers($channel, $this->names[$channel]);
 		unset($this->names[$channel]);
 	}
 
-	public function ServerUserstate($command)
+	public function ServerUserstate(ServerEvent $ev)
 	{
-		if(!$command['moderator'])
+		if(!$ev->moderator)
 			HedgeBot::message("HedgeBot isn't currently a moderator. Moderator rights may be needed to perform some operations.", NULL, E_WARNING);
 	}
 }

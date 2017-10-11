@@ -61,6 +61,8 @@ class HedgeBot
 
 		HedgeBot::message('Bootstrapping storage...');
 
+		// Bootstrapping storages consists of loading the config and data storage configuration from
+		// config files in the given configuration directory.
 		$fileProvider = new FileProvider();
 		$this->config = new ObjectAccess($fileProvider);
 		$connected = $fileProvider->connect($configDir);

@@ -2,6 +2,7 @@
 namespace HedgeBot\Plugins\Currency;
 
 use HedgeBot\Plugins\TestManager\TestCase;
+use HedgeBot\Core\Traits\PropertyConfigMapping;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Server;
 use HedgeBot\Core\HedgeBot;

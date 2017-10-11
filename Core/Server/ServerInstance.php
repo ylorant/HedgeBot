@@ -4,6 +4,9 @@ namespace HedgeBot\Core\Server;
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Server;
+use HedgeBot\Core\Events\CoreEvent;
+use HedgeBot\Core\Events\ServerEvent;
+use HedgeBot\Core\Events\CommandEvent;
 
 class ServerInstance
 {
@@ -108,10 +111,14 @@ class ServerInstance
 			if($command['command'] == 'WHISPER' && strpos(',', $this->config['channels']) === FALSE)
 				$command['channel'] = $this->config['channels'];
 
-			$this->pluginManager->callEvent('core', 'serverMessage', $command);
-			$this->pluginManager->callEvent('server', strtolower($command['command']), $command);
+			$this->pluginManager->callEvent(new CoreEvent('serverMessage', ['command' => $command]));
 
-			if(in_array($command['command'], array('PRIVMSG', 'NOTICE', 'WHISPER')))
+			// Calling the server event, and keeping a reference to allow propagation stopping
+			$serverEvent = new ServerEvent($command);
+			$this->pluginManager->callEvent($serverEvent);
+
+			// Command handling, only if event is still being propagated
+			if($serverEvent->propagation && in_array($command['command'], array('PRIVMSG', 'NOTICE', 'WHISPER')))
 			{
 				$message = explode(' ', $command['message']);
 				if(strlen($message[0]))
@@ -119,7 +126,7 @@ class ServerInstance
 					if($message[0][0] == ":")
 						$message[0] = substr($message[0], 1);
 
-		            $this->pluginManager->execRegexEvents($command, $command['message']);
+		            $this->pluginManager->callRegexEvents($command, $command['message']);
 
 					switch($message[0][0])
 					{
@@ -127,12 +134,12 @@ class ServerInstance
 							$cmdName = substr(array_shift($message), 1);
 							$cmdName = strtolower($cmdName);
 							HedgeBot::message('Command catched: !$0', array($cmdName), E_DEBUG);
-							$this->pluginManager->callEvent('command', $cmdName, $command, $message);
+							$this->pluginManager->callEvent(new CommandEvent($cmdName, $message, $command));
 							break;
 						case "\x01": //CTCP
 							$cmdName = substr(array_shift($message), 1);
 							HedgeBot::message('CTCP Command catched: CTCP$0', array($cmdName), E_DEBUG);
-							$this->pluginManager->callEvent('command', 'CTCP'.$cmdName, $command, $message);
+							$this->pluginManager->callEvent(new CommandEvent('CTCP'.$cmdName, $message, $command));
 							break;
 					}
 				}

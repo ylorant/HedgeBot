@@ -32,7 +32,7 @@ class HttpServer
     {
         // Creating event listeners
         $events = PluginAPI::getManager();
-		$events->addEventListener('http', 'HTTP');
+		$events->addEventListener(HttpEvent::getType(), 'HTTP');
 
         // Create the socket and set its default options
 		$this->socket = socket_create(AF_INET,SOCK_STREAM, SOL_TCP);
@@ -83,7 +83,7 @@ class HttpServer
 				{
 					$this->times[$id] = time();
                     $request = new HttpRequest($id, $buffer);
-                    PluginAPI::getManager()->callEvent('http', 'Request', $request);
+                    PluginAPI::getManager()->callEvent(new HttpEvent('Request', ['request' => $request]));
 				}
 			}
         }

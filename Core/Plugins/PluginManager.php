@@ -5,10 +5,15 @@ use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Data\FileProvider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\API\Server;
+use HedgeBot\Core\Events\EventManager;
+use HedgeBot\Core\Events\CoreEvent;
+use HedgeBot\Core\Events\CommandEvent;
+use HedgeBot\Core\Events\ServerEvent;
+use HedgeBot\Core\Events\TimeoutEvent;
 use ReflectionClass;
 use ReflectionMethod;
 
-class PluginManager extends Events
+class PluginManager extends EventManager
 {
 	private $_plugins; ///< Plugins list
 	private $_routines = array();
@@ -31,10 +36,10 @@ class PluginManager extends Events
 		$this->_plugins = array();
 
 		// Creating default event handlers
-		$this->addEventListener('core', 'CoreEvent');
-		$this->addEventListener('command', 'Command');
-		$this->addEventListener('server', 'Server');
-		$this->addEventListener('timeout', 'Timeout');
+		$this->addEventListener(CoreEvent::getType(), 'CoreEvent');
+		$this->addEventListener(CommandEvent::getType(), 'Command');
+		$this->addEventListener(ServerEvent::getType(), 'Server');
+		$this->addEventListener(TimeoutEvent::getType(), 'Timeout');
 
 		$this->addRoutine($this, 'timeoutRoutine');
 
@@ -405,7 +410,7 @@ class PluginManager extends Events
 		$this->_regex[] = array($regex, $callback);
 	}
 
-	public function execRegexEvents($cmd, $string)
+	public function callRegexEvents($cmd, $string)
 	{
 		foreach($this->_regex as $el)
 		{
@@ -480,7 +485,7 @@ class PluginManager extends Events
 			if($timeout["time"] >= $time)
 			{
 				$timeoutsToRemove[] = $i;
-				$this->callEvent('timeout', $timeout["event"]);
+				$this->callEvent(new TimeoutEvent($timeout["event"]));
 			}
 		}
 

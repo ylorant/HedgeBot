@@ -24,18 +24,18 @@
  * This file hosts the Events class, handling all events.
  */
 
-namespace HedgeBot\Core\Plugins;
+namespace HedgeBot\Core\Events;
 
 use HedgeBot\Core\HedgeBot;
 use ReflectionClass;
 
 /**
- * \brief Events class for leelabot.
+ * \brief EventManager class for Hedgebot.
  *
  * \warning For server events and commands, the manager will only handle 1 callback by event at a time. It is done for simplicity purposes, both at plugin's side
  * and at manager's side (I've noticed that it is not necessary to have multiple callbacks for an unique event, unless you can think about getting your code clear)
  */
-class Events
+class EventManager
 {
 	protected $events = []; ///< Events storage
 	protected $autoMethods = []; ///< Method prefixes for automatic event recognition
@@ -97,7 +97,7 @@ class Events
 	public function addEvent($listener, $id, $event, $callback)
 	{
 		// Normalize event name
-		$event = $this->normalize($event);
+		$event = Event::normalize($event);
 
 		if(!isset($this->events[$listener]))
 		{
@@ -172,33 +172,36 @@ class Events
 	}
 
 	/** Calls an event for an event listener.
-	 * This function calls the callbacks for the given event name. It will execute the callbacks by giving them for parameters the additionnal parameter given to this
-	 * method.
-	 * For example, calling callEvent like that : $this->callEvent('somelistener', 'connect', 1, 'hi'); will call the callbacks bound to the event "connect" with 2
-	 * parameters : 1 and 'hi'.
+	 * This
 	 *
 	 * \param $listener The listener from which the event will be called.
 	 * \param $event The event to call.
 	 *
 	 * \return TRUE if event has been called correctly, FALSE otherwise.
 	 */
-	public function callEvent($listener, $event, ...$params)
+	public function callEvent(Event $event)
 	{
+		$listener = $event::getType();
+		$name = $event->name;
+
 		if(!isset($this->events[$listener]))
 		{
-			HedgeBot::message('Error: Undefined Event Listener: $0', $listener, E_DEBUG);
+			HedgeBot::message('Undefined Event Listener: $0', $listener, E_WARNING);
 			return FALSE;
 		}
 
-		// Normalize event name
-		$event = $this->normalize($event);
-
-		if(!isset($this->events[$listener][$event]) || !$this->events[$listener][$event])
+		// Stop if the event does not exist.
+		if(!isset($this->events[$listener][$name]) || !$this->events[$listener][$name])
 			return FALSE;
-		
+
 		//Calling back
-		foreach($this->events[$listener][$event] as $id => $callback)
-			call_user_func_array($callback, $params);
+		foreach($this->events[$listener][$name] as $id => $callback)
+		{
+			if(!$event->propagation)
+				break;
+
+			call_user_func_array($callback, [$event]);
+		}
 
 		return TRUE;
 	}
@@ -225,7 +228,7 @@ class Events
 			{
 				if(preg_match('#^'.$prefix.'#', $methodName))
 				{
-					$event = $this->normalize(preg_replace('#'.$prefix.'(.+)#', '$1', $methodName));
+					$event = Event::normalize(preg_replace('#'.$prefix.'(.+)#', '$1', $methodName));
 					HedgeBot::message('Binding method $0::$1 on event $2/$3', [$reflectionClass->getShortName(), $methodName, $listener, $event], E_DEBUG);
 					$this->addEvent($listener, $reflectionClass->getName(), $event, [$object, $methodName]);
 				}
@@ -263,15 +266,5 @@ class Events
 			unset($this->events[$callback[0]][$callback[1]][$id]);
 
 		return null;
-	}
-
-	/**
-	 * Normalizes an event name. For now, it only returns it in full lower case.
-	 * \param  string  $name The event name to normalize
-	 * \return string        The normalized event name.
-	 */
-	public function normalize($name)
-	{
-		return strtolower($name);
 	}
 }

@@ -55,7 +55,7 @@ class Server
         $this->httpServer->start();
 
         $events = PluginAPI::getManager();
-        $events->addEvent('http', 'tikal', 'Request', array($this, 'httpRequest'));
+        $events->addEvent(HttpEvent::getType(), 'tikal', 'Request', array($this, 'httpRequest'));
     }
 
     /**
@@ -70,29 +70,31 @@ class Server
 
     /**
      * Http request event callback. Called when the Http server has received a request.
-     * @param  HttpRequest $request The request received.
+     * @param  HttpEvent $event The request event received.
      * @return NULL
      */
-    public function httpRequest(HttpRequest $request)
+    public function httpRequest(HttpEvent $event)
     {
+        $request = $event->request;
+
         $response = new HttpResponse($request);
         $url = $request->requestURI;
-        
+
         if(!$this->tokenlessMode && (empty($request->headers['X-Token']) || $request->headers['X-Token'] != $this->token))
             return $this->sendErrorResponse($response, HttpResponse::UNAUTHORIZED);
-        
+
         if(!$this->hasEndpoint($url)) // Endpoint not found, return a 404
             return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
-        
+
         if($request->method == "POST") // Only handle POST requests as JSON-RPC requests
         {
             // Checking that we have JSON.
             if($request->contentType != "application/json")
                 return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
-            
+
             $request->setRequestURI($url); // Putting back formatted URL into request URI to avoid an extra parameter
             $result = $this->RPCExec($request, $response);
-            
+
             if($result)
                 $this->httpServer->send($response);
         }

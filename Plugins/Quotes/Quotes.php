@@ -4,6 +4,7 @@ namespace HedgeBot\Plugins\Quotes;
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\Events\CommandEvent;
 
 /**
  * Quote manager plugin.
@@ -13,111 +14,115 @@ use HedgeBot\Core\API\IRC;
 class Quotes extends PluginBase
 {
     private $quotes = []; // Quotes, by channel
-    
+
     public function init()
     {
         if(!empty($this->data->quotes))
             $this->quotes = $this->data->quotes->toArray();
     }
-    
+
     /**
      * Mod function: Adds a quote to the quote list
      */
-    public function CommandAddquote($command, $args)
+    public function CommandAddquote(CommandEvent $ev)
     {
         // Check rights
-        if(!$command['moderator'])
+        if(!$ev->moderator)
             return;
-        
+
+        $args = $ev->arguments;
         if(!count($args))
-            return IRC::reply($command, "Insufficient parameters.");
-        
-        array_shift($args); // Remove the command name from the args to get the actual quote
-        
+            return IRC::reply($ev, "Insufficient parameters.");
+
+        array_shift($args); // Remove the command name from the arguments to get the actual quote
+
         // Create channel if needed
-        if(!isset($this->quotes[$command['channel']]))
-            $this->quotes[$command['channel']] = [];
-        
-        $this->quotes[$command['channel']][] = join(' ', $args);
+        if(!isset($this->quotes[$ev->channel]))
+            $this->quotes[$ev->channel] = [];
+
+        $this->quotes[$ev->channel][] = join(' ', $args);
         $this->data->set('quotes', $this->quotes);
-        
-        $index = count($this->quotes[$command['channel']]); // Count = last index + 1, basically the quote index
-        IRC::reply($command, 'Quote #'. $index. ' added.');
+
+        $index = count($this->quotes[$ev->channel]); // Count = last index + 1, basically the quote index
+        IRC::reply($ev, 'Quote #'. $index. ' added.');
     }
-    
+
     /**
      * Mod function: Edits a quote
      */
-    public function CommandEditquote($command, $args)
+    public function CommandEditquote(CommandEvent $ev)
     {
-        if(!$command['moderator'])
+        if(!$ev->moderator)
             return;
-        
+
+        $args = $ev->arguments;
         if(count($args) < 2)
-            return IRC::reply($command, "Insufficient parameters.");
-        
+            return IRC::reply($ev, "Insufficient parameters.");
+
         array_shift($args); // Remove command name
         $quoteID = array_shift($args) - 1; // Get quote ID
-        
+
         // Create channel if needed
-        if(!isset($this->quotes[$command['channel']]))
-            $this->quotes[$command['channel']] = [];
-        
-        if(!isset($this->quotes[$command['channel']][$quoteID]))
-            return IRC::reply($command, "This quote doesn't exist");
-        
+        if(!isset($this->quotes[$ev->channel]))
+            $this->quotes[$ev->channel] = [];
+
+        if(!isset($this->quotes[$ev->channel][$quoteID]))
+            return IRC::reply($ev, "This quote doesn't exist");
+
         // Update the quote
-        $this->quotes[$command['channel']][$quoteID] = join(' ', $args);
+        $this->quotes[$ev->channel][$quoteID] = join(' ', $args);
         $this->data->set('quotes', $this->quotes);
-        
-        IRC::reply($command, "Quote #". $quoteID. " updated.");
+
+        IRC::reply($ev, "Quote #". $quoteID. " updated.");
     }
-    
+
     /**
      * Mod function: Deletes a quote
      */
-    public function CommadnDelquote($command, $args)
+    public function CommadnDelquote(CommandEvent $ev)
     {
-        if(!$command['moderator'])
+        if(!$ev->moderator)
             return;
-        
+
+        $args = $ev->arguments;
         if(!count($args))
-            return IRC::reply($command, "Insufficient parameters.");
-        
+            return IRC::reply($ev, "Insufficient parameters.");
+
         $quoteID = array_shift($args) - 1; // Get quote ID
-        
+
         // Create channel if needed
-        if(!isset($this->quotes[$command['channel']]))
-            $this->quotes[$command['channel']] = [];
-        
-        if(!isset($this->quotes[$command['channel']][$quoteID]))
-            return IRC::reply($command, "This quote doesn't exist");
-        
-        unset($this->quotes[$command['channel']][$quoteID]);
+        if(!isset($this->quotes[$ev->channel]))
+            $this->quotes[$ev->channel] = [];
+
+        if(!isset($this->quotes[$ev->channel][$quoteID]))
+            return IRC::reply($ev, "This quote doesn't exist");
+
+        unset($this->quotes[$ev->channel][$quoteID]);
         $this->data->set('quotes', $this->quotes);
-        
-        IRC::reply($command, "Quote deleted.");
+
+        IRC::reply($ev, "Quote deleted.");
     }
-	
+
     /**
      * Shows a quote. Quote ID can be given as parameter, or if not given, one will be chosen randomly.
      */
-    public function CommandQuote($command, $args)
+    public function CommandQuote(CommandEvent $ev)
     {
         // If there isn't any quote for this channel, don't do anything
-        if(empty($this->quotes[$command['channel']]))
+        if(empty($this->quotes[$ev->channel]))
             return;
-        
+
         $quoteID = null;
-        
+        $args = $ev->arguments;
+
         if(!empty($args[0]))
             $quoteID = intval($args[0]) - 1;
         else
-            $quoteID = rand(0, count($this->quotes[$command['channel']]) - 1);
-        
-        if(!isset($this->quotes[$command['channel']][$quoteID]))
-            return IRC::reply($command, "This quote doesn't exist.");
-        
-        IRC::reply($command, "[#". ($quoteID + 1). "] ". $this->quotes[$command['channel']][$quoteID]);
+            $quoteID = rand(0, count($this->quotes[$ev->channel]) - 1);
+
+        if(!isset($this->quotes[$ev->channel][$quoteID]))
+            return IRC::reply($ev, "This quote doesn't exist.");
+
+        IRC::reply($ev, "[#". ($quoteID + 1). "] ". $this->quotes[$ev->channel][$quoteID]);
     }
 }

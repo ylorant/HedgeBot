@@ -11,6 +11,8 @@ use HedgeBot\Core\API\Server;
 use HedgeBot\Core\Data\FileProvider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Plugins\PluginManager;
+use HedgeBot\Core\Events\ServerEvent;
+use HedgeBot\Core\Events\CommandEvent;
 
 class TestManager extends PluginBase
 {
@@ -75,25 +77,25 @@ class TestManager extends PluginBase
             $this->processTestQueue();
     }
 
-    public function ServerPrivmsg($cmd)
+    public function ServerPrivmsg(ServerEvent $ev)
     {
-        if($cmd['channel'] == $this->testChannel && $cmd['nick'] == $this->botName && !empty($this->currentTest))
-            $this->currentTest->pushMessage($cmd['message']);
+        if($ev->channel == $this->testChannel && $ev->nick == $this->botName && !empty($this->currentTest))
+            $this->currentTest->pushMessage($ev->message);
     }
 
-    public function ServerJoin($cmd)
+    public function ServerJoin(ServerEvent $ev)
     {
         // Autostart when first joining the channel if the config option is set
-        if($cmd['nick'] == Server::getNick())
+        if($ev->nick == Server::getNick())
         {
             if(!empty($this->config['autostart']) && HedgeBot::parseRBool($this->config['autostart']))
-                $this->CommandExecTests($cmd, array());
+                $this->CommandExecTests($ev);
         }
     }
 
-    public function CommandExecTests($cmd, $params)
+    public function CommandExecTests(CommandEvent $ev)
     {
-        $this->testChannel = $cmd['channel'];
+        $this->testChannel = $ev->channel;
         $this->testStats = ["successes" => 0, "failures" => 0];
         $this->buildTests();
         $this->execTests();

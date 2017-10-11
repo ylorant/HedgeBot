@@ -5,6 +5,7 @@ use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\Events\CoreEvent;
 
 class AutoMessage extends PluginBase
 {
@@ -62,7 +63,7 @@ class AutoMessage extends PluginBase
         }
     }
 
-    public function CoreEventConfigUpdate()
+    public function CoreEventConfigUpdate(CoreEvent $ev)
     {
 		$this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
 		$this->reloadConfig();

@@ -3,10 +3,12 @@ namespace HedgeBot\Plugins\Currency;
 
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
-use HedgeBot\Core\Plugins\PropertyConfigMapping;
+use HedgeBot\Core\Traits\PropertyConfigMapping;
 use HedgeBot\Core\API\Server;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\Events\ServerEvent;
+use HedgeBot\Core\Events\CommandEvent;
 
 /**
  * @plugin Currency
@@ -133,22 +135,22 @@ class Currency extends PluginBase
 	}
 
 	/** Initializes an account on join */
-	public function ServerJoin($command)
+	public function ServerJoin(ServerEvent $ev)
 	{
-		if(!empty($this->accounts[$command['channel']][$command['nick']]))
+		if(!empty($this->accounts[$ev->channel][$ev->nick]))
 			return;
 
 		$serverConfig = Server::getConfig();
-		if(strtolower($command['nick']) == strtolower($serverConfig['name']))
+		if(strtolower($ev->nick) == strtolower($serverConfig['name']))
 		{
-			$this->activityTimes[$command['channel']] = array();
-			$this->giveTimes[$command['channel']] = time();
+			$this->activityTimes[$ev->channel] = array();
+			$this->giveTimes[$ev->channel] = time();
 			return;
 		}
 
-		$initialAmount = $this->getConfigParameter($command['channel'], 'initialAmount');
+		$initialAmount = $this->getConfigParameter($ev->channel, 'initialAmount');
 
-		$this->accounts[$command['channel']][$command['nick']] = $initialAmount;
+		$this->accounts[$ev->channel][$ev->nick] = $initialAmount;
 		$this->data->set('accounts', $this->accounts);
 	}
 
@@ -157,28 +159,28 @@ class Currency extends PluginBase
 	 * Handles status command calls too.
 	 * Updates last activity time for the user.
 	 */
-	public function ServerPrivmsg($command)
+	public function ServerPrivmsg(ServerEvent $ev)
 	{
-		$this->ServerJoin($command);
+		$this->ServerJoin($ev);
 
-		$cmd = explode(' ', $command['message']);
+		$cmd = explode(' ', $ev->message);
 		if($cmd[0][0] == '!')
 		{
 			$cmd = substr($cmd[0], 1);
-			$statusCommand = $this->getConfigParameter($command['channel'], 'statusCommand');
+			$statusCommand = $this->getConfigParameter($ev->channel, 'statusCommand');
 			if($statusCommand == $cmd)
-				$this->RealCommandAccount($command, array());
+				$this->RealCommandAccount($ev);
 		}
 
-		$this->activityTimes[$command['channel']][$command['nick']] = time();
+		$this->activityTimes[$ev->channel][$ev->nick] = time();
 	}
 
 	/**
 	 * Handles whispers as regular messages for money status command.
 	 */
-	public function ServerWhisper($command)
+	public function ServerWhisper(ServerEvent $ev)
 	{
-		$this->ServerPrivmsg($command);
+		$this->ServerPrivmsg($ev);
 	}
 
 	/**
@@ -190,24 +192,26 @@ class Currency extends PluginBase
 	 * @parameter amount The amount you want to give.
 	 *
 	 */
-	public function CommandGive($command, $args)
+	public function CommandGive(CommandEvent $ev)
 	{
 		// Check rights
-		if(!$command['moderator'])
+		if(!$ev->moderator)
 			return;
 
+		$args = $ev->arguments;
+		
 		// Check that arguments are there
 		if(count($args) < 2)
-			return IRC::reply($command, 'Insufficient parameters.');
+			return IRC::reply($ev, 'Insufficient parameters.');
 
 		// Lowercasing the username
 		$nick = strtolower($args[0]);
 
 		// Check that the account exists
-		if(!isset($this->accounts[$command['channel']][$nick]))
-			return IRC::reply($command, 'Unknown user.');
+		if(!isset($this->accounts[$ev->channel][$nick]))
+			return IRC::reply($ev, 'Unknown user.');
 
-		$this->accounts[$command['channel']][$nick] += (int) $args[1];
+		$this->accounts[$ev->channel][$nick] += (int) $args[1];
 		$this->data->set('accounts', $this->accounts);
 	}
 
@@ -218,16 +222,17 @@ class Currency extends PluginBase
      *
      * @parameter user The username of the person to check the money on.
 	 */
-	public function CommandCheck($command, $args)
+	public function CommandCheck(CommandEvent $ev)
 	{
-		if(!$command['moderator'] || count($args) < 1)
+		if(!$ev->moderator || count($args) < 1)
 			return;
 
+		$args = $ev->arguments;
 		$nick = strtolower($args[0]);
-		if(isset($this->accounts[$command['channel']][$nick]))
+		if(isset($this->accounts[$ev->channel][$nick]))
 		{
-			$message = $this->formatMessage("Admin check (@name): @total @currency", $command['channel'], $nick);
-			IRC::reply($command, $message);
+			$message = $this->formatMessage("Admin check (@name): @total @currency", $ev->channel, $nick);
+			IRC::reply($ev, $message);
 		}
 	}
 
@@ -239,39 +244,41 @@ class Currency extends PluginBase
 	 * @parameter user   The username of the person to take money from.
 	 * @parameter amount The amount of money to take from that user.
      */
-	public function CommandTake($command, $args)
+	public function CommandTake(CommandEvent $ev)
 	{
 		// Check rights
-		if(!$command['moderator'])
+		if(!$ev->moderator)
 			return;
+
+		$args = $ev->arguments;
 
 		// Check that arguments are there
 		if(count($args) < 2)
-			return IRC::reply($command, 'Insufficient parameters.');
+			return IRC::reply($ev, 'Insufficient parameters.');
 
 		// Lowercasing the username
 		$nick = strtolower($args[0]);
 
 		// Check that the account exists
-		if(!isset($this->accounts[$command['channel']][$nick]))
-			return IRC::reply($command, 'Unknown user.');
+		if(!isset($this->accounts[$ev->channel][$nick]))
+			return IRC::reply($ev, 'Unknown user.');
 
 		// Perform account operations
 		$sum = (int) $args[1];
 
-		if($this->accounts[$command['channel']][$nick] - $sum > 0)
-			$this->accounts[$command['channel']][$nick] -= $sum;
+		if($this->accounts[$ev->channel][$nick] - $sum > 0)
+			$this->accounts[$ev->channel][$nick] -= $sum;
 		else
-			$this->accounts[$command['channel']][$nick] = 0;
+			$this->accounts[$ev->channel][$nick] = 0;
 
 		$this->data->set('accounts', $this->accounts);
 	}
 
 	/** Real account show command, shows the current amount of currency for the user */
-	public function RealCommandAccount($command, $args)
+	public function RealCommandAccount(ServerEvent $ev)
 	{
-		$message = $this->getConfigParameter($command['channel'], 'statusMessage');
-		IRC::reply($command, $this->formatMessage($message, $command['channel'], $command['nick']));
+		$message = $this->getConfigParameter($ev->channel, 'statusMessage');
+		IRC::reply($ev, $this->formatMessage($message, $ev->channel, $ev->nick));
 	}
 
 	/** Formats a currency message, with plural forms and everything. */

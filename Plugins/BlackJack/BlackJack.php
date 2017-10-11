@@ -2,9 +2,11 @@
 namespace HedgeBot\Plugins\BlackJack;
 
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
-use HedgeBot\Core\Plugins\PropertyConfigMapping;
+use HedgeBot\Core\Traits\PropertyConfigMapping;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Plugin;
+use HedgeBot\Core\Events\ServerEvent;
+use HedgeBot\Core\Events\CommandEvent;
 
 class BlackJack extends PluginBase
 {
@@ -110,31 +112,31 @@ class BlackJack extends PluginBase
      * Initializes a blackjack game. Basically, one game per channel at a time, and a game can be
      * reused after it has been finished, with the deck not being reinitialized.
      */
-    public function CommandBlackJack($command, $params)
+    public function CommandBlackJack(CommandEvent $ev)
     {
         // Create a game if it doesn't exist
-        if(empty($this->games[$command['channel']]))
-            $this->games[$command['channel']] = new Game($command['channel'], $this);
+        if(empty($this->games[$ev->channel]))
+            $this->games[$ev->channel] = new Game($ev->channel, $this);
 
-        $messages = $this->getConfigParameter($command['channel'], 'messages');
-        $game = $this->games[$command['channel']];
+        $messages = $this->getConfigParameter($ev->channel, 'messages');
+        $game = $this->games[$ev->channel];
 
         $initialized = $game->init(); // Initialize that s**t
 
         // Check if the game isn't already started
         if(!$initialized)
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], 'messages.gameInProgress'));
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.gameInProgress'));
 
-        IRC::message($command['channel'], $this->getConfigParameter($command['channel'], 'messages.init'));
+        IRC::message($ev->channel, $this->getConfigParameter($ev->channel, 'messages.init'));
 
         // Show join timeout if necessary
-        $joinTimeout = $this->getConfigParameter($command['channel'], 'joinTimeout');
+        $joinTimeout = $this->getConfigParameter($ev->channel, 'joinTimeout');
         $startMessage = 'messages.joinStart';
         if($joinTimeout > 0)
             $startMessage = 'messages.joinTimeout';
 
-        $message = str_replace('@timeout', $joinTimeout, $this->getConfigParameter($command['channel'], $startMessage));
-        IRC::message($command['channel'], $message);
+        $message = str_replace('@timeout', $joinTimeout, $this->getConfigParameter($ev->channel, $startMessage));
+        IRC::message($ev->channel, $message);
 
         return true;
     }
@@ -142,22 +144,22 @@ class BlackJack extends PluginBase
     /**
      * Joins a game. The player has to specify a bet for him to play.
      */
-    public function CommandJoin($command, $params)
+    public function CommandJoin(CommandEvent $ev)
     {
         // Check the parameters are there
-        if(!isset($params[0]) || !is_numeric($params[0]))
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], 'messages.missingBet'));
+        if(!isset($ev->arguments[0]) || !is_numeric($ev->arguments[0]))
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.missingBet'));
 
         // Get the bet amount and the account balance for the player
-        $bet = intval($params[0]);
-        $balance = $this->currency->getBalance($command['channel'], $command['nick']);
+        $bet = intval($ev->arguments[0]);
+        $balance = $this->currency->getBalance($ev->channel, $ev->nick);
 
         // Check all there is to check on the game and the player.
         $canJoin = false;
         $errorMsg = null;
-        if(empty($this->games[$command['channel']]) || $this->games[$command['channel']]->getState() == Game::STATE_IDLE)
+        if(empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() == Game::STATE_IDLE)
             $errorMsg = 'messages.noGame';
-        elseif($this->games[$command['channel']]->getState() == Game::STATE_PLAY)
+        elseif($this->games[$ev->channel]->getState() == Game::STATE_PLAY)
             $errorMsg = 'messages.gameInProgress';
         elseif($balance < $bet)
             $errorMsg = 'messages.notEnoughMoney';
@@ -166,24 +168,24 @@ class BlackJack extends PluginBase
 
         // If the player can't join the game, show the error and return.
         if(!$canJoin)
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], $errorMsg));
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, $errorMsg));
 
         // Join the game and handle the errors.
-        $result = $this->games[$command['channel']]->joinGame($command['nick'], $bet);
+        $result = $this->games[$ev->channel]->joinGame($ev->nick, $bet);
 
         if(!$result)
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], 'messages.alreadyInGame'));
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.alreadyInGame'));
 
         // Remove the bet from the account of the player
-        $this->currency->takeAmount($command['channel'], $command['nick'], $bet);
+        $this->currency->takeAmount($ev->channel, $ev->nick, $bet);
     }
 
     /**
      * Starts the game. There has to be at least one player in the game to start it.
      */
-    public function CommandStart($command, $params)
+    public function CommandStart(CommandEvent $ev)
     {
-        $channel = $command['channel'];
+        $channel = $ev->channel;
 
         // Checking that the game exists
         if(empty($this->games[$channel]) || $this->games[$channel]->getState() == Game::STATE_IDLE)
@@ -230,40 +232,40 @@ class BlackJack extends PluginBase
     /**
      * Draws a card.
      */
-    public function CommandDraw($command, $params)
+    public function CommandDraw(CommandEvent $ev)
     {
         // Checking that there is a game
-        if(empty($this->games[$command['channel']]) || $this->games[$command['channel']]->getState() != Game::STATE_PLAY)
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], 'messages.noGame'));
+        if(empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() != Game::STATE_PLAY)
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.noGame'));
 
         // Trying to draw
-        $return = $this->games[$command['channel']]->draw($command['nick']);
+        $return = $this->games[$ev->channel]->draw($ev->nick);
         if(!$return)
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], 'messages.notPlaying'));
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.notPlaying'));
 
-        $this->showHand($command['channel'], $command['nick']);
-        if($this->games[$command['channel']]->getPlayer($command['nick'])->status == Game::PLAYER_LOST)
+        $this->showHand($ev->channel, $ev->nick);
+        if($this->games[$ev->channel]->getPlayer($ev->nick)->status == Game::PLAYER_LOST)
         {
-            IRC::reply($command, str_replace('@player', $command['nick'], $this->getConfigParameter($command['channel'], 'messages.playerLost')));
-            $this->finishGameIfNecessary($command['channel']);
+            IRC::reply($ev, str_replace('@player', $ev->nick, $this->getConfigParameter($ev->channel, 'messages.playerLost')));
+            $this->finishGameIfNecessary($ev->channel);
         }
     }
 
     /**
      * Ends a player's turn.
      */
-    public function CommandStay($command, $params)
+    public function CommandStay(CommandEvent $ev)
     {
         // Checking that there is a game
-        if(empty($this->games[$command['channel']]) || $this->games[$command['channel']]->getState() != Game::STATE_PLAY)
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], 'messages.noGame'));
+        if(empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() != Game::STATE_PLAY)
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.noGame'));
 
         // Trying to draw
-        $return = $this->games[$command['channel']]->stay($command['nick']);
+        $return = $this->games[$ev->channel]->stay($ev->nick);
         if(!$return)
-            return IRC::reply($command, $this->getConfigParameter($command['channel'], 'messages.notPlaying'));
+            return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.notPlaying'));
 
-        $this->finishGameIfNecessary($command['channel']);
+        $this->finishGameIfNecessary($ev->channel);
     }
 
     /**

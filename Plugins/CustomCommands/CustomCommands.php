@@ -4,6 +4,8 @@ namespace HedgeBot\Plugins\CustomCommands;
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\Events\ServerEvent;
+use HedgeBot\Core\Events\CommandEvent;
 
 class CustomCommands extends Plugin
 {
@@ -15,55 +17,57 @@ class CustomCommands extends Plugin
 			$this->commands = $this->data->commands->toArray();
 	}
 
-	public function ServerPrivmsg($cmd)
+	public function ServerPrivmsg(ServerEvent $ev)
 	{
-		$message = $cmd['message'];
+		$message = $ev->message;
 		if($message[0] == '!')
 		{
 			$message = explode(' ', $message);
 			$command = substr($message[0], 1);
 
-			if(isset($this->commands[$cmd['channel']][$command]))
-				return IRC::message($cmd['channel'], $this->commands[$cmd['channel']][$command]);
+			if(isset($this->commands[$ev->channel][$command]))
+				return IRC::message($ev->channel, $this->commands[$ev->channel][$command]);
 		}
 	}
 
-	public function CommandAddCommand($param, $args)
+	public function CommandAddCommand(CommandEvent $ev)
 	{
-		if(!$param['moderator'])
+		if(!$ev->moderator)
 			return;
 
+		$args = $ev->arguments;
 		if(count($args) < 2)
-			return IRC::message($param['channel'], "Insufficient parameters.");
+			return IRC::message($ev->channel, "Insufficient parameters.");
 
 		$newCommand = array_shift($args);
 		$newCommand = $newCommand[0] == '!' ? substr($newCommand, 1) : $newCommand;
 		$message = join(' ', $args);
 
-		if(!empty($this->commands[$param['channel']][$newCommand]))
-			return IRC::message($param['channel'], "A command with this name already exists. Try again.");
+		if(!empty($this->commands[$ev->channel][$newCommand]))
+			return IRC::message($ev->channel, "A command with this name already exists. Try again.");
 
-		$this->commands[$param['channel']][$newCommand] = $message;
+		$this->commands[$ev->channel][$newCommand] = $message;
 		$this->data->set('commands', $this->commands);
-		return IRC::message($param['channel'], "New message for command !". $newCommand. " registered.");
+		return IRC::message($ev->channel, "New message for command !". $newCommand. " registered.");
 	}
 
-	public function CommandRmCommand($param, $args)
+	public function CommandRmCommand(CommandEvent $ev)
 	{
-		if(!$param['moderator'])
+		if(!$ev->moderator)
 			return;
 
+		$args = $ev->arguments;
 		if(count($args) == 0)
-			return IRC::message($param['channel'], "Insufficient parameters.");
+			return IRC::message($ev->channel, "Insufficient parameters.");
 
 		$deletedCommand = array_shift($args);
 		$deletedCommand = $deletedCommand[0] == '!' ? substr($deletedCommand, 1) : $deletedCommand;
 
-		if(empty($this->commands[$param['channel']][$deletedCommand]))
-			return IRC::message($param['channel'], "This command does not exist. Try again.");
+		if(empty($this->commands[$ev->channel][$deletedCommand]))
+			return IRC::message($ev->channel, "This command does not exist. Try again.");
 
-		unset($this->commands[$param['channel']][$deletedCommand]);
+		unset($this->commands[$ev->channel][$deletedCommand]);
 		$this->data->set('commands', $this->commands);
-		return IRC::message($param['channel'], "Command deleted.");
+		return IRC::message($ev->channel, "Command deleted.");
 	}
 }
