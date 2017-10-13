@@ -158,7 +158,7 @@ class FileProvider extends Provider
                         break;
                     }
                     else
-                        $flatArray .= $name.'['.$k.']='. $v."\n";
+                        $flatArray .= $name.'['.$k.']='. $this->escapeValue($v)."\n";
                 }
 
                 if($isNumeric)
@@ -483,5 +483,22 @@ class FileProvider extends Provider
         }
 
         return $empty;
+    }
+
+    /**
+     * Escapes values to store them safely in the file.
+     * @param  mixed  $value The value to escape
+     * @return string        The escaped value
+     */
+    private function escapeValue($value)
+    {
+        // Convert int to string
+        if(is_numeric($value))
+            return (string) $value;
+
+        if(is_string($value))
+            return '"'. str_replace('"', '\\"', $value). '"';
+
+        return $value;
     }
 }

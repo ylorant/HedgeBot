@@ -394,22 +394,19 @@ class IRCConnection
 
 	public function parseMsg($message)
 	{
+		$message = trim($message);
 		$raw = $message;
 		$msg = '';
 		$channel = "";
 		$nick = "";
 		$moderator = false;
-		$command = explode(':', trim($message), 3);
-
-		if(trim($command[0]) == 'PING')
-			return array('command' => 'PING', 'additionnal' => $command[1]);
-
-
 		$membership = array();
 
-		if(!empty($command[0]) && $command[0][0] == "@")
+		if($message[0] == "@")
 		{
-			$membershipData = explode(';', substr($command[0], 1));
+			$messageParts = explode(' :', $message, 2);
+			$message = ':'. $messageParts[1];
+			$membershipData = explode(';', substr($messageParts[0], 1));
 
 			foreach ($membershipData as $data)
 			{
@@ -434,9 +431,15 @@ class IRCConnection
 			}
 		}
 
+
+		$command = explode(':', $message, 3);
+
+		if(trim($command[0]) == 'PING')
+			return array('command' => 'PING', 'additionnal' => $command[1]);
+
 		if(isset($command[2]))
 			$msg = $command[2];
-
+		
 		$cmd = explode(' ', $command[1], 4);
 		$user = explode('!', $cmd[0]);
 		if(isset($user[1]))
@@ -449,7 +452,6 @@ class IRCConnection
 
 		// Removing case for nickname, since Twitch doesn't care about case
 		$nick = strtolower($nick);
-
 		$command = $cmd[1];
 		if(isset($cmd[2]))
 			$channel = substr($cmd[2], 1); // Remove the # from the channel name
