@@ -1,7 +1,7 @@
 <?php
 namespace HedgeBot\Documentor;
 
-use HedgeBot\Core\HedgeBot;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * User documentation generator for Hedgebot.
@@ -15,20 +15,24 @@ class Documentor
 
 	private $outputDir;
 	private $pluginDocs = [];
+	private $output;
 
 	/**
 	 * Constructs a documentor.
 	 * @constructor
 	 */
-	public function __construct()
+	public function __construct(OutputInterface $output)
 	{
 		$this->outputDir = self::DEFAULT_OUTPUT_DIRECTORY;
+		$this->output = $output;
 	}
 
 	public function setOutputDirectory($outputDirectory)
 	{
-		if(!is_dir($outputDirectory) && !)
+		if(!is_dir($outputDirectory) && !mkdir($outputDirectory))
 			throw new Exception('Output directory does not exist and is not creatable');
+
+		$this->outputDir = $outputDirectory;
 	}
 
 	/**
@@ -36,39 +40,39 @@ class Documentor
 	 */
 	public function generate()
 	{
-        HedgeBot::message("HedgeBot plugin doc generator.", null, E_DEBUG);
+        $this->output->writeln("HedgeBot plugin doc generator.");
 
 		// List all plugins
 		$pluginList = scandir(self::PLUGINS_DIRECTORY);
 		$pluginList = array_diff($pluginList, ['.', '..']); // Remove self and parent dir ref
 
-		HedgeBot::message("Discovering plugins...", null, E_DEBUG);
+		$this->output->writeln("Discovering plugins...");
 		foreach($pluginList as $pluginDir)
 		{
             $pluginPath = self::PLUGINS_DIRECTORY. DIRECTORY_SEPARATOR. $pluginDir;
             if(is_dir($pluginPath))
             {
-            	HedgeBot::message("\tDiscovered plugin $0", [$pluginDir], E_DEBUG);
+            	$this->output->writeln("\tDiscovered plugin ". $pluginDir);
             	$this->pluginDocs[] = new PluginDoc($pluginPath);
             }
 		}
 
-		HedgeBot::message('Plugins found: $0', count($this->pluginDocs), E_DEBUG);
+		$this->output->writeln('Plugins found: '. count($this->pluginDocs));
 
-		HedgeBot::message("Reading plugins' config...", null, E_DEBUG);
+		$this->output->writeln("Reading plugins' config...");
 		$this->executePluginDocsFunction('readPluginConfig');
 
-		HedgeBot::message("Reading plugins' general doc...", null, E_DEBUG);
+		$this->output->writeln("Reading plugins' general doc...");
 		$this->executePluginDocsFunction('reflectPlugin');
 
-		HedgeBot::message("Reading plugins' commands...", null, E_DEBUG);
+		$this->output->writeln("Reading plugins' commands...");
 		$this->executePluginDocsFunction('readPluginCommands');
 
-		HedgeBot::message("Writing docs markdown...");
+		$this->output->writeln("Writing docs markdown...");
 		$writeStatus = $this->writeDocs();
 
 		if(!$writeStatus)
-		    HedgeBot::message("Markdown generation failed.", null, E_ERROR);
+		    $this->output->writeln("Markdown generation failed.");
 	}
 
     private function writeDocs()
@@ -81,7 +85,7 @@ class Documentor
 
         foreach($this->pluginDocs as $plugin)
         {
-            HedgeBot::message("\t$0...", [$plugin->getName()], E_DEBUG);
+            $this->output->writeln("\t". $plugin->getName(). "...");
             $filename = $this->outputDir. DIRECTORY_SEPARATOR. $plugin->getName(). ".md";
             $doc = (string) $plugin;
 
@@ -106,7 +110,7 @@ class Documentor
 
         foreach($this->pluginDocs as $plugin)
         {
-            HedgeBot::message("\t$0...", [$plugin->getName()], E_DEBUG);
+            $this->output->writeln("\t". $plugin->getName(). "...");
             $plugin->$methodName(...$params);
         }
     }

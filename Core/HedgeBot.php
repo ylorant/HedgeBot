@@ -7,18 +7,21 @@ use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Config;
 use HedgeBot\Core\API\Plugin;
+use HedgeBot\Core\API\Security;
 use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\Server\ServerInstance;
-use HedgeBot\Core\Data\FileProvider;
+use HedgeBot\Core\Server\CoreEvents;
+use HedgeBot\Core\Data\IniFileProvider;
 use HedgeBot\Core\Data\Provider;
 use HedgeBot\Core\Data\ObjectAccess;
-use HedgeBot\Core\Server\CoreEvents;
 use HedgeBot\Core\Twitch\Kraken;
 use HedgeBot\Core\Tikal\Server as TikalServer;
 use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\PluginEndpoint as TikalPluginEndpoint;
+
+define('E_DEBUG', 32768);
 
 class HedgeBot
 {
@@ -63,7 +66,7 @@ class HedgeBot
 
 		// Bootstrapping storages consists of loading the config and data storage configuration from
 		// config files in the given configuration directory.
-		$fileProvider = new FileProvider();
+		$fileProvider = new IniFileProvider();
 		$this->config = new ObjectAccess($fileProvider);
 		$connected = $fileProvider->connect($configDir);
 

@@ -8,3 +8,4 @@ data/*.ini
 data/*/*.ini
 doc/*
 *.log
+vendor
