@@ -2,7 +2,7 @@
 namespace HedgeBot\Core\Plugins;
 
 use HedgeBot\Core\HedgeBot;
-use HedgeBot\Core\Data\FileProvider;
+use HedgeBot\Core\Data\IniFileProvider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\API\Server;
 use HedgeBot\Core\Events\EventManager;
@@ -286,7 +286,7 @@ class PluginManager extends EventManager
 		if(!isset($this->_pluginsDefinition[$name]))
 		{
 			$pluginDirectory = $this->pluginsDirectory. '/'. $name. '/';
-			$pluginConfig = new FileProvider();
+			$pluginConfig = new IniFileProvider();
 			$pluginConfig->readonly = true; // Ensure that we don't try to save the plugin definition.
 			$config = new ObjectAccess($pluginConfig);
 			$pluginConfig->connect($pluginDirectory);

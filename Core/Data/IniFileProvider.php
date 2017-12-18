@@ -9,7 +9,7 @@ use RecursiveIteratorIterator;
 
 /** Use the first 2 section names as subdirectory/file name for the config. */
 
-class FileProvider extends Provider
+class IniFileProvider extends Provider
 {
     private $dataDirectory; // Root storage directory
     private $fileLastModification; // Files last modification times, for updating
@@ -17,7 +17,7 @@ class FileProvider extends Provider
 
     private $data; // Data storage
 
-    const STORAGE_NAME = "file";
+    const STORAGE_NAME = "ini";
 
 	/** Loads data from INI formatted files into a directory, recursively.
 	 * This function loads data from all .ini files in the given folder. It also loads the data found in all its sub-directories.
@@ -271,7 +271,7 @@ class FileProvider extends Provider
                 {
                     $updated = true;
                     $data = $this->loadFile($dir.'/'.$file);
-                    $this->data = array_merge($this->data, $data);
+                    $this->data = array_replace_recursive($this->data, $data);
                     $this->fileLastModification[$dir.'/'.$file] = filemtime($dir.'/'.$file);
                 }
             }
@@ -384,7 +384,7 @@ class FileProvider extends Provider
         else
             $location = $parameters;
 
-        HedgeBot::message('Connecting to file storage at directory "$0"', array($location), E_DEBUG);
+        HedgeBot::message('Connecting to INI file storage at directory "$0"', array($location), E_DEBUG);
 
         if(substr($location, -1) == '/')
 			$location = substr($location, 0, -1);

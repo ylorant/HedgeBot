@@ -11,7 +11,7 @@ class CoreEvent extends Event
      * @param       array  $data    The event data. It will be expanded into properties, so they'll be available at
      *                                $event->key = value.
      */
-    public function __construct($eventName, $data)
+    public function __construct($eventName, $data = [])
     {
         parent::__construct($eventName);
 
