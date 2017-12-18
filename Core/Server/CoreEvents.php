@@ -2,6 +2,7 @@
 namespace HedgeBot\Core\Server;
 
 use HedgeBot\Core\API\Server;
+use HedgeBot\Core\API\Security;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\ServerList;
@@ -175,5 +176,30 @@ class CoreEvents
 	{
 		if(!$ev->moderator)
 			HedgeBot::message("HedgeBot isn't currently a moderator. Moderator rights may be needed to perform some operations.", NULL, E_WARNING);
+	}
+
+	public function ServerMessage(ServerEvent $ev)
+	{
+		// Parsing the message in search for a command
+		$message = explode(' ', $ev->message);
+		if(strlen($message[0]))
+		{
+			if($message[0][0] == ":")
+				$message[0] = substr($message[0], 1);
+
+			if($message[0][0] == '!')
+			{
+				// Generating right name from command and checking it
+				$cmdName = substr(array_shift($message), 1);
+				$rightName = "command/". strtolower($cmdName);
+
+				// If the user doesn't have the right to the command, then we stop the propagation of it.
+				if(!Security::hasRight($ev->nick, $rightName))
+				{
+					HedgeBot::message("Access denied to right 'command/$0' for user '$1'", [strtolower($cmdName), $ev->nick], E_DEBUG);
+					$ev->stopPropagation();
+				}
+			}
+		}
 	}
 }

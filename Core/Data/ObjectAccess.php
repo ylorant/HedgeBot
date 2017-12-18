@@ -55,7 +55,7 @@ class ObjectAccess
         $path = trim($path, '.');
         $val = $this->provider->get($path);
 
-        if(is_array($val))
+        if(is_null($val) || is_array($val))
             return new ObjectAccess($this->provider, $path);
         else
             return $val;
@@ -114,6 +114,15 @@ class ObjectAccess
     {
         $path = trim($this->currentPath.'.'.$name, '.');
         return $this->provider->set($path, $value);
+    }
+
+    /**
+     * Gets the underlying provider.
+     * @return Provider The provider
+     */
+    public function getProvider()
+    {
+        return $this->provider;
     }
 
     /**

@@ -16,6 +16,7 @@ use HedgeBot\Core\Server\CoreEvents;
 use HedgeBot\Core\Data\IniFileProvider;
 use HedgeBot\Core\Data\Provider;
 use HedgeBot\Core\Data\ObjectAccess;
+use HedgeBot\Core\Security\AccessControlManager;
 use HedgeBot\Core\Twitch\Kraken;
 use HedgeBot\Core\Tikal\Server as TikalServer;
 use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
@@ -33,6 +34,7 @@ class HedgeBot
 	public $plugins;
 	public $initialized;
 	public $tikalServer;
+	public $accessControl;
 
 	private $run;
 
@@ -93,6 +95,10 @@ class HedgeBot
 		// Setting verbosity
 		if(HedgeBot::$verbose == 1 && !empty($this->config->general->verbosity))
 			HedgeBot::$verbose = $this->config->general->verbosity;
+
+		// Initializing access control manager
+		$this->accessControl = new AccessControlManager($this->data->getProvider());
+		Security::setObject($this->accessControl);
 
 		// Initializing Twitch API connector
 		HedgeBot::message("Discovering available Twitch services...", null, E_DEBUG);
