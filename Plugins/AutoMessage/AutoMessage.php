@@ -65,7 +65,7 @@ class AutoMessage extends PluginBase
 
     public function CoreEventConfigUpdate(CoreEvent $ev)
     {
-		$this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
+		$this->config = HedgeBot::getInstance()->config->get('plugin.AutoMessage');
 		$this->reloadConfig();
     }
 

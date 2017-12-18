@@ -34,8 +34,8 @@ class Counter extends PluginBase
 
 	public function CommandAddCounter(CommandEvent $ev)
 	{
-		// if(!$ev->moderator)
-			// return;
+		if(!$ev->moderator)
+			return;
 
 		$args = $ev->arguments;
 		if(count($args) < 2)

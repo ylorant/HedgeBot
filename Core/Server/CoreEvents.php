@@ -29,17 +29,20 @@ class CoreEvents
 
 		// Server commands the bot is supposed to answer to
 		// TODO: Use autoloading question mark ?
-		$events->addEvent(ServerEvent::getType(), 'coreevents', '001', array($this, 'ServerConnected'));
-		$events->addEvent(ServerEvent::getType(), 'coreevents', 'kick', array($this, 'ServerKick'));
-		$events->addEvent(ServerEvent::getType(), 'coreevents', 'ping', array($this, 'ServerPing'));
-		$events->addEvent(ServerEvent::getType(), 'coreevents', '353', array($this, 'ServerNamesReply'));
-		$events->addEvent(ServerEvent::getType(), 'coreevents', '366', array($this, 'ServerEndOfNames'));
-		$events->addEvent(ServerEvent::getType(), 'coreevents', 'mode', array($this, 'ServerMode'));
-		$events->addEvent(ServerEvent::getType(), 'coreevents', 'join', array($this, 'ServerJoin'));
-		$events->addEvent(ServerEvent::getType(), 'coreevents', 'part', array($this, 'ServerPart'));
+		$events->addEvent(ServerEvent::getType(), 'coreevents', '001', [$this, 'ServerConnected']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'kick', [$this, 'ServerKick']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'ping', [$this, 'ServerPing']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', '353', [$this, 'ServerNamesReply']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', '366', [$this, 'ServerEndOfNames']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'mode', [$this, 'ServerMode']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'join', [$this, 'ServerJoin']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'part', [$this, 'ServerPart']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'privmsg', [$this, 'ServerMessage']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'notice', [$this, 'ServerMessage']);
+		$events->addEvent(ServerEvent::getType(), 'coreevents', 'whisper', [$this, 'ServerMessage']);
 
 		// Core events
-		$events->addEvent(CoreEvent::getType(), 'coreevents', 'ServerMessage', array($this, 'CoreEventServerMessage'));
+		$events->addEvent(CoreEvent::getType(), 'coreevents', 'ServerMessage', [$this, 'CoreEventServerMessage']);
 
 		// Routines
 		$events->addRoutine($this, 'RoutinePingServer', 60);
