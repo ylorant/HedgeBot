@@ -37,7 +37,7 @@ class CreateRoleCommand extends SecurityCommand
 
         if(!empty($idOption))
         {
-            if(!preg_match('#^[a-z0-9_]$#', $idOption))
+            if(!SecurityRole::checkId($idOption))
                 throw new InvalidArgumentException("Role ID syntax is invalid.");
             
             $roleId = $idOption;
@@ -53,17 +53,17 @@ class CreateRoleCommand extends SecurityCommand
                 throw new InvalidArgumentException("Parent role ID '". $parentRole. "' doesn't exist.");
         }
 
+        $newRole = new SecurityRole($roleId);
+        $newRole->setName($roleName);
+
+        if(!empty($parentRole))
+            $newRole->setParent($parentRole);
+
         // Create the role
-        $roleCreated = $accessControlManager->createRole($roleId, $roleName);
+        $roleCreated = $accessControlManager->addRole($newRole);
         
         if(!$roleCreated)
             throw new RuntimeException("Unable to create role: ID '". $roleId. "' already exists.");
-        
-        if(!empty($parentRole))
-        {
-            $newRole = $accessControlManager->getRole($roleId);
-            $newRole->setParent($parentRole);
-        }
         
         $accessControlManager->saveToStorage();
         $output->writeln("New role ID: ". $roleId);

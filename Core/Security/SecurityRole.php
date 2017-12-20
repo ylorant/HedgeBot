@@ -3,6 +3,7 @@ namespace HedgeBot\Core\Security;
 
 use HedgeBot\Core\Security\SecurityRole;
 use HedgeBot\Core\API\Security;
+use InvalidArgumentException;
 
 /**
  * Security Role container. Holds all the data related to a role in the security system.
@@ -31,10 +32,16 @@ class SecurityRole
      * Constructor.
      * 
      * @constructor
-     * @param       string $name The role name.
+     * @param       string $id The role ID.
+     * 
+     * @throws InvalidArgumentException
      */
     public function __construct($id)
     {
+        // Check if the given role id is a valid id or the role doesn't already exist
+        if(!self::checkId($id))
+            throw new InvalidArgumentException("Role ID is invalid");
+
         $this->id = $id;
         $this->rights = [];
         $this->parent = null;
@@ -256,5 +263,10 @@ class SecurityRole
             return null;
 
         return $text;
+    }
+
+    public static function checkId($id)
+    {
+        return preg_match('#^[a-z0-9_]+$#', $id);
     }
 }

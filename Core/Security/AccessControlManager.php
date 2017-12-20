@@ -91,24 +91,17 @@ class AccessControlManager
     }
 
     /**
-     * Creates a role.
+     * Adds a role to the access control manager.
      *
-     * @param  string  $roleId   The role ID. Has to be unique.
-     * @param  string  $roleName The role name.
-     * @return boolean           True if the role has been created, False if not (the role already exists, or the given ID is incorrect).
+     * @param  SecurityRole $role The role to add.
+     * @return boolean            True if the role has been created, False if not (the role already exists).
      */
-    public function createRole($roleId, $roleName = null)
+    public function addRole(SecurityRole $role)
     {
-        if(empty($roleName))
-            $roleName = $roleId;
-
-        // Check if the given role id is a valid id or the role doesn't already exist
-        if(!preg_match('#^[a-z0-9_]+$#', $roleId) || isset($this->roleList[$roleId]))
+        if(isset($this->roleList[$role->getId()]))
             return false;
         
-        $newRole = new SecurityRole($roleId);
-        $newRole->setName($roleName);
-        $this->roleList[$roleId] = $newRole;
+        $this->roleList[$role->getId()] = $role;
 
         return true;
     }
@@ -202,22 +195,6 @@ class AccessControlManager
             $this->userList[$user] = [];
         
         return true;
-    }
-    
-    /** 
-     * Mark or unmarks the role as a default role that will be applied to all users.
-     * 
-     * @param string $roleId The role ID.
-     * @param bool $default True to set the role as a default role, false to unset it.
-     * @return bool True if the role has been set to default successfully, false otherwise.
-     */
-    public function setRoleDefault($roleId, $default = true)
-    {
-        $role = $this->getRole($roleId);
-        if(empty($role))
-            return false;
-        
-        $role->setDefault($default);
     }
 
     /**
