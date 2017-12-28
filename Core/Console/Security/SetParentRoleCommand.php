@@ -37,6 +37,9 @@ class SetParentRoleCommand extends SecurityCommand
         if(empty($role) || empty($parentRole))
             throw new InvalidArgumentException("Unable to load role '". (empty($roleId) ? $roleId : $parentRoleId). "': role does not exist.");
         
+        if($accessControlManager->rolesHaveRelation($role, $parentRole))
+            throw new InvalidArgumentException("Unable to set parent of '". $roleId. "' to '". $parentRoleId."': Roles already have a parent/child relation.");
+        
         $role->setParent($parentRole);
         $accessControlManager->saveToStorage();
     }

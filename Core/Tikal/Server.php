@@ -36,8 +36,8 @@ class Server
 
         $this->baseUrl = $config->baseUrl ? $config->baseUrl : '/';
         $this->token = $config->token;
-        $this->tokenlessMode = $config->tokenless ? $config->tokenless : false;
-
+        $this->tokenlessMode = isset($config->tokenless) ? $config->tokenless : false;
+        
         if($this->tokenlessMode)
             HedgeBot::message("Token-less mode is insecure! We advise you to use a token unless you know what you're doing !", null, E_WARNING);
 
@@ -216,6 +216,8 @@ class Server
         if($this->hasEndpoint($endpoint))
             return false;
 
+        HedgeBot::message("Adding Tikal endpoint '" . $endpoint. "' on class ". get_class($class));
+        
         $this->endpoints[$endpoint] = $class;
 
         return true;

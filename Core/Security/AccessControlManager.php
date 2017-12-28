@@ -232,6 +232,66 @@ class AccessControlManager
     }
 
     /**
+     * Check if the 2 given roles are in a relation one to each other (one is already in the parent/children chain to another).
+     * 
+     * @param SecurityRole $role1 The first role.
+     * @param SecurityRole $role2 The second role.
+     * 
+     * @return bool True if the roles have a relation in common, false otherwise.
+     */
+    public function rolesHaveRelation(SecurityRole $role1, SecurityRole $role2)
+    {
+        $tmpRole = $role1;
+
+        do
+        {
+            if($tmpRole->getId() == $role2->getId())
+                return true;
+            
+            $tmpRole = $tmpRole->getParent();
+        } while($tmpRole != null);
+
+        $tmpRole = $role2;
+
+        do
+        {
+            if($tmpRole->getId() == $role1->getId())
+                return true;
+            
+            $tmpRole = $tmpRole->getParent();
+        } while($tmpRole != null);
+
+        return false;
+    }
+
+    /**
+     * Gets the role relationship complete tree.
+     * 
+     * @return array The hierarchy of roles, with each role as a SecurityRole object.
+     */
+    public function getRoleTree()
+    {
+        // This anonymous function fills a branch
+        $fillBranchFunc = function($base) use(&$fillBranchFunc)
+        {
+            $branch = [];
+
+            foreach($this->roleList as $role)
+            {
+                if(is_null($base) && is_null($role->getParent()) || !is_null($role->getParent()) && $role->getParent()->getId() == $base)
+                    $branch[] = [
+                        'role' => $role,
+                        'children' => $fillBranchFunc($role->getId())
+                    ];
+            }
+
+            return $branch;
+        };
+        
+          return $fillBranchFunc(null);  
+    }
+
+    /**
      * Gets the roles from an user
      * @param  string     $user The username to get the roles of.
      * @return array|null       An array containing the roles of the user, or NULL if the user hasn't been found.
