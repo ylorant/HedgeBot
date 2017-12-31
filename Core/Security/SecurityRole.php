@@ -131,6 +131,17 @@ class SecurityRole
     }
 
     /**
+     * Gets the inherited rights of this role.
+     */
+    public function getInheritedRights()
+    {
+        if(empty($this->parent))
+            return [];
+        
+        return array_merge($this->parent->getRights(), $this->parent->getInheritedRights());
+    }
+
+    /**
      * Adds a right to the role.
      *
      * @param string $right   The right name.

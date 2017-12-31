@@ -298,13 +298,10 @@ class AccessControlManager
      */
     public function getUserRoles($user)
     {
-        foreach($this->userList as $userName => $userRoles)
-        {
-            if($userName == $user)
-                return $userRoles;
-        }
+        if(!isset($this->userList[$user]))
+            return null;
 
-        return null;
+        return $this->userList[$user];
     }
 
     /**
@@ -335,6 +332,18 @@ class AccessControlManager
         return $this->roleList;
     }
 
+    public function getRoleUsers($roleId)
+    {
+        $users = [];
+        foreach($this->userList as $user => $userRoles)
+        {
+            if(in_array($roleId, $userRoles))
+                $users[] = $user;
+        }
+
+        return $users;
+    }
+    
     /**
      * Gets the list of registered users.
      * @return array The user list.

@@ -16,7 +16,8 @@ class SetParentRoleCommand extends SecurityCommand
         $this->setName('security:role-set-parent')
             ->setDescription('Sets the parent role for a role. The two roles must already exist.')
             ->addArgument('roleId', InputArgument::REQUIRED, 'The ID of the role to set the parent of.')
-            ->addArgument('parentRoleId', InputArgument::REQUIRED, 'The ID of the parent role to set.');
+            ->addArgument('parentRoleId', InputArgument::OPTIONAL, 'The ID of the parent role to set.')
+            ->addOption('delete', 'd', InputOption::VALUE_NONE);
 
         // Adding default arguments for security commands
         parent::configure();
@@ -29,16 +30,26 @@ class SetParentRoleCommand extends SecurityCommand
         
         $roleId = $input->getArgument('roleId');
         $parentRoleId = $input->getArgument('parentRoleId');
+        $deleteParent = $input->getOption('delete');
 
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         $role = $accessControlManager->getRole($roleId);
-        $parentRole = $accessControlManager->getRole($parentRoleId);
+        $parentRole = null;
 
-        if(empty($role) || empty($parentRole))
-            throw new InvalidArgumentException("Unable to load role '". (empty($roleId) ? $roleId : $parentRoleId). "': role does not exist.");
+        if(empty($role))
+            throw new InvalidArgumentException("Unable to load role '". $roleId. "': role does not exist.");
         
-        if($accessControlManager->rolesHaveRelation($role, $parentRole))
-            throw new InvalidArgumentException("Unable to set parent of '". $roleId. "' to '". $parentRoleId."': Roles already have a parent/child relation.");
+        if(!$deleteParent)
+        {
+            $parentRole = $accessControlManager->getRole($parentRoleId);
+            if(empty($parentRole))
+                throw new InvalidArgumentException("Unable to load role '". $parentRoleId. "': role does not exist.");
+            
+            if($accessControlManager->rolesHaveRelation($role, $parentRole))
+                throw new InvalidArgumentException("Unable to set parent of '". $roleId. "' to '". $parentRoleId."': Roles already have a parent/child relation.");
+        }
+
+        
         
         $role->setParent($parentRole);
         $accessControlManager->saveToStorage();

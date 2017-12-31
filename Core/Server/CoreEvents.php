@@ -44,6 +44,7 @@ class CoreEvents
 
 		// Core events
 		$events->addEvent(CoreEvent::getType(), 'coreevents', 'ServerMessage', [$this, 'CoreEventServerMessage']);
+		$events->addEvent(CoreEvent::getType(), 'coreevents', 'DataUpdate', [$this, 'CoreEventDataUpdate']);
 
 		// Routines
 		$events->addRoutine($this, 'RoutinePingServer', 60);
@@ -102,6 +103,12 @@ class CoreEvents
 	{
 		$serverName = Server::getName();
 		$this->lastMessages[$serverName] = time();
+	}
+
+	public function CoreEventDataUpdate(CoreEvent $ev)
+	{
+		HedgeBot::message("Reloading access control lists...");
+		Security::refreshFromStorage();
 	}
 
 	public function ServerConnected(ServerEvent $ev)

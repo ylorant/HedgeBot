@@ -20,6 +20,28 @@ class SecurityEndpoint
         
         return $roleList;
     }
+    
+    /** 
+     * Gets information about a specific role. It will also return the users that have this role.
+     * 
+     * @param string $roleId The ID of the role.
+     * 
+     * @return array|null The role data, or null if the role hasn't been found.
+     */
+    public function getRole($roleId)
+    {
+        $role = Security::getRole($roleId);
+        if(!$role)
+            return null;
+        
+        $inheritedRights = $role->getInheritedRights();
+
+        $role = $role->toArray();
+        $role['users'] = Security::getRoleUsers($roleId);
+        $role['inheritedRights'] = $inheritedRights;
+
+        return $role;
+    }
 
     /**
      * Saves a role into the security system.
@@ -69,6 +91,13 @@ class SecurityEndpoint
         Security::saveToStorage();
     }
 
+    /**
+     * Gets the tree hierarchy of the roles registered into the bot.
+     * 
+     * @return array The role tree as a recursive array. Each leaf has 2 keys:
+     *               - role: The role ID
+     *               - children: The role children
+     */
     public function getRoleTree()
     {
         $roleTree = Security::getRoleTree();
@@ -87,5 +116,15 @@ class SecurityEndpoint
         $simplifyRoleTree($roleTree);
 
         return $roleTree;
+    }
+
+    /**
+     * Gets the registered users in the bot.
+     * 
+     * @return array The user list as an array with the username as key, and its roles as the value.
+     */
+    public function getUsers()
+    {
+        return Security::getUserList();
     }
 }
