@@ -14,9 +14,10 @@ use HedgeBot\Core\API\Security;
  * - User has n Roles
  * - Roles have parents
  * - Roles define their access to rights.
- * - Rights have a namespace (doesn't have to be represented
- *   in code from the access manager)
+ * - Rights have a namespace
  * - For commands, rights are "command/<commandname>"
+ * - Plugins and other parts can notice the existence of the rights
+ *   they create to the access control manager for easier listing by APIs.
  * - Other rights types can be dissociated from commands
  * - Then, modifiers are applied.
  */
@@ -24,6 +25,7 @@ class AccessControlManager
 {
     protected $roleList;
     protected $userList;
+    protected $rightList;
 
     protected $dataProvider;
 
@@ -37,6 +39,7 @@ class AccessControlManager
     {
         $this->roleList = [];
         $this->userList = [];
+        $this->rightList = [];
 
         $this->dataProvider = $dataProvider;
 
@@ -198,6 +201,28 @@ class AccessControlManager
     }
 
     /**
+     * Replaces users by the new ones.
+     * 
+     * @param string $roleId The role ID.
+     * @param array $users The new users.
+     */
+    public function replaceUsers($roleId, $newUsers)
+    {
+        // Remove the role from all the users
+        foreach ($this->userList as $user => $roles)
+        {
+            if(($key = array_search($roleId, $roles)) !== false)
+                unset($roles[$key]);
+        }
+
+        // Reinsert the role into the new users
+        foreach ($newUsers as $user)
+            $this->assignRole($user, $roleId);
+
+        return true;
+    }
+
+    /**
      * Checks if an user has access to a specific right.
      *
      * @param $user string The user to check.
@@ -229,6 +254,47 @@ class AccessControlManager
 
         // No role allows the right
         return false;
+    }
+
+    /**
+     * Adds a right to the right list.
+     * 
+     * @param string $rightNames The name of the right to add. Variadic.
+     */
+    public function addRights(...$rightNames)
+    {
+        foreach($rightNames as $rightName)
+        {
+            if(!in_array($rightName, $this->rightList))
+                $this->rightList[] = $rightName;
+        }
+        
+        $this->rightList = array_values($this->rightList); // Re-index the right list
+    }
+
+    /** 
+     * Removes a right from the right list.
+     * 
+     * @param string $rightName The name of the right to remove.
+     */
+    public function removeRights(...$rightNames)
+    {
+        foreach($rightNames as $rightNames)
+        {
+            $rightKey = array_search($rightNames, $this->rightList);
+            if($rightKey !== false)
+                unset($this->rightList[$rightKey]);
+        }
+        
+        $this->rightList = array_values($this->rightList); // Re-index the right list
+    }
+
+    /**
+     * Gets the right list.
+     */
+    public function getRightList()
+    {
+        return $this->rightList;
     }
 
     /**
@@ -278,7 +344,7 @@ class AccessControlManager
 
             foreach($this->roleList as $role)
             {
-                if(is_null($base) && is_null($role->getParent()) || !is_null($role->getParent()) && $role->getParent()->getId() == $base)
+                if($base === $role->getParent() || !is_null($role->getParent()) && $role->getParent()->getId() == $base)
                     $branch[] = [
                         'role' => $role,
                         'children' => $fillBranchFunc($role->getId())

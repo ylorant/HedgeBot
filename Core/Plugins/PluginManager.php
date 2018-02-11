@@ -12,6 +12,7 @@ use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\Events\TimeoutEvent;
 use ReflectionClass;
 use ReflectionMethod;
+use HedgeBot\Core\API\Security;
 
 class PluginManager extends EventManager
 {
@@ -68,7 +69,7 @@ class PluginManager extends EventManager
 				$return = $this->loadPlugin($plugin, $manual);
 				if($return !== FALSE)
 					$loadedPlugins[] = $plugin;
-				else
+				elseif(!$manual)
 					return FALSE;
 			}
 		}
@@ -129,17 +130,24 @@ class PluginManager extends EventManager
 		$pluginObj = new $className($config->defaultSettings->toArray());
 
 		HedgeBot::message('Autoloading events for $0...', array($plugin));
-		$this->autoload($pluginObj);
-		$ret = $pluginObj->init();
+		$autoloadedEvents = $this->autoload($pluginObj);
 
-		if($ret === FALSE)
+		// Register new commands into the security system
+		foreach($autoloadedEvents as $event)
 		{
-			HedgeBot::message('Could not load plugin $0', array($plugin));
-			unset($this->_plugins[$plugin]);
-			return FALSE;
+			if($event['listener'] == CommandEvent::getType())
+				Security::addRights($event['listener']. '/'. $event['event']);
 		}
 
 		$this->_plugins[$plugin] = $pluginObj;
+		$ret = $pluginObj->init();
+		
+		if($ret === FALSE)
+		{
+			HedgeBot::message('Could not load plugin $0', array($plugin));
+			$this->unloadPlugin($plugin);
+			return FALSE;
+		}
 
 		if($manual)
 			$this->_manuallyLoadedPlugins[$plugin] = $plugin;
@@ -230,8 +238,20 @@ class PluginManager extends EventManager
 			}
 		}
 
-		// Deleting all the autoloaded events for the plugin
 		$reflectionClass = new ReflectionClass($this->_plugins[$plugin]);
+
+		// Remove all the rights references
+		$pluginEvents = $this->getEventsById($reflectionClass->getName());
+		$rightsToRemove = [];
+		foreach($pluginEvents as $event)
+		{
+			if($event['listener'] == CommandEvent::getType())
+				$rightsToRemove[] = $event['listener']. '/'. $event['event'];
+		}
+
+		Security::removeRights(...$rightsToRemove);
+
+		// Deleting all the autoloaded events for the plugin
 		$this->deleteEventsById($reflectionClass->getName());
 
 		unset($this->_plugins[$plugin]);

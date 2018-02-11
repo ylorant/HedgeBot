@@ -205,11 +205,13 @@ class SecurityRole
      */
     public static function fromArray(array $data)
     {
-        if(!isset($data['id']) || !isset($data['name']))
+        if(!isset($data['id']))
             return null;
 
         $role = new SecurityRole($data['id']);
-        $role->name = $data['name'];
+
+        if(!empty($data['name']))
+            $role->name = $data['name'];
 
         if(!empty($data['rights']))
             $role->rights = $data['rights'];
@@ -276,6 +278,12 @@ class SecurityRole
         return $text;
     }
 
+    /**
+     * Checks if the ID is a valid role ID syntax.
+     * 
+     * @param string $id The ID to check.
+     * @return bool True if the ID is a valid ID, false if not.
+     */
     public static function checkId($id)
     {
         return preg_match('#^[a-z0-9_]+$#', $id);

@@ -46,7 +46,7 @@ class SecurityEndpoint
     /**
      * Saves a role into the security system.
      * 
-     * @param string $roleId   The ID of the role to save.
+     * @param string $roleId   The ID of the role to save. Must already exist. Use createRole() if not.
      * @param object $roleData The data of the role. Refer to the output of the getRoles() method to see the
      *                         expected format.
      * 
@@ -64,8 +64,8 @@ class SecurityEndpoint
             Security::addRole($role);
         }
 
-        // Save the parent role if found. if not found, return false.
-        if(!empty($roleData->parent))
+        // Save the parent role if found and different from the previous one. if not found, return false.
+        if(!empty($roleData->parent) && (empty($role->getParent()) || $roleData->parent != $role->getParent()->getId()))
         {
             $parentRole = Security::getRole($roleData->parent);
             if(empty($parentRole))
@@ -85,10 +85,42 @@ class SecurityEndpoint
         if(isset($roleData->default))
             $role->setDefault($roleData->default);
         
+        // Replace the role rights
         if(!empty($roleData->rights))
             $role->replaceRights((array) $roleData->rights);
         
+        // Save the users
+        if(!empty($roleData->users))
+            Security::replaceUsers($roleId, $roleData->users);
+        
         Security::saveToStorage();
+    }
+
+    /**
+     * Creates a role into the security system.
+     * 
+     * @param  string $roleId The Id of the role to create. Must not already exist, and be syntactically correct.
+     * @return bool True if the role has been created successfully, false if not.
+     *              Usual errors can be: Incorrect role ID syntax, already existing role.
+     */
+    public function createRole($roleId)
+    {
+        $alreadyExistingRole = Security::getRole($roleId);
+        if(!empty($alreadyExistingRole))
+            return false;
+        
+        if(!SecurityRole::checkId($roleId))
+            return false;
+        
+        $newRole = new SecurityRole($roleId);
+        $roleCreated = Security::addRole($newRole);
+        
+        if(!$roleCreated)
+            return false;
+        
+        Security::saveToStorage();
+
+        return true;
     }
 
     /**
@@ -126,5 +158,15 @@ class SecurityEndpoint
     public function getUsers()
     {
         return Security::getUserList();
+    }
+
+    /**
+     * Gets the complete list of all the registered rights into the rights system.
+     * 
+     * @return array The list of rights currently registered in the security management system.
+     */
+    public function getRights()
+    {
+        return Security::getRightList();
     }
 }

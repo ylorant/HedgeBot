@@ -28,6 +28,7 @@ namespace HedgeBot\Core\Events;
 
 use HedgeBot\Core\HedgeBot;
 use ReflectionClass;
+use HedgeBot\Core\API\Security;
 
 /**
  * \brief EventManager class for Hedgebot.
@@ -210,14 +211,15 @@ class EventManager
 	 * This methods tries to register events automatically depending on their methods names, using a defined
 	 * prefix common for the event listener (defined when the listener was created).
 	 *
-	 * \param $object The object to load events from.
+	 * @param object $object The object to load events from.
 	 *
-	 * \return TRUE.
+	 * @return array The list of bound events.
 	 */
 	public function autoload($object)
 	{
 		$reflectionClass = new ReflectionClass($object);
 		$methods = $reflectionClass->getMethods(); //Get all class methods for plugin
+		$addedEvents = [];
 
 		//Analyse all class methods
 		foreach($methods as $method)
@@ -231,39 +233,54 @@ class EventManager
 					$event = Event::normalize(preg_replace('#'.$prefix.'(.+)#', '$1', $methodName));
 					HedgeBot::message('Binding method $0::$1 on event $2/$3', [$reflectionClass->getShortName(), $methodName, $listener, $event], E_DEBUG);
 					$this->addEvent($listener, $reflectionClass->getName(), $event, [$object, $methodName]);
+					$addedEvents[] = [
+						'listener' => $listener, 
+						'event' => $event, 
+						'callback' => [$object, $methodName]
+					];
 				}
 			}
 		}
 
-		return TRUE;
+		return $addedEvents;
+	}
+
+	/** Gets events by their callee ID.
+	 * This method gets all events with a given callee function ID, regardless of its
+	 * listener.
+	 * 
+	 * @param string $id The id to search.
+	 */
+	public function getEventsById($id)
+	{
+		$matchedEvents = [];
+		foreach($this->events as $listenerName => $events)
+		{
+			foreach($events as $eventName => $callbacks)
+			{
+				if(in_array($id, array_keys($callbacks)))
+					$matchedEvents[] = ['listener' => $listenerName, 'event' => $eventName];
+			}
+		}
+
+		return $matchedEvents;
 	}
 
 	/** Deletes events by their callee ID.
 	 * This method deletes all events with a given callee function ID, regardless of its
 	 * listener.
 	 *
-	 * \param $id The id to search and delete from.
+	 * @param string $id The id to search and delete from.
 	 *
-	 * \return NULL.
+	 * @return null
 	 */
 	public function deleteEventsById($id)
 	{
-		$callbacksToDelete = [];
-		foreach($this->events as $listenerName => $events)
-		{
-			foreach($events as $eventName => $callbacks)
-			{
-				foreach($callbacks as $callbackId => $callback)
-				{
-					if($id == $callbackId)
-						$callbacksToDelete[] = array($listenerName, $eventName);
-				}
-			}
-		}
+		$eventsToDelete = $this->getEventsById($id);
 
 		// Delete the events' callbacks
-		foreach($callbacksToDelete as $callback)
-			unset($this->events[$callback[0]][$callback[1]][$id]);
+		foreach($eventsToDelete as $event)
+			unset($this->events[$event['listener']][$event['event']][$id]);
 
 		return null;
 	}

@@ -175,7 +175,7 @@ class Server
 
             $rpcQuery->params = $orderedParams;
         }
-
+        
         $funcResult = $reflectionMethod->invokeArgs($endpointClass, $rpcQuery->params);
 
         // Send result only if this is not a notification, i.e. an ID is given

@@ -13,6 +13,7 @@ class Counter extends PluginBase
 	{
 		if(!empty($this->data->counters))
 			$this->counters = $this->data->counters->toArray();
+		return false;
 	}
 
 	public function ServerPrivmsg(ServerEvent $ev)
