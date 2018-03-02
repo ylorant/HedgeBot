@@ -17,7 +17,7 @@ use HedgeBot\Core\Data\IniFileProvider;
 use HedgeBot\Core\Data\Provider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Security\AccessControlManager;
-use HedgeBot\Core\Twitch\Kraken;
+use HedgeBot\Core\Service\Twitch\Kraken;
 use HedgeBot\Core\Tikal\Server as TikalServer;
 use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\PluginEndpoint as TikalPluginEndpoint;
@@ -130,7 +130,7 @@ class HedgeBot
 		$pluginList = explode(',', $pluginList);
 		$pluginList = array_map('trim', $pluginList);
 
-		$this->plugins = new PluginManager();
+		$this->plugins = new PluginManager($this->config->general->pluginsDirectory);
 		Plugin::setManager($this->plugins);
 
 		$this->plugins->loadPlugins($pluginList);

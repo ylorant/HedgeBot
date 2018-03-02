@@ -8,8 +8,9 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class UnsetRightCommand extends SecurityCommand
+class UnsetRightCommand extends StorageAwareCommand
 {
     public function configure()
     {
@@ -17,16 +18,10 @@ class UnsetRightCommand extends SecurityCommand
             ->setDescription('Unsets a right to a role, i.e. removes it from the list of defined rights for that role.')
             ->addArgument('roleId', InputArgument::REQUIRED, 'The ID of the role to unset a right from.')
             ->addArgument('rightName', InputArgument::REQUIRED, 'The right to unset.');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-        
         $roleId = $input->getArgument('roleId');
         $rightName = $input->getArgument('rightName');
 

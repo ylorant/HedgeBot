@@ -8,8 +8,9 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class SetRightCommand extends SecurityCommand
+class SetRightCommand extends StorageAwareCommand
 {
     public function configure()
     {
@@ -18,16 +19,10 @@ class SetRightCommand extends SecurityCommand
             ->addArgument('roleId', InputArgument::REQUIRED, 'The ID of the role to add a right to.')
             ->addArgument('rightName', InputArgument::REQUIRED, 'The right to set.')
             ->addOption('denied', 'd', InputOption::VALUE_NONE, 'Use this option to explicitly set the right to denied.');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-        
         $rightGranted = !$input->getOption('denied');
         $roleId = $input->getArgument('roleId');
         $rightName = $input->getArgument('rightName');

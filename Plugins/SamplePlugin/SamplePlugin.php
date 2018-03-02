@@ -10,7 +10,7 @@ class SamplePlugin extends PluginBase
 {
     public function CommandHello(CommandEvent $ev)
     {
-        IRC::message($ev->channel, "Hello, world!");
+        IRC::reply($ev, "Hello, world!");
     }
 
     public function CommandGoodbye(CommandEvent $ev)

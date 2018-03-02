@@ -8,28 +8,12 @@ require __DIR__.'/Core/HedgeBot.php';
 spl_autoload_register([HedgeBot::class, 'autoload']);
 
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\ConsoleProvider;
 
 $application = new Application();
 
-$commandNamespace = "HedgeBot\\Core\\Console";
-$commandPath = "Core/Console";
-
-$allFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($commandPath));
-$phpFiles = new RegexIterator($allFiles, '/\.php$/');
-
-foreach($phpFiles as $file)
-{
-    $className = str_replace('.php', '', $file->getPathname());
-    $className = str_replace($commandPath, '', $className);
-    $className = $commandNamespace. str_replace(DIRECTORY_SEPARATOR, "\\", $className);
-
-    $reflectionClass = new ReflectionClass($className);
-    
-    if(!$reflectionClass->isAbstract() && !$reflectionClass->isInterface())
-    {
-        $obj = new $className();
-        $application->add($obj);
-    }
-}
+$provider = new ConsoleProvider($argv);
+$provider->populateApplication($application);
 
 $application->run();

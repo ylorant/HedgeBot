@@ -9,8 +9,9 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use RuntimeException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class SetRoleDefaultCommand extends SecurityCommand
+class SetRoleDefaultCommand extends StorageAwareCommand
 {
     public function configure()
     {
@@ -18,16 +19,10 @@ class SetRoleDefaultCommand extends SecurityCommand
              ->setDescription('Sets the default status of a role.')
              ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to delete.')
              ->addOption('disable', 'd', InputOption::VALUE_NONE, 'Set this option to disable the default status of the role.');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-
         $roleId = $input->getArgument('roleId');
         $default = !$input->getOption('disable'); // The default status is basically the opposite of the presence of the disabled option
 

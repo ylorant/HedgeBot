@@ -9,8 +9,9 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use RuntimeException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class CreateRoleCommand extends SecurityCommand
+class CreateRoleCommand extends StorageAwareCommand
 {
     public function configure()
     {
@@ -19,16 +20,10 @@ class CreateRoleCommand extends SecurityCommand
              ->addOption('role-id', null, InputOption::VALUE_REQUIRED, 'Specify manually the role ID (lowercase alphanumeric plus underscore only).')
              ->addOption('parent', null, InputOption::VALUE_REQUIRED, 'Specifies a parent for the role. The parent must already exist.')
              ->addArgument('roleName', InputArgument::REQUIRED, 'The name of the role');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-
         $roleName = $input->getArgument('roleName');
         $roleId = SecurityRole::normalizeId($roleName);
         $idOption = $input->getOption('role-id');

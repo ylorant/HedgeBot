@@ -1,5 +1,5 @@
 <?php
-namespace HedgeBot\Core\Twitch;
+namespace HedgeBot\Core\Service\Twitch;
 
 use ReflectionClass;
 use HedgeBot\Core\HedgeBot;

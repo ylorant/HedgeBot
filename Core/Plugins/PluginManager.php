@@ -32,7 +32,7 @@ class PluginManager extends EventManager
 	 *
 	 * \param $main A reference to the main program class (HedgeBot class).
 	 */
-	public function __construct()
+	public function __construct($pluginsDirectory)
 	{
 		$this->_plugins = array();
 
@@ -45,7 +45,7 @@ class PluginManager extends EventManager
 		$this->addRoutine($this, 'timeoutRoutine');
 
 		// Setting plugins directory
-		$this->pluginsDirectory = HedgeBot::getInstance()->config->general->pluginsDirectory;
+		$this->pluginsDirectory = $pluginsDirectory;
 	}
 
 	/** Loads plugins from an array.
@@ -285,6 +285,13 @@ class PluginManager extends EventManager
 		return array_keys($this->_plugins);
 	}
 
+	/** Gets a plugin if it is loaded.
+	 * Gets a plugin if it is loaded, returns null otherwise.
+	 * 
+	 * @param string $name The plugin name to get.
+	 * 
+	 * @return Plugin|null The plugin if found, null otherwise.
+	 */
 	public function getPlugin($name)
 	{
 		if(isset($this->_plugins[$name]))

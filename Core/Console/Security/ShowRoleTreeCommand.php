@@ -8,23 +8,18 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class ShowRoleTreeCommand extends SecurityCommand
+class ShowRoleTreeCommand extends StorageAwareCommand
 {
     public function configure()
     {
         $this->setName('security:role-tree')
             ->setDescription('Shows the currently registered roles rights as a tree.');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-        
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         $roleTree = $accessControlManager->getRoleTree();    
         

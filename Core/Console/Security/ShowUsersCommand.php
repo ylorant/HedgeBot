@@ -8,24 +8,19 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class ShowUsersCommand extends SecurityCommand
+class ShowUsersCommand extends StorageAwareCommand
 {
     public function configure()
     {
         $this->setName('security:user-show')
             ->setDescription('Shows the currently registered users and their rights.')
             ->addArgument('username', InputArgument::OPTIONAL, 'Filter by a specific user name.');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-        
         $userName = $input->getArgument('username');
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         

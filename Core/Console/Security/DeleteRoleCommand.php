@@ -9,24 +9,19 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use RuntimeException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class DeleteRoleCommand extends SecurityCommand
+class DeleteRoleCommand extends StorageAwareCommand
 {
     public function configure()
     {
         $this->setName('security:role-delete')
              ->setDescription('Deletes a role.')
              ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to delete.');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-
         $roleId = $input->getArgument('roleId');
 
         $accessControlManager = new AccessControlManager($this->getDataStorage());

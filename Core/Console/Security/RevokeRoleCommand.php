@@ -9,8 +9,9 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use RuntimeException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class RevokeRoleCommand extends SecurityCommand
+class RevokeRoleCommand extends StorageAwareCommand
 {
     public function configure()
     {
@@ -19,16 +20,10 @@ class RevokeRoleCommand extends SecurityCommand
              ->addArgument('username', InputArgument::REQUIRED, 'The nickname of the user that will have this role assigned.')
              ->addArgument('roleId', InputArgument::OPTIONAL, 'The role ID to assign. Required if not using the --all modifier')
              ->addOption('all', 'a', InputOption::VALUE_NONE, 'Add this option to revoke all roles from the user');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-
         $roleId = $input->getArgument('roleId');
         $userName = $input->getArgument('username');
         $allRoles = $input->getOption('all');

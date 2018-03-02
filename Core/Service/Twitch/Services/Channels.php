@@ -1,5 +1,5 @@
 <?php
-namespace HedgeBot\Core\Twitch\Services;
+namespace HedgeBot\Core\Service\Twitch\Services;
 
 use HedgeBot\Core\Twitch\Kraken;
 use stdClass;

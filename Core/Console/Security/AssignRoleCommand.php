@@ -9,8 +9,9 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use RuntimeException;
+use HedgeBot\Core\Console\StorageAwareCommand;
 
-class AssignRoleCommand extends SecurityCommand
+class AssignRoleCommand extends StorageAwareCommand
 {
     public function configure()
     {
@@ -18,16 +19,10 @@ class AssignRoleCommand extends SecurityCommand
              ->setDescription('Assigns a role to an user.')
              ->addArgument('username', InputArgument::REQUIRED, 'The nickname of the user that will have this role assigned.')
              ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to assign.');
-
-        // Adding default arguments for security commands
-        parent::configure();
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        // Call parent method to build the data storage
-        parent::execute($input, $output);
-
         $roleId = $input->getArgument('roleId');
         $userName = $input->getArgument('username');
 

@@ -2,6 +2,7 @@
 namespace HedgeBot\Core\Plugins;
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\API\Data;
+use HedgeBot\Core\API\Config;
 use ReflectionClass;
 
 class Plugin
@@ -11,20 +12,20 @@ class Plugin
 
 	public function __construct($defaultConfig)
 	{
-		$main = HedgeBot::getInstance();
-
+		$dataStorage = Data::getObject();
+		$configStorage = Config::getObject();
+		
 		$reflectorClass = new ReflectionClass($this);
 		$pluginName = $reflectorClass->getShortName();
 
-		$this->config = $main->config->get('plugin.'.$pluginName);
+		$this->config = $configStorage->plugin->{$pluginName}->toArray();
 
 		// Loading default configuraiton if present
 		if(empty($this->config))
-			$main->config->set('plugin.'. $pluginName, $defaultConfig);
+			$configStorage->plugin->{$pluginName} = $defaultConfig;
 
-		$this->config = $main->config->get('plugin.'.$pluginName);
+		$this->config = $configStorage->plugin->{$pluginName}->toArray();
 
-		$dataStorage = Data::getObject();
 		if(empty($dataStorage->plugin))
 			$dataStorage->plugin = array();
 

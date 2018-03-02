@@ -22,14 +22,10 @@ class Quotes extends PluginBase
     }
 
     /**
-     * Mod function: Adds a quote to the quote list
+     * Adds a quote to the quote list
      */
     public function CommandAddquote(CommandEvent $ev)
     {
-        // Check rights
-        if(!$ev->moderator)
-            return;
-
         $args = $ev->arguments;
         if(!count($args))
             return IRC::reply($ev, "Insufficient parameters.");
@@ -48,13 +44,10 @@ class Quotes extends PluginBase
     }
 
     /**
-     * Mod function: Edits a quote
+     * Edits a quote
      */
     public function CommandEditquote(CommandEvent $ev)
     {
-        if(!$ev->moderator)
-            return;
-
         $args = $ev->arguments;
         if(count($args) < 2)
             return IRC::reply($ev, "Insufficient parameters.");
@@ -77,13 +70,10 @@ class Quotes extends PluginBase
     }
 
     /**
-     * Mod function: Deletes a quote
+     * Deletes a quote
      */
-    public function CommadnDelquote(CommandEvent $ev)
+    public function CommandDelquote(CommandEvent $ev)
     {
-        if(!$ev->moderator)
-            return;
-
         $args = $ev->arguments;
         if(!count($args))
             return IRC::reply($ev, "Insufficient parameters.");
