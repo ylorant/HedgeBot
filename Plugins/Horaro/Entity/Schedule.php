@@ -441,4 +441,31 @@ class Schedule
         
         return $out;
     }
+
+    // Other methods
+
+    /**
+     * Loads the schedule data (fetched from Horaro) that is stored in another schedule.
+     * Before loading it, the source schedule will be checked to see if they concern the same event.
+     * If not, it will not try to import them and return false.
+     * 
+     * @param Schedule $schedule The schedule to import the data from.
+     * 
+     * @return bool True if the schedule data has been imported, false if not (because the schedule are detected to be on different Horaro schedules).
+     */
+    public function loadDataFromSchedule(Schedule $schedule)
+    {
+        // Check if the event ID is specified for both schedules and it's different or not
+        if(!empty($schedule->getEventId()) && !empty($this->eventId) && $schedule->getEventId() != $this->eventId)
+            return false;
+        
+        // Check the schedule ID
+        if($schedule->getScheduleId() != $this->scheduleId)
+            return false;
+        
+        // Schedules correspond, we import the data.
+        $this->data = $schedule->getData();
+        
+        return true;
+    }
 }

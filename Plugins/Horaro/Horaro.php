@@ -19,6 +19,8 @@ class Horaro extends PluginBase
     protected $horaro;
     /** @var array The list of schedules currently loaded in the bot, and their current state */
     protected $schedules;
+    /** @var int Refresh schedules current index */
+    protected $refreshScheduleIndex;
 
     /**
      * Plugin initialization.
@@ -26,8 +28,11 @@ class Horaro extends PluginBase
     public function init()
     {
         $this->horaro = new HoraroAPI();
+        $this->schedules = [];
+        $this->refreshScheduleIndex = 0;
 
-        Plugin::getManager()->addRoutine($this, "RoutineProcessSchedule", 60);
+        Plugin::getManager()->addRoutine($this, "RoutineProcessSchedules", 60);
+        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", 900);
         
         $this->loadData();
     }
@@ -37,10 +42,10 @@ class Horaro extends PluginBase
     /**
      * Schedule management routine. Basically handles all the automatic schedule managmeent.
      */
-    public function RoutineProcessSchedule()
+    public function RoutineProcessSchedules()
     {
         HedgeBot::message("Checking Horaro schedules...", [], E_DEBUG);
-        $now = new DateTime("2018-03-09T23:00:00+01:00");
+        $now = new DateTime("2018-03-09T21:35:00+01:00");
         
         /** @var Schedule $schedule */
         foreach($this->schedules as $identSlug => $schedule)
@@ -49,7 +54,10 @@ class Horaro extends PluginBase
 
             // Only process schedules that are enabled and not paused (duh)
             if(!$schedule->isEnabled() || $schedule->isPaused())
+            {
+                HedgeBot::message("Schedule is disabled and/or paused. Skipping.", [], E_DEBUG);
                 continue;
+            }
 
             // Schedule isn't started, we check if it's past its start time (and before its end time)
             // and we fast forward to the current item if necessary
@@ -98,6 +106,7 @@ class Horaro extends PluginBase
             $currentItem = $schedule->getCurrentItem();
             $itemEndTime = new DateTime($currentItem->scheduled);
             $itemEndTime->add(new DateInterval($currentItem->length));
+            $itemEndTime->add(new DateInterval($schedule->getData('setup')));
 
             if($now > $itemEndTime)
             {
@@ -130,7 +139,21 @@ class Horaro extends PluginBase
      */
     public function RoutineRefreshSchedules()
     {
+        if(!empty($this->schedules))
+        {
+            
+        }
+    }
 
+    // Core events
+
+    /**
+     * Data has been updated externally, maybe that means the schedules have changed ?
+     * In any case, we reload the schedules
+     */
+    public function CoreEventDataUpdate()
+    {
+        $this->loadData();
     }
 
     // Chat commands
@@ -161,6 +184,9 @@ class Horaro extends PluginBase
         $scheedule = $this->getScheduleByIdentSlug($identSlug);
         $scheedule->setPaused(true);
         $scheedule->setStarted(false); // Set started status as false, that way when we'll resume, it'll fast forward to whatever item it is.
+
+        // Save the schedule
+        $this->saveData();
 
         IRC::reply($event, "Schedule paused.");
     }
@@ -310,6 +336,7 @@ class Horaro extends PluginBase
         $currentItem = $schedule->getCurrentItem();
         $channelTitle = $schedule->getCurrentTitle();
         $channelGame = $schedule->getCurrentGame();
+        $channel = $schedule->getChannels();
 
         // Set the title & game
         if($this->config['whisperOverride'])
@@ -319,11 +346,8 @@ class Horaro extends PluginBase
         }
         else
         {
-            foreach($channels as $channel)
-            {
-                IRC::message($channel, '!settitle '. $channelTitle);
-                IRC::message($channel, '!setgame '. $channelGame);
-            }
+            IRC::message($channel, '!settitle '. $channelTitle);
+            IRC::message($channel, '!setgame '. $channelGame);
         }
     }
 
@@ -340,17 +364,22 @@ class Horaro extends PluginBase
         foreach($this->schedules as $identSlug => $schedule)
             $schedules[$identSlug] = $schedule->toArray();
 
-        Data::set('plugin.horaro.schedules', $schedules);
+        $this->data->schedules = $schedules;
     }
 
     /**
      * Loads the schedule data from the storage.
+     * This method will do a diff between the currently loaded schedules, and will reload them at need (since it calls Horaro, it is a
+     * time-consuming operation to reload a schedule).
      */
     public function loadData()
     {
         HedgeBot::message("Loading schedules...", [], E_DEBUG);
 
-        $schedules = Data::get('plugin.horaro.schedules');
+        $schedules = $this->data->schedules->toArray();
+
+        // Reset the actual schedule list, but keep the refs into a separate var, if a schedule has not been modified, it will not be reloaded that way.
+        $oldSchedules = $this->schedules;
         $this->schedules = [];
 
         if(empty($schedules))
@@ -359,13 +388,27 @@ class Horaro extends PluginBase
         foreach($schedules as $identSlug => $schedule)
         {
             $scheduleObj = Schedule::fromArray($schedule);
+            $loadSchedule = false;
 
-            // Fetch schedule data from Horaro and inject it into the object
-            $scheduleData = $this->horaro->getSchedule($scheduleObj->getScheduleId(), $scheduleObj->getEventId());
-            $scheduleObj->setData($scheduleData);
+            // If the schedule isn't already in the schedule list, we load it.
+            if(isset($oldSchedules[$identSlug]))
+            {
+                // We try to reload the data in the new schedule from the previous one, and if that fails, we trigger a full reload
+                $dataLoaded = $scheduleObj->loadDataFromSchedule($oldSchedules[$identSlug]);
+                if(!$dataLoaded)
+                    $loadSchedule = true;
+            }
+            else
+                $loadSchedule = true;
+
+            // Fetch schedule data from Horaro and inject it into the object if needed
+            if($loadSchedule)
+            {
+                $scheduleData = $this->horaro->getSchedule($scheduleObj->getScheduleId(), $scheduleObj->getEventId());
+                $scheduleObj->setData($scheduleData);
+            }
 
             $this->schedules[$identSlug] = $scheduleObj;
         }
-        
     }
 }

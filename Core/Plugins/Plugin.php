@@ -12,6 +12,7 @@ class Plugin
 
 	public function __construct($defaultConfig)
 	{
+		HedgeBot::message("Initializing plugin...", [], E_DEBUG);
 		$dataStorage = Data::getObject();
 		$configStorage = Config::getObject();
 		
@@ -30,7 +31,7 @@ class Plugin
 			$dataStorage->plugin = array();
 
 		if(empty($dataStorage->plugin->{$pluginName}))
-			$dataStorage->plugin->{$pluginName} = array();
+			$dataStorage->plugin->{$pluginName} = [];
 
 		$this->data = $dataStorage->plugin->{$pluginName};
 	}
