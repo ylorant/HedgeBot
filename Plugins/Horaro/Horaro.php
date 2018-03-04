@@ -45,7 +45,7 @@ class Horaro extends PluginBase
     public function RoutineProcessSchedules()
     {
         HedgeBot::message("Checking Horaro schedules...", [], E_DEBUG);
-        $now = new DateTime("2018-03-09T21:35:00+01:00");
+        $now = new DateTime();
         
         /** @var Schedule $schedule */
         foreach($this->schedules as $identSlug => $schedule)
