@@ -1,13 +1,16 @@
 <?php
-namespace HedgeBot\Core\Service\Twitch\Services;
+namespace HedgeBot\Core\Service\Twitch\Kraken\Services;
 
-use HedgeBot\Core\Twitch\Kraken;
+use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
 use stdClass;
 use DateTime;
 
 class Users extends Service
 {
     const SERVICE_NAME = "users";
+
+    /** @var array  user names => user IDs match table cache, to avoir duplicating requests when doing operations on the same channel multiple times */
+    protected static $userIdCache = [];
 
     public function __construct(Kraken $kraken)
     {
@@ -35,5 +38,18 @@ class Users extends Service
         $userObject->bio = $user->bio;
 
         return $userObject;
+    }
+
+    public function getUserId($username)
+    {
+        if(empty(self::$userIdCache[$username]))
+        {   
+            $response = $this->query(Kraken::QUERY_TYPE_GET, "", ['login' => $username]);
+            $user = reset($response->users);
+            
+            self::$userIdCache[$username] = $user->_id;
+            
+        }
+        return self::$userIdCache[$username];
     }
 }

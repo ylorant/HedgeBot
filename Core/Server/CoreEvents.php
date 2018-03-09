@@ -58,11 +58,17 @@ class CoreEvents
 
 		$updated = Config::checkUpdate();
 		if($updated)
+		{
+			HedgeBot::message("Configuration has been updated externally", [], E_DEBUG);
 			$events->callEvent(new CoreEvent('ConfigUpdate'));
+		}
 
 		$updated = Data::checkUpdate();
 		if($updated)
+		{
+			HedgeBot::message("Data has been updated externally", [], E_DEBUG);
 			$events->callEvent(new CoreEvent('DataUpdate'));
+		}
 	}
 
 	public function RoutinePingServer()

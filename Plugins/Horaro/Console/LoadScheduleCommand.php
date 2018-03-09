@@ -43,7 +43,7 @@ class LoadScheduleCommand extends StorageAwareCommand
         {
             /** @var Schedule $schedule */
             $schedule = $plugin->getScheduleByIdentSlug($scheduleIdentSlug);
-            $schedule->addChannel($channel);
+            $schedule->setChannel($channel);
         }
 
         $plugin->saveData();

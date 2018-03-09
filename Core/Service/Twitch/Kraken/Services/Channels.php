@@ -1,7 +1,7 @@
 <?php
-namespace HedgeBot\Core\Service\Twitch\Services;
+namespace HedgeBot\Core\Service\Twitch\Kraken\Services;
 
-use HedgeBot\Core\Twitch\Kraken;
+use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
 use stdClass;
 use DateTime;
 
@@ -28,7 +28,8 @@ class Channels extends Service
      */
     public function info($channel)
     {
-        return $this->query(Kraken::QUERY_TYPE_GET, "/$channel");
+        $channelId = $this->kraken->getService('users')->getUserId($channel);
+        return $this->query(Kraken::QUERY_TYPE_GET, "/$channelId");
     }
 
     /**
@@ -42,7 +43,7 @@ class Channels extends Service
      *                    - start; Where to start from. Expects a cursor, refer to the Twitch API for more info.
      *                    - order: The order in which the results will be presented, desc or asc. Order will be by follow time.
      *                    - detailed info: boolean indicating whether to get extended info for each user or only the nickname.
-     * @return An object containing the resulting list, along with other useful data (count, cursor). If detailed info is requested,
+     * @return object An object containing the resulting list, along with other useful data (count, cursor). If detailed info is requested,
      *         then each user is listed in an object. If not, only the nickname as a string will be returned in the list.
      *
      * @see https://github.com/justintv/Twitch-API/blob/master/v3_resources/follows.md#get-channelschannelfollows
@@ -57,7 +58,8 @@ class Channels extends Service
 
         $queryParameters = array_filter($queryParameters);
 
-        $userList = $this->query(Kraken::QUERY_TYPE_GET, "/$channel/follows");
+        $channelId = $this->kraken->getService('users')->getUserId($channel);
+        $userList = $this->query(Kraken::QUERY_TYPE_GET, "/$channelId/follows");
 
         $return = new stdClass();
         $return->total = $userList->_total;
@@ -85,5 +87,34 @@ class Channels extends Service
         }
 
         return $return;
+    }
+
+    /**
+     * Updates a channel's data. This method requires to have a valid access token, that can update a channel of course.
+     * 
+     * @param $channel The channel to update.
+     * @param $parameters The parameters to update. Available parameters:
+     *                    - title: The channel title
+     *                    - game: The channel game
+     *                    - delay: The channel delay, in seconds. It requires the access token to be one from the channel owner.
+     *                    - channel_feed-enabled: Set to true to enable the channel feed. Requires an access token from the channel owner.
+     */
+    public function update($channel, array $parameters = [])
+    {
+        $queryParameters = [
+            "channel" => [
+                'status' => $parameters['title'] ?? null,
+                'game' => $parameters['game'] ?? null,
+                'delay' => $parameters['delay'] ?? null,
+                'channel_feed_enabled' => $parameters['channel_feed_enabled'] ?? null
+            ]
+        ];
+
+        $queryParameters["channel"] = array_filter($queryParameters["channel"]);
+        
+        $channelId = $this->kraken->getService('users')->getUserId($channel);
+        $response = $this->query(Kraken::QUERY_TYPE_PUT, "/$channelId", $queryParameters, $channel);
+
+        return $response;
     }
 }

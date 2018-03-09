@@ -17,8 +17,8 @@ class Schedule
     protected $paused;
     /** @var object The schedule data, fetched from Horaro. The using entity is expected to fill this. */
     protected $data;
-    /** @var array The channels where the schedule is active */
-    protected $channels;
+    /** @var string The channel where the schedule is active */
+    protected $channel;
     /** @var int The index of the current item on the schedule, to handle manual sync */
     protected $currentIndex;
     /** @var bool Wether the schedule has started or not, to allow the plugin to set the first item */
@@ -27,6 +27,10 @@ class Schedule
     protected $titleTemplate;
     /** @var string The template for the channel game while this schedule is running. Usually it's the column var for the game name. */
     protected $gameTemplate;
+    /** @var string The template for the announce for the next item. It'll be used only if you enable the announce feature in the config.  */
+    protected $announceTemplate;
+    /** @var bool Wether the next item has been already announced in the chat or not. */
+    protected $nextItemAnnounced;
 
     // Exported keys for the toArray() method
     const EXPORTED_KEYS = [
@@ -34,11 +38,13 @@ class Schedule
         "scheduleId",
         "enabled",
         "paused",
-        "channels",
+        "channel",
+        "currentIndex",
         "started",
         "titleTemplate",
         "gameTemplate",
-        "currentIndex"
+        "announceTemplate",
+        "nextItemAnnounced"
     ];
 
     public function __construct($scheduleId = null, $eventId = null)
@@ -49,7 +55,8 @@ class Schedule
         $this->paused = false;
         $this->started = false;
         $this->currentIndex = 0;
-        $this->channels = [];
+        $this->channel = "";
+        $this->nextItemAnnounced = false;
     }
 
     // Property access methods
@@ -164,9 +171,9 @@ class Schedule
      * 
      * @return array The list of channels where the schedule is active.
      */
-    public function getChannels()
+    public function getChannel()
     {
-        return $this->channels;
+        return $this->channel;
     }
 
     /**
@@ -174,30 +181,9 @@ class Schedule
      * 
      * @param string $channels The new channels.
      */
-    public function setChannels($channels)
+    public function setChannel($channels)
     {
-        $this->channels = $channels;
-    }
-
-    /**
-     * Adds a channel to the list of channels where the schedule is active.
-     * 
-     * @param string $channel The channel.
-     */
-    public function addChannel($channel)
-    {
-        $this->channels[] = $channel;
-    }
-
-    /**
-     * Removes a channel from the list of channels where the schedule is active.
-     * 
-     * @param string $channel The channel.
-     */
-    public function removeChannel($channel)
-    {
-        if(($key = array_search($channel, $this->channels)) !== false)
-            unset($this->channels[$key]);
+        $this->channels = $channel;
     }
 
     /**
@@ -282,6 +268,46 @@ class Schedule
         $this->gameTemplate = $gameTemplate;
     }
 
+    /**
+     * Gets the announce template that is used to announce the next run.
+     * 
+     * @return string The announce template.
+     */
+    public function getAnnounceTemplate()
+    {
+        return $this->announceTemplate;
+    }
+
+    /**
+     * Sets the announce template that'll be used to announce the next run.
+     * 
+     * @param string $announceTemplate The announce template.
+     */
+    public function setAnnounceTemplate($announceTemplate)
+    {
+        $this->announceTemplate = $announceTemplate;
+    }
+
+    /**
+     * Gets wether the next item has already been announced or not
+     * 
+     * @return bool True if the next item has been announced, false if not.
+     */
+    public function isNextItemAnnounced()
+    {
+        return $this->nextItemAnnounced;
+    }
+
+    /**
+     * Sets wether the next item has been announced or not.
+     * 
+     * @param bool $nextItemAnnounced True if the next item has been announced; false if not.
+     */
+    public function setNextItemAnnounced($nextItemAnnounced)
+    {
+        $this->nextItemAnnounced = $nextItemAnnounced;
+    }
+
     // Generated props access methods
 
     /**
@@ -347,12 +373,25 @@ class Schedule
     /**
      * Gets the current item.
      * 
-     * @return object The current item.
+     * @return object|null The current item or null if the item is not found.
      */
     public function getCurrentItem()
     {
         if(!empty($this->data->items[$this->currentIndex]))
             return $this->data->items[$this->currentIndex];
+        
+        return null;
+    }
+
+    /**
+     * Gets the next item in the schedule, relative to the current set item.
+     * 
+     * @return object|null The next item, or null if the item isn't found.
+     */
+    public function getNextItem()
+    {
+        if(!empty($this->data->items[$this->currentIndex + 1]))
+            return $this->data->items[$this->currentIndex + 1];
         
         return null;
     }
@@ -364,22 +403,12 @@ class Schedule
      */
     public function getCurrentTitle()
     {
-        $columns = $this->getData('columns');
-        $channels = $this->getChannels();
         $currentItem = $this->getCurrentItem();
 
         if(empty($currentItem))
             return null;
 
-        foreach($columns as &$columnName)
-            $columnName = "$". $columnName;
-        
-        $title = str_replace($columns, $currentItem->data, $this->titleTemplate);
-        
-        //FIXME: Replace this dirty Markdown URL fix by something a bit more beautiful?
-        $title = preg_replace("#\[(.+)\]\((.+)\)#isU", "$1", $title);
-        
-        return $title;
+        return $this->fillTemplateItem($this->titleTemplate, $currentItem);
     }
 
     /**
@@ -389,17 +418,43 @@ class Schedule
      */
     public function getCurrentGame()
     {
-        $columns = $this->getData('columns');
-        $channels = $this->getChannels();
         $currentItem = $this->getCurrentItem();
 
         if(empty($currentItem))
             return null;
 
+        return $this->fillTemplateItem($this->gameTemplate, $currentItem);
+    }
+
+    /**
+     * Gets the announce for the next item.
+     * 
+     * @return string|null The announce for the next run.
+     */
+    public function getNextAnnounce()
+    {
+        $nextItem = $this->getNextItem();
+
+        if(empty($nextItem))
+            return null;
+        
+        return $this->fillTemplateItem($this->announceTemplate, $nextItem);
+    }
+
+    protected function fillTemplateItem($template, $item)
+    {
+        $columns = $this->getData('columns');
+        
+        // Prepend a $ to the columns name to prepare them for a big ol' str_replace
         foreach($columns as &$columnName)
             $columnName = "$". $columnName;
         
-        return str_replace($columns, $currentItem->data, $this->gameTemplate);
+        $ret = str_replace($columns, $item->data, $template);
+
+        //FIXME: Replace this dirty Markdown URL fix by something a bit more beautiful?
+        $ret = preg_replace("#\[(.+)\]\((.+)\)#isU", "$1", $ret);
+
+        return $ret;
     }
 
     // Serialization

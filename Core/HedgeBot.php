@@ -17,11 +17,16 @@ use HedgeBot\Core\Data\IniFileProvider;
 use HedgeBot\Core\Data\Provider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Security\AccessControlManager;
-use HedgeBot\Core\Service\Twitch\Kraken;
+use HedgeBot\Core\Service\Twitch\AuthManager as TwitchAuthManager;
+use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
+use HedgeBot\Core\Service\Twitch\Helix\Helix;
 use HedgeBot\Core\Tikal\Server as TikalServer;
 use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\PluginEndpoint as TikalPluginEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\SecurityEndpoint as TikalSecurityEndpoint;
+use HedgeBot\Core\API\Twitch\Helix as HelixAPI;
+use HedgeBot\Core\API\Twitch\Kraken as KrakenAPI;
+use HedgeBot\Core\API\Twitch\Auth as TwitchAuth;
 
 define('E_DEBUG', 32768);
 
@@ -102,10 +107,15 @@ class HedgeBot
 		Security::setObject($this->accessControl);
 
 		// Initializing Twitch API connector
-		HedgeBot::message("Discovering available Twitch services...", null, E_DEBUG);
-		$kraken = new Kraken();
+		HedgeBot::message("Initializing Twitch API client...", null, E_DEBUG);
+
+		$authManager = new TwitchAuthManager($this->config->get('twitch.auth.clientId'), $this->data->getProvider());
+		$kraken = new Kraken($authManager);
+		$helix = new Helix($authManager);
 		$kraken->discoverServices();
-		Twitch::setObject($kraken);
+		KrakenAPI::setObject($kraken);
+		HelixAPI::setObject($helix);
+		TwitchAuth::setObject($authManager);
 
 		// Initializing "Tikal" API server
 		if(!empty($this->config->tikal) && $this->config->tikal->enabled == true)

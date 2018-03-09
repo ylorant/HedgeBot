@@ -1,7 +1,7 @@
 <?php
-namespace HedgeBot\Core\API;
+namespace HedgeBot\Core\API\Twitch;
 
-class Twitch
+class Kraken
 {
     private static $kraken;
 

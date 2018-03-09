@@ -12,6 +12,7 @@ use DateTime;
 use DateInterval;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\API\Twitch\Kraken;
 
 class Horaro extends PluginBase
 {
@@ -29,27 +30,42 @@ class Horaro extends PluginBase
     {
         $this->horaro = new HoraroAPI();
         $this->schedules = [];
-        $this->refreshScheduleIndex = 0;
+        $this->refreshScheduleIndex = -1; // Since we pre-increment the current index, we will use -1 to start at 0.
 
         Plugin::getManager()->addRoutine($this, "RoutineProcessSchedules", 60);
-        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", 900);
-        
+        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", $this->config['refreshInterval']);
+        Plugin::getManager()->addRoutine($this, "RoutineCheckAsyncRequests", 1);
+
         $this->loadData();
     }
     
     // Routines
 
     /**
-     * Schedule management routine. Basically handles all the automatic schedule managmeent.
+     * This routine checkes the Horaro API client for asynchronous replies.
      */
-    public function RoutineProcessSchedules()
+    public function RoutineCheckAsyncRequests()
+    {
+        $this->horaro->asyncListen();
+    }
+
+    /**
+     * Schedule management routine. Basically handles all the automatic schedule managmeent.
+     * 
+     * @param string $identSlug If given, the schedule processing will be limited to this ident slug.
+     */
+    public function RoutineProcessSchedules($identSlug = null)
     {
         HedgeBot::message("Checking Horaro schedules...", [], E_DEBUG);
-        $now = new DateTime();
+        $now = new DateTime($this->config['simulatedTime']);
         
         /** @var Schedule $schedule */
-        foreach($this->schedules as $identSlug => $schedule)
+        foreach($this->schedules as $currentSlug => $schedule)
         {
+            // Check for the given ident slug limitation if necessary, and skip if they differ
+            if(!empty($identSlug) && $currentSlug != $identSlug)
+                continue;
+
             HedgeBot::message("Checking schedule $0...", [$schedule->getIdentSlug()], E_DEBUG);
 
             // Only process schedules that are enabled and not paused (duh)
@@ -59,16 +75,17 @@ class Horaro extends PluginBase
                 continue;
             }
 
+            $scheduleStartTime = $schedule->getStartTime();
+            $scheduleEndTime = $schedule->getEndTime();
+
             // Schedule isn't started, we check if it's past its start time (and before its end time)
             // and we fast forward to the current item if necessary
             if(!$schedule->isStarted())
             {
                 HedgeBot::message("Schedule isn't started.", [], E_DEBUG);
-                $startTime = $schedule->getStartTime();
-                $endTime = $schedule->getEndTime();
 
                 // We're started, so we fast forward to the current item, set the title and mark the schedule as started
-                if($now > $startTime && $now < $endTime)
+                if($now > $scheduleStartTime && $now < $scheduleEndTime)
                 {
                     HedgeBot::message("We're in the schedule, starting it.", [], E_DEBUG);
 
@@ -91,7 +108,7 @@ class Horaro extends PluginBase
                         }
                     }
                 }
-                elseif($now > $endTime) // The schedule is outdated, we disable it to save some processing time
+                elseif($now > $scheduleEndTime) // The schedule is outdated, we disable it to save some processing time
                 {
                     $schedule->setEnabled(false);
                     $this->saveData();
@@ -102,17 +119,45 @@ class Horaro extends PluginBase
             
             HedgeBot::message("Schedule is started.", [], E_DEBUG);
 
+            if($now > $scheduleEndTime)
+            {
+                HedgeBot::message("Schedule has ended, disabling.", [], E_DEBUG);
+                $schedule->setEnabled(false);
+                $schedule->setStarted(false);
+                $this->saveData();
+
+                continue;
+            }
+
             // Schedule is started, we check compared to the current item
             $currentItem = $schedule->getCurrentItem();
-            $itemEndTime = new DateTime($currentItem->scheduled);
-            $itemEndTime->add(new DateInterval($currentItem->length));
-            $itemEndTime->add(new DateInterval($schedule->getData('setup')));
+            $nextItem = $schedule->getNextItem();
 
-            if($now > $itemEndTime)
+            // Get current item end time and next item start time
+            $currentItemEndTime = new DateTime($currentItem->scheduled);
+            $currentItemEndTime->add(new DateInterval($currentItem->length));
+            $nextItemStartTime = null;
+            $nextItemAnnounceThresholdTime = null;
+
+            if(!empty($nextItem))
+            {
+                $nextItemStartTime = new DateTime($nextItem->scheduled);
+                
+                if($this->config['announceNextItem'] && isset($this->config['announceNextDelay']))
+                {
+                    $nextItemAnnounceThresholdTime = clone $nextItemStartTime;
+                    $nextItemAnnounceThresholdTime->sub(new DateInterval($schedule->getData('setup')));
+                    $nextItemAnnounceThresholdTime->sub(new DateInterval('PT'. $this->config['announceNextDelay']. 'S'));
+                }
+            }
+
+            // Increment the item and change the title and game for the stream when coming on the next run time
+            if(!empty($nextItemStartTime) && $now > $nextItemStartTime)
             {
                 HedgeBot::message("Previous item is finished, advancing.", [], E_DEBUG);
                 $totalItems = count($schedule->getData('items'));
                 $schedule->setCurrentIndex($schedule->getCurrentIndex() + 1);
+                $schedule->setNextItemAnnounced(false);
                 
                 // We've reached the end of the schedule
                 if(!$schedule->getCurrentItem())
@@ -130,6 +175,13 @@ class Horaro extends PluginBase
                 $this->setChannelTitleFromSchedule($schedule);
                 $this->saveData();
             }
+            elseif(!empty($nextItemAnnounceThresholdTime) && $now > $nextItemAnnounceThresholdTime && !$schedule->isNextItemAnnounced())
+            {
+                // Announce the next item and mark it as announced
+                IRC::message($schedule->getChannel(), $schedule->getNextAnnounce());
+                $schedule->setNextItemAnnounced(true);
+                $this->saveData();
+            }
         }
     }
 
@@ -141,25 +193,61 @@ class Horaro extends PluginBase
     {
         if(!empty($this->schedules))
         {
+            // Increment the currently refreshed schedule index, and make sure it's pointing to a current schedule
+            $this->refreshScheduleIndex++;
+            if($this->refreshScheduleIndex >= count($this->schedules))
+                $this->refreshScheduleIndex = 0;
             
+            // Get the correct schedule corresponding to the current index with its key.
+            $scheduleKeys = array_keys($this->schedules);
+            $schedule = $this->schedules[$scheduleKeys[$this->refreshScheduleIndex]];
+
+            // Finally, fetch the new schedule data
+            $newScheduleData = $this->horaro->getScheduleAsync($schedule->getScheduleId(), $schedule->getEventId(), null, [$this, 'onScheduleReceived']);
+            
+            if(!empty($newScheduleData))
+                $schedule->setData($newScheduleData);
         }
+    }
+
+    public function RoutineAnnounceNextRun()
+    {
+
+    }
+
+    // Callbacks
+
+    public function onScheduleReceived($scheduleId, $eventId, $scheduleData)
+    {
+        $schedule = $this->getScheduleById($scheduleId, $eventId);
+        $schedule->setData($scheduleData);
     }
 
     // Core events
 
     /**
      * Data has been updated externally, maybe that means the schedules have changed ?
-     * In any case, we reload the schedules
+     * In any case, we reload the schedules.
      */
     public function CoreEventDataUpdate()
     {
         $this->loadData();
     }
 
+    /**
+     * Config has been updated externally, we reload the refresh interval.
+     */
+    public function CoreEventConfigUpdate()
+    {
+        // TODO: Find a way to avoid to re-find the configuration manually
+		$this->config = HedgeBot::getInstance()->config->get('plugin.Horaro');
+        Plugin::getManager()->changeRoutineTimeInterval($this, "RoutineRefreshSchedules", $this->config['refreshInterval']);
+    }
+
     // Chat commands
 
     /**
-     * Pauses the diven schedule, or the current schedule if none is given (2 schedules running at the same time would be strange though)
+     * Pauses the given schedule, or the current schedule if none is given (2 schedules running at the same time would be strange though)
      */
     public function CommandPause(CommandEvent $event)
     {
@@ -172,7 +260,8 @@ class Horaro extends PluginBase
             elseif(count($currentSchedules) == 0)
                 return IRC::reply($event, "No schedule is currently running.");
             
-            $identSlug = $currentSchedules[0]->getIdentSlug();
+            $currentSchedule = reset($currentSchedules);
+            $identSlug = $currentSchedule->getIdentSlug();
         }
         else // Ident slug is given, we check that it exists
         {
@@ -181,14 +270,85 @@ class Horaro extends PluginBase
                 return IRC::reply($event, "Schedule not found.");
         }
 
-        $scheedule = $this->getScheduleByIdentSlug($identSlug);
-        $scheedule->setPaused(true);
-        $scheedule->setStarted(false); // Set started status as false, that way when we'll resume, it'll fast forward to whatever item it is.
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+        $schedule->setPaused(true);
+        $schedule->setStarted(false); // Set started status as false, that way when we'll resume, it'll fast forward to whatever item it is.
 
         // Save the schedule
         $this->saveData();
 
         IRC::reply($event, "Schedule paused.");
+    }
+
+    /**
+     * Resumes the given schedule, or the current schedule if none is given.
+     */
+    public function CommandResume(CommandEvent $event)
+    {
+        // Try to guess the event slug if not given
+        if(empty($event->arguments[0]))
+        {
+            $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
+            if(count($currentSchedules) > 1)
+                return IRC::reply($event, "Couldn't automatically determine which schedule to pause, please specify an ident slug.");
+            elseif(count($currentSchedules) == 0)
+                return IRC::reply($event, "No schedule is currently running.");
+            
+            $currentSchedule = reset($currentSchedules);
+            $identSlug = $currentSchedule->getIdentSlug();
+        }
+        else // Ident slug is given, we check that it exists
+        {
+            $identSlug = $event->arguments[0];
+            if(!$this->hasScheduleIdentSlug($identSlug))
+                return IRC::reply($event, "Schedule not found.");
+        }
+
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+        $schedule->setPaused(false);
+
+        // Save the schedule
+        $this->saveData();
+
+        $this->RoutineProcessSchedules($identSlug);
+
+        IRC::reply($event, "Schedule resumed.");
+    }
+
+    /**
+     * Skips the current item on the given schedule or the one given as argument, and goes straight to the next one.
+     */
+    public function CommandNext(CommandEvent $event)
+    {
+        // Try to guess the event slug if not given
+        if(empty($event->arguments[0]))
+        {
+            $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
+            if(count($currentSchedules) > 1)
+                return IRC::reply($event, "Couldn't automatically determine which schedule to pause, please specify an ident slug.");
+            elseif(count($currentSchedules) == 0)
+                return IRC::reply($event, "No schedule is currently running.");
+            
+            $currentSchedule = reset($currentSchedules);
+            $identSlug = $currentSchedule->getIdentSlug();
+        }
+        else // Ident slug is given, we check that it exists
+        {
+            $identSlug = $event->arguments[0];
+            if(!$this->hasScheduleIdentSlug($identSlug))
+                return IRC::reply($event, "Schedule not found.");
+        }
+
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+        $schedule->setCurrentIndex($schedule->getCurrentIndex() + 1);
+
+        // Update title & game
+        $this->setChannelTitleFromSchedule($schedule);
+
+        // Save the schedule
+        $this->saveData();
+
+        IRC::reply($event, "Item has been skipped.");
     }
 
     // Schedule management methods, called by console commands and API //
@@ -260,6 +420,26 @@ class Horaro extends PluginBase
     }
 
     /**
+     * Gets a schedule by its schedule ID and, if given, by its event ID.
+     * 
+     * @param string $scheduleId The schedule ID.
+     * @param string $eventId    The even ID, optional.
+     * 
+     * @return Schedule|null The schedule object if found, null if not found.
+     */
+    public function getScheduleById($scheduleId, $eventId = null)
+    {
+        /** @var Schedule $schedule */
+        foreach($this->schedules as $schedule)
+        {
+            if($schedule->getScheduleId() == $scheduleId && (is_null($eventId) || $schedule->getEventId() == $eventId))
+                return $schedule;
+        }
+
+        return null;
+    }
+
+    /**
      * Checks if the given schedule ident slug exists within the loaded schedules.
      * 
      * @param string $identSlug The schedule ident slug to look for.
@@ -296,7 +476,7 @@ class Horaro extends PluginBase
     public function getCurrentlyRunningSchedules($channel = null)
     {
         $runningSchedules = [];
-        $currentTime = new DateTime();
+        $currentTime = new DateTime($this->config['simulatedTime']);
 
         foreach($this->schedules as $identSlug => $schedule)
         {
@@ -336,19 +516,9 @@ class Horaro extends PluginBase
         $currentItem = $schedule->getCurrentItem();
         $channelTitle = $schedule->getCurrentTitle();
         $channelGame = $schedule->getCurrentGame();
-        $channel = $schedule->getChannels();
+        $channel = $schedule->getChannel();
 
-        // Set the title & game
-        if($this->config['whisperOverride'])
-        {
-            IRC::whisper($this->config['whisperOverride'], '!settitle '. $channelTitle);
-            IRC::whisper($this->config['whisperOverride'], '!setgame '. $channelGame);
-        }
-        else
-        {
-            IRC::message($channel, '!settitle '. $channelTitle);
-            IRC::message($channel, '!setgame '. $channelGame);
-        }
+        Kraken::get('channels')->update($channel, ['title' => $channelTitle, 'game' => $channelGame]);
     }
 
     /**
