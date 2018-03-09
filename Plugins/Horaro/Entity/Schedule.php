@@ -183,7 +183,7 @@ class Schedule
      */
     public function setChannel($channel)
     {
-        $this->channels = $channel;
+        $this->channel = $channel;
     }
 
     /**
