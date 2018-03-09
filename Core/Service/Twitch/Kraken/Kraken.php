@@ -111,7 +111,7 @@ class Kraken
             $httpHeaders[] = 'Content-Type: application/json';   
             curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($parameters));
         }
-        
+
         // Set base common options
         curl_setopt_array($curl, [
             CURLOPT_RETURNTRANSFER => true,
@@ -120,7 +120,7 @@ class Kraken
         ]);
 
         $reply = curl_exec($curl);
-
+        
         return json_decode($reply);
     }
 

@@ -47,6 +47,7 @@ class AuthManager
 
     public function hasAccessToken($channel)
     {
+        $channel = strtolower($channel);
         return !empty($this->accessTokens[$channel]);
     }
 
@@ -59,6 +60,7 @@ class AuthManager
      */
     public function getAccessToken($channel)
     {
+        $channel = strtolower($channel);
         if(!empty($this->accessTokens[$channel]))
             return $this->accessTokens[$channel];
         
@@ -83,6 +85,7 @@ class AuthManager
      */
     public function addAccessToken($channel, $accessToken)
     {
+        $channel = strtolower($channel);
         $this->accessTokens[$channel] = $accessToken;
     }
 
@@ -93,6 +96,7 @@ class AuthManager
      */
     public function removeAccessToken($channel)
     {
+        $channel = strtolower($channel);
         if(isset($this->accessTokens[$channel]))
             unset($this->accessTokens[$channel]);
     }
