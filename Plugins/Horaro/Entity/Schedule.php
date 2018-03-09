@@ -181,7 +181,7 @@ class Schedule
      * 
      * @param string $channels The new channels.
      */
-    public function setChannel($channels)
+    public function setChannel($channel)
     {
         $this->channels = $channel;
     }

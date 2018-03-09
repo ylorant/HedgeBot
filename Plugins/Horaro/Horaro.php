@@ -33,7 +33,7 @@ class Horaro extends PluginBase
         $this->refreshScheduleIndex = -1; // Since we pre-increment the current index, we will use -1 to start at 0.
 
         Plugin::getManager()->addRoutine($this, "RoutineProcessSchedules", 60);
-        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", $this->config['refreshInterval']);
+        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", $this->config['refreshInterval'] ?? 300);
         Plugin::getManager()->addRoutine($this, "RoutineCheckAsyncRequests", 1);
 
         $this->loadData();
