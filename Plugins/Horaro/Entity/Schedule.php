@@ -452,6 +452,7 @@ class Schedule
         $ret = str_replace($columns, $item->data, $template);
 
         //FIXME: Replace this dirty Markdown URL fix by something a bit more beautiful?
+        // Use a data store / providers system, with plugins having a data provider class/interface for the data provider
         $ret = preg_replace("#\[(.+)\]\((.+)\)#isU", "$1", $ret);
 
         return $ret;
