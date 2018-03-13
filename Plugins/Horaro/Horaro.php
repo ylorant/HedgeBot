@@ -119,6 +119,7 @@ class Horaro extends PluginBase
             
             HedgeBot::message("Schedule is started.", [], E_DEBUG);
 
+            // Disabling the schedule if it has ended
             if($now > $scheduleEndTime)
             {
                 HedgeBot::message("Schedule has ended, disabling.", [], E_DEBUG);
@@ -139,6 +140,7 @@ class Horaro extends PluginBase
             $nextItemStartTime = null;
             $nextItemAnnounceThresholdTime = null;
 
+            // Compute the next item announce threshold time if needed
             if(!empty($nextItem))
             {
                 $nextItemStartTime = new DateTime($nextItem->scheduled);
