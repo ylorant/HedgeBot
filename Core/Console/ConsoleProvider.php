@@ -140,14 +140,12 @@ class ConsoleProvider
         {
             $config = $pluginManager->getPluginDefinition(trim($pluginName));
 
-            // Check that the plugin configuration is valid
-            if(!$pluginManager->checkPluginConfig($config))
+            // Instanciate the plugin through the plugin manager, check if that worked, and get the object
+            $pluginInstanciated = $pluginManager->loadPlugin($pluginName);
+            if(!$pluginInstanciated)
                 continue;
 
-            // Instanciate once the plugin
-            $pluginClass = PluginManager::PLUGINS_NAMESPACE. $pluginName. "\\". $config->pluginDefinition->mainClass;
-            $pluginObj = new $pluginClass($config->defaultSettings->toArray());
-            $pluginObj->init();
+            $pluginObj = $pluginManager->getPlugin($pluginName);
 
             // Load the commands if they're present
             if(isset($config->commands))
@@ -164,5 +162,10 @@ class ConsoleProvider
                 }
             }
         }
+    }
+
+    protected function loadPlugin()
+    {
+
     }
 }

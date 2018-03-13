@@ -13,6 +13,7 @@ use DateInterval;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Twitch\Kraken;
+use HedgeBot\Plugins\Horaro\Event\HoraroEvent;
 
 class Horaro extends PluginBase
 {
@@ -35,6 +36,8 @@ class Horaro extends PluginBase
         Plugin::getManager()->addRoutine($this, "RoutineProcessSchedules", 60);
         Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", $this->config['refreshInterval'] ?? 300);
         Plugin::getManager()->addRoutine($this, "RoutineCheckAsyncRequests", 1);
+
+        Plugin::getManager()->addEventListener(HoraroEvent::getType(), 'Horaro');
 
         $this->loadData();
     }
@@ -103,6 +106,7 @@ class Horaro extends PluginBase
                             HedgeBot::message("Current item index: $0, setting title", [$index], E_DEBUG);
                             $schedule->setCurrentIndex($index);
                             $this->setChannelTitleFromSchedule($schedule);
+                            Plugin::getManager()->callEvent(new HoraroEvent('scheduleUpdated', $schedule));
                             $this->saveData();
                             break;
                         }
@@ -175,6 +179,7 @@ class Horaro extends PluginBase
 
                 // Set the new schedule item, since we're not at the end
                 $this->setChannelTitleFromSchedule($schedule);
+                Plugin::getManager()->callEvent(new HoraroEvent('scheduleUpdated', $schedule));
                 $this->saveData();
             }
             elseif(!empty($nextItemAnnounceThresholdTime) && $now > $nextItemAnnounceThresholdTime && !$schedule->isNextItemAnnounced())

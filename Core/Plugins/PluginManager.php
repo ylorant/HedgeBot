@@ -132,10 +132,10 @@ class PluginManager extends EventManager
 		HedgeBot::message('Autoloading events for $0...', array($plugin));
 		$autoloadedEvents = $this->autoload($pluginObj);
 
-		// Register new commands into the security system
+		// Register new commands into the security system if the security context is loaded
 		foreach($autoloadedEvents as $event)
 		{
-			if($event['listener'] == CommandEvent::getType())
+			if($event['listener'] == CommandEvent::getType() && !empty(Security::getObject()))
 				Security::addRights($event['listener']. '/'. $event['event']);
 		}
 
@@ -249,7 +249,9 @@ class PluginManager extends EventManager
 				$rightsToRemove[] = $event['listener']. '/'. $event['event'];
 		}
 
-		Security::removeRights(...$rightsToRemove);
+		// Remove the rights from the security context if it exists
+		if(!empty(Security::getObject()))
+			Security::removeRights(...$rightsToRemove);
 
 		// Deleting all the autoloaded events for the plugin
 		$this->deleteEventsById($reflectionClass->getName());
