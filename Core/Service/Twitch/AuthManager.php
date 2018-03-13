@@ -78,12 +78,12 @@ class AuthManager
     }
 
     /**
-     * Adds an access token to the token list.
+     * Sets an access token to the token list.
      * 
      * @param string $channel The channel for which the access token will be used.
      * @param string $accessToken The access token.
      */
-    public function addAccessToken($channel, $accessToken)
+    public function setAccessToken($channel, $accessToken)
     {
         $channel = strtolower($channel);
         $this->accessTokens[$channel] = $accessToken;

@@ -14,7 +14,7 @@ class RegisterAccessTokenCommand extends StorageAwareCommand
     public function configure()
     {
         $this->setName('twitch:register-access-token')
-             ->setDescription('Registers a token on Twitch to be used on a channel.')
+             ->setDescription('Registers/update a token on Twitch to be used on a channel.')
              ->addArgument('channel', InputArgument::REQUIRED, 'The channel where the token will be active.')
              ->addArgument('token', InputArgument::REQUIRED, 'The token.');
     }
@@ -26,7 +26,7 @@ class RegisterAccessTokenCommand extends StorageAwareCommand
         $token = $input->getArgument('token');
 
         $twitchAuth = new AuthManager($config->get('twitch.auth.clientId'), $this->getDataStorage());
-        $twitchAuth->addAccessToken($channel, $token);
+        $twitchAuth->setAccessToken($channel, $token);
 
         $twitchAuth->saveToStorage();
     }
