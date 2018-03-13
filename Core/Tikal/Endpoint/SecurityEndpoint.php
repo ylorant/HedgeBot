@@ -94,6 +94,8 @@ class SecurityEndpoint
             Security::replaceUsers($roleId, $roleData->users);
         
         Security::saveToStorage();
+
+        return true;
     }
 
     /**
@@ -121,6 +123,11 @@ class SecurityEndpoint
         Security::saveToStorage();
 
         return true;
+    }
+
+    public function deleteRole($roleId)
+    {
+        return Security::deleteRole($roleId);
     }
 
     /**
