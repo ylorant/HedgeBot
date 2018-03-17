@@ -120,7 +120,7 @@ class PluginManager extends EventManager
 				HedgeBot::message('Cannot load plugin dependencies, loading aborted.', array(), E_WARNING);
 				return FALSE;
 			}
-			HedgeBot::message('Loaded plugin dependencies for $0.', array($params['name']));
+			HedgeBot::message('Loaded plugin dependencies for $0.', array($plugin));
 		}
 		elseif(!empty($config->get('pluginDefinition.dependencies')))
 			HedgeBot::message('Dependencies list is not an array.', array(), E_WARNING);
