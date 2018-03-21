@@ -6,6 +6,8 @@ use HedgeBot\Core\Plugins\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\Events\CommandEvent;
+use HedgeBot\Core\API\Store;
+use HedgeBot\Core\Store\Formatter\TextFormatter;
 
 class CustomCommands extends Plugin
 {
@@ -26,7 +28,11 @@ class CustomCommands extends Plugin
 			$command = substr($message[0], 1);
 
 			if(isset($this->commands[$ev->channel][$command]))
-				return IRC::message($ev->channel, $this->commands[$ev->channel][$command]);
+			{
+				$formatter = Store::getFormatter(TextFormatter::getName());
+				$formattedMessage = $formatter->format($this->commands[$ev->channel][$command], $ev->channel);
+				return IRC::message($ev->channel, $formattedMessage);
+			}
 		}
 	}
 

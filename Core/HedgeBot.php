@@ -27,6 +27,8 @@ use HedgeBot\Core\Tikal\Endpoint\SecurityEndpoint as TikalSecurityEndpoint;
 use HedgeBot\Core\API\Twitch\Helix as HelixAPI;
 use HedgeBot\Core\API\Twitch\Kraken as KrakenAPI;
 use HedgeBot\Core\API\Twitch\Auth as TwitchAuth;
+use HedgeBot\Core\Store\Store;
+use HedgeBot\Core\API\Store as StoreAPI;
 
 define('E_DEBUG', 32768);
 
@@ -41,6 +43,7 @@ class HedgeBot
 	public $initialized;
 	public $tikalServer;
 	public $accessControl;
+	public $store;
 
 	private $run;
 
@@ -102,6 +105,10 @@ class HedgeBot
 		if(HedgeBot::$verbose == 1 && !empty($this->config->general->verbosity))
 			HedgeBot::$verbose = $this->config->general->verbosity;
 
+		// Loading internal store
+		$this->store = new Store();
+		StoreAPI::setObject($this->store);
+		
 		// Initializing access control manager
 		$this->accessControl = new AccessControlManager($this->data->getProvider());
 		Security::setObject($this->accessControl);

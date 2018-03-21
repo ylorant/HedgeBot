@@ -14,8 +14,11 @@ use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Twitch\Kraken;
 use HedgeBot\Plugins\Horaro\Event\HoraroEvent;
+use HedgeBot\Core\Store\StoreSourceInterface;
+use HedgeBot\Core\API\Store;
+use HedgeBot\Core\Store\Formatter\TextFormatter;
 
-class Horaro extends PluginBase
+class Horaro extends PluginBase implements StoreSourceInterface
 {
     /** @var HoraroAPI Horaro API Client instance */
     protected $horaro;
@@ -23,6 +26,9 @@ class Horaro extends PluginBase
     protected $schedules;
     /** @var int Refresh schedules current index */
     protected $refreshScheduleIndex;
+
+    const SOURCE_NAMESPACE = "Horaro";
+    const CURRENT_DATA_SOURCE_PATH = self::SOURCE_NAMESPACE.".schedule.currentItem.data";
 
     /**
      * Plugin initialization.
@@ -39,9 +45,57 @@ class Horaro extends PluginBase
 
         Plugin::getManager()->addEventListener(HoraroEvent::getType(), 'Horaro');
 
+        Store::registerSource($this);
+
         $this->loadData();
     }
     
+    // Store implementation
+
+    /**
+     * Provides the store with schedule data.
+     * 
+     * @param string $channel The channel from which the data will be restricted.
+     * 
+     * @return array The schedule data for the store.
+     */
+    public function provideStoreData($channel = null)
+    {
+        $storeData = [];
+        
+        $runningSchedules = $this->getCurrentlyRunningSchedules($channel);
+
+        /** @var Schedule $schedule */
+        foreach($runningSchedules as &$schedule)
+        {
+            $columns = $schedule->getData("columns");
+            $currentItem = $schedule->getCurrentItem();
+            $nextItem = $schedule->getNextItem();
+
+            $schedule = $schedule->toArray();
+            $schedule['currentItem'] = (array) $currentItem;
+            $schedule['currentItem']['data'] = array_combine($columns, $schedule['currentItem']['data']);
+            $schedule['nextItem'] = $nextItem;
+
+            if(!is_null($schedule['nextItem']))
+                $schedule['nextItem'] = (array) $schedule['nextItem'];
+        }
+
+        // If a specific channel is asked, we get only the first running schedule, anyway, there should be only one.
+        if(!empty($channel))
+            $storeData['schedule'] = reset($runningSchedules);
+        else
+            $storeData['schedules'] = $runningSchedules;
+        
+
+        return $storeData;
+    }
+
+    public static function getSourceNamespace()
+    {   
+        return self::SOURCE_NAMESPACE;
+    }
+
     // Routines
 
     /**
@@ -490,7 +544,7 @@ class Horaro extends PluginBase
             $startTime = $schedule->getStartTime();
             $endTime = $schedule->getEndTime();
 
-            if($currentTime > $startTime && $currentTime < $endTime)
+            if($currentTime > $startTime && $currentTime < $endTime && (empty($channel) || $schedule->getChannel() == $channel))
                 $runningSchedules[$identSlug] = $schedule;
         }
 
@@ -520,11 +574,17 @@ class Horaro extends PluginBase
      */
     public function setChannelTitleFromSchedule(Schedule $schedule)
     {
-        $currentItem = $schedule->getCurrentItem();
-        $channelTitle = $schedule->getCurrentTitle();
-        $channelGame = $schedule->getCurrentGame();
+        $titleTemplate = $schedule->getTitleTemplate();
+        $gameTemplate = $schedule->getGameTemplate();
         $channel = $schedule->getChannel();
 
+        HedgeBot::message("Updating title from Horaro for channel $0", [$channel], E_DEBUG);
+
+        // Format the title and the game with the text formatter, providing a root namespace to avoid 
+        $textFormatter = Store::getFormatter(TextFormatter::getName());
+        $channelTitle = $textFormatter->format($titleTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
+        $channelGame = $textFormatter->format($gameTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
+        
         Kraken::get('channels')->update($channel, ['title' => $channelTitle, 'game' => $channelGame]);
     }
 
