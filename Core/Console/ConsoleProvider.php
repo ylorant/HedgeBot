@@ -17,6 +17,8 @@ use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\API\Config;
 use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Plugin;
+use HedgeBot\Core\API\Store as StoreAPI;
+use HedgeBot\Core\Store\Store;
 
 /**
  * Console provider, provides the console application with all the commands it can
@@ -31,6 +33,8 @@ class ConsoleProvider
     protected $data;
     /** @var ObjectAccess $config The configuration storage provider, encapsuled in an ObjectAccess wrapper */
     protected $config;
+    /** @var Store The data store. */
+    protected $store;
     /** @var string $arguments The arguments passed to the console command */
     protected $arguments;
 
@@ -46,16 +50,26 @@ class ConsoleProvider
     }
 
     /**
-     * Populates the console application using both core commands and 
+     * Populates the console application using both core commands and plugin commands.
      */
     public function populateApplication(Application $application)
     {
         // Load the storages
+        $this->init();
         $this->loadStorages();
 
         // Populate the different parts
         $this->populateCoreCommands($application);
         $this->populatePluginCommands($application);
+    }
+
+    /**
+     * Initializes the common parts of the bot that may be used by the plugins.
+     */
+    public function init()
+    {
+        $this->store = new Store();
+		StoreAPI::setObject($this->store);
     }
 
     /**
