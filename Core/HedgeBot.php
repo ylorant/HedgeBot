@@ -52,6 +52,13 @@ class HedgeBot
 	const VENDOR_NAMESPACE = "HedgeBot"; // Base "vendor" namespace for autoloading
 	const DEFAULT_CONFIG_DIR = "./conf";
 
+	/**
+	 * Initializes the bot, connects the storages, loads the plugins, load peripheral services...
+	 *
+	 * TODO: Instead of initializing services like that, why not do a service container of some sorts ?
+	 * 
+	 * @return bool True if the bot initialized correctly, false if not.
+	 */
 	public function init()
 	{
 		HedgeBot::$instance = $this;
@@ -194,8 +201,9 @@ class HedgeBot
 
 	/**
 	 * Autoloads a class depending on its namespace. Kinda follows PSR-4 ?
-	 * \param $class the class trying to be loaded.
-	 * \return null.
+	 * 
+	 * @param string $class the class trying to be loaded.
+	 * @return null
 	 */
 	public static function autoload($class)
 	{
@@ -227,6 +235,27 @@ class HedgeBot
 			require $path;
 	}
 
+	/**
+     * Returns true if the stream supports colorization.
+     *
+     * Colorization is disabled if not supported by the stream:
+     *
+     *  -  Windows without Ansicon, ConEmu or Mintty
+     *  -  non tty consoles
+     *
+	 * This function was taken shamelessly from the Symfony Console component.
+	 * 
+     * @return bool true if the stream supports colorization, false otherwise
+	 * @author Fabien Potencier <fabien@symfony.com>
+     */
+    protected static function hasColorSupport()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            return false !== getenv('ANSICON') || 'ON' === getenv('ConEmuANSI') || 'xterm' === getenv('TERM');
+        }
+        return function_exists('posix_isatty') && @posix_isatty(STDOUT);
+    }
+
 	public static function getInstance()
 	{
 		return self::$instance;
@@ -248,11 +277,32 @@ class HedgeBot
 			return TRUE;
 	}
 
+	/**
+	 * Outputs a message on the console. This is the main way this bot has to communicate with the user.
+	 * Every message can have a type/gravity assigned to it and, depending on the verbosity settings, this
+	 * gravity will be allowed to be displayed by the bot. Also, the message can be written in a template-like
+	 * fashion, using a `$keyname` syntax, where "keyname" is the key of the element to be inserted in the $args
+	 * array. This has been made to allow for future translations of the bot messages.
+	 * 
+	 * Depending on the console capabilities, some messages will be colored.
+	 * 
+	 * TODO: Use a real logger service, to allow logging these into a file & more.
+	 * 
+	 * @param string $message The message to output. You can use tokens in the form `$keyname` to substitute vars.
+	 * @param array  $vars    The vars to substitute the tokens with in the message.
+	 * @param int    $type    The type/gravity of the message. Verbosity will make the message show or not depending
+	 * 						  on this setting.
+	 * 
+	 * @return bool True for non-error messages (notice, debug) and false for error-level messages (warning, error).
+	 */
 	public static function message($message, $args = array(), $type = E_NOTICE)
 	{
 		$returnVal = true;
 		$verbosity = 1;
 		$prefix = "";
+
+		$hasColors = self::hasColorSupport();
+
 		//Getting type string
 		switch($type)
 		{
@@ -263,7 +313,7 @@ class HedgeBot
 			case E_WARNING:
 			case E_USER_WARNING:
 			$prefix = 'Warning';
-				if(PHP_OS == 'Linux') //If we are on Linux, we use colors
+				if($hasColors) // If we are on Linux, we use colors
 					echo "\033[0;33m";
 				break;
 			case E_ERROR:
@@ -271,12 +321,14 @@ class HedgeBot
 				$prefix = 'Error';
 				$force = TRUE;
 				$verbosity = 0;
-				if(PHP_OS == 'Linux') //If we are on Linux, we use colors (yes, I comment twice)
+				if($hasColors) // If we are on Linux, we use colors (yes, I comment twice)
 					echo "\033[0;31m";
 				break;
 			case E_DEBUG:
 				$prefix = 'Debug';
 				$verbosity = 2;
+				if($hasColors) // If we are on Linux, we use colors
+					echo "\033[38;5;245m";
 				break;
 			default:
 				$prefix = 'Unknown';
@@ -298,7 +350,7 @@ class HedgeBot
 		if(HedgeBot::$verbose >= $verbosity)
 		{
 			echo date("m/d/Y h:i:s A").' -- '.$prefix.' -- '.$message.PHP_EOL;
-			if(PHP_OS == 'Linux')
+			if($hasColors)
 				echo "\033[0m";
 		}
 
