@@ -39,14 +39,16 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $this->schedules = [];
         $this->refreshScheduleIndex = -1; // Since we pre-increment the current index, we will use -1 to start at 0.
 
+        $this->horaro->setErrorHandler([$this, 'onHoraroError']);
+
         Plugin::getManager()->addRoutine($this, "RoutineProcessSchedules", 60);
         Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", $this->config['refreshInterval'] ?? 300);
         Plugin::getManager()->addRoutine($this, "RoutineCheckAsyncRequests", 1);
-
         Plugin::getManager()->addEventListener(HoraroEvent::getType(), 'Horaro');
-
+    
         Store::registerSource($this);
 
+        
         $this->loadData();
     }
     
@@ -91,6 +93,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
         return $storeData;
     }
 
+    /**
+     * @inheritdoc
+     */
     public static function getSourceNamespace()
     {   
         return self::SOURCE_NAMESPACE;
@@ -252,16 +257,17 @@ class Horaro extends PluginBase implements StoreSourceInterface
      */
     public function RoutineRefreshSchedules()
     {
-        if(!empty($this->schedules))
+        $enabledSchedules = $this->getEnabledSchedules();
+        if(!empty($enabledSchedules))
         {
             // Increment the currently refreshed schedule index, and make sure it's pointing to a current schedule
             $this->refreshScheduleIndex++;
-            if($this->refreshScheduleIndex >= count($this->schedules))
+            if($this->refreshScheduleIndex >= $enabledSchedules)
                 $this->refreshScheduleIndex = 0;
             
             // Get the correct schedule corresponding to the current index with its key.
-            $scheduleKeys = array_keys($this->schedules);
-            $schedule = $this->schedules[$scheduleKeys[$this->refreshScheduleIndex]];
+            $scheduleKeys = array_keys($enabledSchedules);
+            $schedule = $enabledSchedules[$scheduleKeys[$this->refreshScheduleIndex]];
 
             // Finally, fetch the new schedule data
             $newScheduleData = $this->horaro->getScheduleAsync($schedule->getScheduleId(), $schedule->getEventId(), null, [$this, 'onScheduleReceived']);
@@ -271,17 +277,40 @@ class Horaro extends PluginBase implements StoreSourceInterface
         }
     }
 
-    public function RoutineAnnounceNextRun()
-    {
-
-    }
-
     // Callbacks
 
+    /**
+     * Event called when a schedule is received by an async call (when updating).
+     * 
+     * @param string $scheduleId The ID of the schedule.
+     * @param string $eventId The ID of the event to which belongs the schedule.
+     * @param string $scheduleData The data fetched from the API.
+     */
     public function onScheduleReceived($scheduleId, $eventId, $scheduleData)
     {
         $schedule = $this->getScheduleById($scheduleId, $eventId);
         $schedule->setData($scheduleData);
+    }
+
+    /**
+     * Event called when an error has occured on a schedule retrieval method.
+     * 
+     * @param int $curlError The error that cURL has threw. If the error comes from the API and not cURL itself, equals CURLE_OK.
+     * @param resource $curlHandler The cURL handler, to get additional info from.
+     * @param array $parameters The parameters that should have been given to the callback if the call had succeeded.
+     * @param object $data The data that has been returned by the curlHandler if the request succeeded but the API returned an error.
+     */
+    public function onHoraroError($curlError, $curlHandler = null, $parameters = [], $data = null)
+    {
+        // Check if the HTTP reply denotes a schedule not found error
+        if($curlError == CURLE_OK && !empty($data) && $data->status == 404)
+        {
+            // Getting the schedules by the parameters that should've been passed to the success callback
+            $schedule = $this->getScheduleById($parameters[0], $parameters[1]);
+            HedgeBot::message("Failed getting schedule data for schedule $0, disabling it.", [$schedule->getIdentSlug()], E_WARNING);
+            $schedule->setEnabled(false);
+            $this->saveData();
+        }
     }
 
     // Core events
@@ -552,6 +581,23 @@ class Horaro extends PluginBase implements StoreSourceInterface
     }
 
     /**
+     * Gets the enabled schedules.
+     * 
+     * @return array The schedules that are enabled.
+     */
+    public function getEnabledSchedules()
+    {
+        $enabledSchedules = [];
+        foreach($this->schedules as $identSlug => $schedule)
+        {
+            if($schedule->isEnabled())
+                $enabledSchedules[$identSlug] = $schedule;
+        }
+
+        return $enabledSchedules;
+    }
+
+    /**
      * Checks that a schedule exists on the Horaro API.
      * 
      * @param string $scheduleId The schedule ID/slug to check the existence of.
@@ -618,6 +664,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         // Reset the actual schedule list, but keep the refs into a separate var, if a schedule has not been modified, it will not be reloaded that way.
         $oldSchedules = $this->schedules;
         $this->schedules = [];
+        $saveData = false;
 
         if(empty($schedules))
             return;
@@ -642,10 +689,21 @@ class Horaro extends PluginBase implements StoreSourceInterface
             if($loadSchedule)
             {
                 $scheduleData = $this->horaro->getSchedule($scheduleObj->getScheduleId(), $scheduleObj->getEventId());
-                $scheduleObj->setData($scheduleData);
+
+                if($scheduleData)
+                    $scheduleObj->setData($scheduleData);
+                else // We skip loading the schedule if getting the schedule data fails.
+                {
+                    HedgeBot::message("Failed getting schedule data for schedule $0, disabling it.", [$identSlug], E_WARNING);
+                    $scheduleObj->setEnabled(false);
+                    $saveData = true; // Since we disabled a schedule, we mark the data to be saved after loading
+                }
             }
 
             $this->schedules[$identSlug] = $scheduleObj;
         }
+
+        if($saveData)
+            $this->saveData();
     }
 }

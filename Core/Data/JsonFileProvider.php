@@ -47,6 +47,9 @@ class JsonFileProvider extends Provider
 
         $json = json_encode($cleanData, JSON_PRETTY_PRINT);
         file_put_contents($this->dataFile, $json);
+
+        // Updating the last modification time to avoid instant reload
+        $this->lastModification = filemtime($this->dataFile);
     }
 
     /** Loads data from the file store in the specified file.
@@ -144,7 +147,14 @@ class JsonFileProvider extends Provider
         }
 
         $currentPath[$varName] = $data;
-        $this->writeData();
+        
+        // Save only if the data that has been set is relevant (not an empty structure, like an array or an object)
+        if(!(is_array($data) && empty($data) || is_object($data) && empty((array) $data)))
+        {
+            HedgeBot::message("Writing data to file: $0", [$this->dataFile], E_DEBUG);
+            $this->writeData();
+        }
+        
         return TRUE;
     }
 

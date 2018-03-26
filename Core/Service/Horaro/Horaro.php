@@ -36,6 +36,7 @@ class Horaro
      * - The reply code from cURL
      * - The cURL handler
      * - The parameters that would've been given to the initial callback.
+     * - The reply data
      */
     public function setErrorHandler($errorHandler)
     {
@@ -111,7 +112,7 @@ class Horaro
                 // If there's a status replied and it's not 200 (HTTP OK), then it's an error and we trigger the error handler
                 if(!empty($data->status) && $data->status != 200)
                 {
-                    $this->callErrorHandler($curlInfo, $request, $request['cbParams'], $data);
+                    $this->callErrorHandler($curlInfo['result'], $curlInfo['handle'], $request['cbParams'], $data);
                     break;
                 }
             
