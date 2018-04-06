@@ -262,7 +262,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         {
             // Increment the currently refreshed schedule index, and make sure it's pointing to a current schedule
             $this->refreshScheduleIndex++;
-            if($this->refreshScheduleIndex >= $enabledSchedules)
+            if($this->refreshScheduleIndex >= count($enabledSchedules))
                 $this->refreshScheduleIndex = 0;
             
             // Get the correct schedule corresponding to the current index with its key.
