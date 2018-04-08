@@ -176,6 +176,7 @@ class Server
             $rpcQuery->params = $orderedParams;
         }
         
+        HedgeBot::message("Tikal: Calling RPC method: $0::$1", [$reflectionClass->getShortName(), $reflectionMethod->getName()], E_DEBUG);
         $funcResult = $reflectionMethod->invokeArgs($endpointClass, $rpcQuery->params);
 
         // Send result only if this is not a notification, i.e. an ID is given

@@ -147,13 +147,9 @@ class JsonFileProvider extends Provider
         }
 
         $currentPath[$varName] = $data;
-        
-        // Save only if the data that has been set is relevant (not an empty structure, like an array or an object)
-        if(!(is_array($data) && empty($data) || is_object($data) && empty((array) $data)))
-        {
-            HedgeBot::message("Writing data to file: $0", [$this->dataFile], E_DEBUG);
-            $this->writeData();
-        }
+    
+        // Write the data
+        $this->writeData();
         
         return TRUE;
     }

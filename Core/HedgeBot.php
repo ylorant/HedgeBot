@@ -24,6 +24,7 @@ use HedgeBot\Core\Tikal\Server as TikalServer;
 use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\PluginEndpoint as TikalPluginEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\SecurityEndpoint as TikalSecurityEndpoint;
+use HedgeBot\Core\Tikal\Endpoint\TwitchEndpoint as TikalTwitchEndpoint;
 use HedgeBot\Core\API\Twitch\Helix as HelixAPI;
 use HedgeBot\Core\API\Twitch\Kraken as KrakenAPI;
 use HedgeBot\Core\API\Twitch\Auth as TwitchAuth;
@@ -122,8 +123,11 @@ class HedgeBot
 
 		// Initializing Twitch API connector
 		HedgeBot::message("Initializing Twitch API client...", null, E_DEBUG);
+		
+		$clientID = $this->config->get('twitch.auth.clientId');
+		$clientSecret = $this->config->get('twitch.auth.clientSecret');
 
-		$authManager = new TwitchAuthManager($this->config->get('twitch.auth.clientId'), $this->data->getProvider());
+		$authManager = new TwitchAuthManager($clientID, $clientSecret, $this->data->getProvider());
 		$kraken = new Kraken($authManager);
 		$helix = new Helix($authManager);
 		$kraken->discoverServices();
@@ -142,6 +146,7 @@ class HedgeBot
 			Tikal::addEndpoint('/', new TikalCoreEndpoint());
 			Tikal::addEndpoint('/plugin', new TikalPluginEndpoint());
 			Tikal::addEndpoint('/security', new TikalSecurityEndpoint());
+			Tikal::addEndpoint('/twitch', new TikalTwitchEndpoint());
 		}
 
 		// Loading plugins

@@ -7,6 +7,8 @@ include('Core/HedgeBot.php');
 
 spl_autoload_register("HedgeBot\Core\HedgeBot::autoload");
 
+const ENV = "main";
+
 $hedgebot = new HedgeBot();
 $initialized = $hedgebot->init();
 
