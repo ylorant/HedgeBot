@@ -75,12 +75,16 @@ class IRCConnection
 			$channels = explode(',', str_replace(' ', '', $channels));
 
 		foreach($channels as &$channel)
+		{
 			$channel = strtolower($channel);
 
-		$this->_channels = array_merge($this->_channels, $channels);
+			// Avoid joining a channel we have already joined
+			if(!in_array($channel, $this->_channels))
+				$this->send('JOIN #'. $channel);
+		}
 
-		foreach($channels as $channel)
-			$this->send('JOIN #'. $channel);
+		// Add the new list of channels and eliminate duplicates
+		$this->_channels = array_unique(array_merge($this->_channels, $channels));
 	}
 
 	public function joinChannel($chan)
