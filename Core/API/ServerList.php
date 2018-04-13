@@ -15,11 +15,14 @@ class ServerList
 	private static function getInstance()
 	{
 		if(empty(self::$_instance))
-			self::$_instance = new Server();
+			self::$_instance = new ServerList();
 
 		return self::$_instance;
 	}
 
+	/**
+	 * TODO: Refactor this method to return the actual instances when no parameter is given, not the names, and make a getNames function
+	 */
 	public static function get($name = NULL)
 	{
 		$self = self::getInstance();
