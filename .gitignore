@@ -9,3 +9,4 @@ data/*/*.ini
 doc/*
 *.log
 vendor
+.idea
