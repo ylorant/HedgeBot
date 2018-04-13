@@ -55,9 +55,9 @@ class HoraroTextFile extends PluginBase
             // Add estimate, see to replace with provider stuff
             $dateInterval = new DateInterval($item->length);
             $itemFileContent .= "\n". $dateInterval->format("%H:%I:%S");
+            
+            file_put_contents($this->fileMapping[$identSlug], $itemFileContent);
         }
-
-        file_put_contents($this->fileMapping[$identSlug], $itemFileContent);
     }
 
     /**
