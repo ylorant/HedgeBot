@@ -29,6 +29,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
     const SOURCE_NAMESPACE = "Horaro";
     const CURRENT_DATA_SOURCE_PATH = self::SOURCE_NAMESPACE.".schedule.currentItem.data";
+    const NEXT_DATA_SOURCE_PATH = self::SOURCE_NAMESPACE.".schedule.nextItem.data";
 
     /**
      * Plugin initialization.
@@ -70,17 +71,20 @@ class Horaro extends PluginBase implements StoreSourceInterface
         /** @var Schedule $schedule */
         foreach($runningSchedules as &$schedule)
         {
-            $columns = $schedule->getData("columns");
+            $columns = $schedule->getColumns(true);
             $currentItem = $schedule->getCurrentItem();
             $nextItem = $schedule->getNextItem();
 
             $schedule = $schedule->toArray();
             $schedule['currentItem'] = (array) $currentItem;
             $schedule['currentItem']['data'] = array_combine($columns, $schedule['currentItem']['data']);
-            $schedule['nextItem'] = $nextItem;
+            $schedule['nextItem'] = null;
 
-            if(!is_null($schedule['nextItem']))
-                $schedule['nextItem'] = (array) $schedule['nextItem'];
+            if(!is_null($nextItem))
+            {
+                $schedule['nextItem'] = (array) $nextItem;
+                $schedule['nextItem']['data'] = array_combine($columns, $schedule['nextItem']['data']);
+            }
         }
 
         // If a specific channel is asked, we get only the first running schedule, anyway, there should be only one.
@@ -89,7 +93,6 @@ class Horaro extends PluginBase implements StoreSourceInterface
         else
             $storeData['schedules'] = $runningSchedules;
         
-
         return $storeData;
     }
 
@@ -241,11 +244,14 @@ class Horaro extends PluginBase implements StoreSourceInterface
                 Plugin::getManager()->callEvent(new HoraroEvent('scheduleUpdated', $schedule));
                 $this->saveData();
             }
-            elseif(!empty($nextItemAnnounceThresholdTime) && $now > $nextItemAnnounceThresholdTime && !$schedule->isNextItemAnnounced())
+            elseif(!empty($nextItemAnnounceThresholdTime) && $now >= $nextItemAnnounceThresholdTime && !$schedule->isNextItemAnnounced())
             {
                 // Announce the next item and mark it as announced
-                IRC::message($schedule->getChannel(), $schedule->getNextAnnounce());
-                $schedule->setNextItemAnnounced(true);
+                $textFormatter = Store::getFormatter(TextFormatter::getName());
+                $announceMessage = $textFormatter->format($schedule->getAnnounceTemplate(), $schedule->getChannel(), self::NEXT_DATA_SOURCE_PATH);
+
+                IRC::message($schedule->getChannel(), $announceMessage);
+                $schedule->setNextItemAnnounced(true); 
                 $this->saveData();
             }
         }
@@ -631,6 +637,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $channelTitle = $textFormatter->format($titleTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
         $channelGame = $textFormatter->format($gameTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
         
+        HedgeBot::message("New title: $0", [$channelTitle], E_DEBUG);
+        HedgeBot::message("New game: $0", [$channelGame], E_DEBUG);
+
         Kraken::get('channels')->update($channel, ['title' => $channelTitle, 'game' => $channelGame]);
     }
 
@@ -658,7 +667,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function loadData()
     {
         HedgeBot::message("Loading schedules...", [], E_DEBUG);
-
+        
         $schedules = $this->data->schedules->toArray();
 
         // Reset the actual schedule list, but keep the refs into a separate var, if a schedule has not been modified, it will not be reloaded that way.

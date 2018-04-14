@@ -397,65 +397,22 @@ class Schedule
     }
 
     /**
-     * Gets the current title for the current item in the schedule.
+     * Get the data columns of the schedule.
      * 
-     * @return string|null The current title formatted with the curent item data, or null if the item isn't found.
+     * @param bool $normalizeSpaces Set to true to replace the spaces in the column names by an underscore,
+     *                              to allow them to be used as variable names, for example.
      */
-    public function getCurrentTitle()
-    {
-        $currentItem = $this->getCurrentItem();
-
-        if(empty($currentItem))
-            return null;
-
-        return $this->fillTemplateItem($this->titleTemplate, $currentItem);
-    }
-
-    /**
-     * Gets the current game for the current item in the schedule.
-     * 
-     * @return string|null The current game formatted with the curent item data, or null if the item isn't found.
-     */
-    public function getCurrentGame()
-    {
-        $currentItem = $this->getCurrentItem();
-
-        if(empty($currentItem))
-            return null;
-
-        return $this->fillTemplateItem($this->gameTemplate, $currentItem);
-    }
-
-    /**
-     * Gets the announce for the next item.
-     * 
-     * @return string|null The announce for the next run.
-     */
-    public function getNextAnnounce()
-    {
-        $nextItem = $this->getNextItem();
-
-        if(empty($nextItem))
-            return null;
-        
-        return $this->fillTemplateItem($this->announceTemplate, $nextItem);
-    }
-
-    protected function fillTemplateItem($template, $item)
+    public function getColumns($normalizeSpaces = false)
     {
         $columns = $this->getData('columns');
-        
-        // Prepend a $ to the columns name to prepare them for a big ol' str_replace
-        foreach($columns as &$columnName)
-            $columnName = "$". $columnName;
-        
-        $ret = str_replace($columns, $item->data, $template);
 
-        //FIXME: Replace this dirty Markdown URL fix by something a bit more beautiful?
-        // Use a data store / providers system, with plugins having a data provider class/interface for the data provider
-        $ret = preg_replace("#\[(.+)\]\((.+)\)#isU", "$1", $ret);
+        if($normalizeSpaces)
+        {
+            foreach($columns as &$column)
+                $column = str_replace(' ', '_', $column);
+        }
 
-        return $ret;
+        return $columns;
     }
 
     // Serialization
