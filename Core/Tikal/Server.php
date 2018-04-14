@@ -121,6 +121,10 @@ class Server
 
         foreach($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $reflectionMethod)
         {
+            // Ignore all magic methods
+            if(strpos($reflectionMethod->getName(), "__") === 0)
+                continue;
+
             $method = ['name' => $reflectionMethod->name, 'args' => []];
             foreach($reflectionMethod->getParameters() as $reflectionParameter)
             {
@@ -153,8 +157,8 @@ class Server
         $endpointClass = $this->getEndpoint($request->requestURI);
         $reflectionClass = new ReflectionClass($endpointClass);
 
-        // Check that the method exists
-        if(!$reflectionClass->hasMethod($rpcQuery->method))
+        // Check that the method exists and it isn't a magic method
+        if(!$reflectionClass->hasMethod($rpcQuery->method) || strpos($rpcQuery->method, "__") === 0)
             return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
 
         $reflectionMethod = $reflectionClass->getMethod($rpcQuery->method);
