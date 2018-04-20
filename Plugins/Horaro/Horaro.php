@@ -574,7 +574,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function getCurrentlyRunningSchedules($channel = null)
     {
         $runningSchedules = [];
-        $currentTime = new DateTime($this->config['simulatedTime']);
+        $currentTime = new DateTime($this->config['simulatedTime'] ?? null);
 
         foreach($this->schedules as $identSlug => $schedule)
         {
