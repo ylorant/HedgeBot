@@ -76,6 +76,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
             $nextItem = $schedule->getNextItem();
 
             $schedule = $schedule->toArray();
+	    $schedule['data'] = $schedule->getData();
             $schedule['currentItem'] = (array) $currentItem;
             $schedule['currentItem']['data'] = array_combine($columns, $schedule['currentItem']['data']);
             $schedule['nextItem'] = null;
