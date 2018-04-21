@@ -203,8 +203,6 @@ class Horaro extends PluginBase implements StoreSourceInterface
             $nextItem = $schedule->getNextItem();
 
             // Get current item end time and next item start time
-            $currentItemEndTime = new DateTime($currentItem->scheduled);
-            $currentItemEndTime->add(new DateInterval($currentItem->length));
             $nextItemStartTime = null;
             $nextItemAnnounceThresholdTime = null;
 
