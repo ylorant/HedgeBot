@@ -106,31 +106,6 @@ class CustomCommands extends Plugin
 	}
 
 	/**
-	 * Adds a command to the command list.
-	 * 
-	 * @param string $command The command name, without the exclamation mark.
-	 * @param string $text    The text to display when calling the command.
-	 * @param array $channels The channels to add the command on.
-	 * 
-	 * @return bool True if the command has been added, false if not (that usually means that the command already exists).
-	 */
-	public function addCommand($command, $text, array $channels)
-	{
-		if(!empty($this->commands[$command]))
-			return false;
-		
-		$this->commands[$command] = [
-			'name' => $command,
-			'channels' => $channels,
-			'text' => $text
-		];
-		
-		$this->saveData();
-
-		return true;
-	}
-
-	/**
 	 * Removes a command from the list of commands.
 	 * 
 	 * @param string $commandName The command name, without the exclamation mark.
@@ -150,6 +125,55 @@ class CustomCommands extends Plugin
 		}
 
 		return false;
+	}
+
+	/**
+	 * Saves a command into the list of commands. This method is to be used to create a command as well as update it.
+	 * 
+	 * @param string $commandName The command name to save. If this is an update and the name of the command is to be changed,
+	 * 							  then this parameter has to be the *old* name of the command, to allow proper replacement.
+	 * @param array  $commandData The command data. The allowed keys are :
+	 * 							  - name: The (new) command name.
+	 * 							  - text: The command reply text.
+	 * 							  - channels: The channel list where the command is active, as an array.
+	 */
+	public function saveCommand($commandName, array $commandData)
+	{
+		$oldCommandData = $this->getCommand($commandName);
+		
+		// If the command exists, we update the data and save it in the place of the old one
+		if(!empty($oldCommandData))
+		{
+			// Fill the remaining of the new data with the old one if new data isn't present
+			$commandData['name'] = $commandData['name'] ?? $oldCommandData['name'];
+			$commandData['text'] = $commandData['text'] ?? $oldCommandData['text'];
+			$commandData['channels'] = $commandData['channels'] ?? $oldCommandData['channels'];
+
+			// Get the old 
+			foreach($this->commands as $i => &$command)
+			{
+				if($command['name'] == $commandName)
+				{
+					$command = $commandData;
+					break;
+				}
+			}	
+		}
+		else // If there isn't any command present (it's a new command), we need to create it
+		{
+			// Check if basic data is needed, and if not, fail
+			if(empty($commandData['name']) || empty($commandData['text']))
+				return false;
+			
+			// Set a default channels value if needed, and cast it as an array
+			$commandData['channels'] = (array) ($commandData['channels'] ?? []);
+
+			// Add the command
+			$this->commands[] = $commandData;
+		}
+
+		$this->saveData();
+		return true;
 	}
 
 	/**
