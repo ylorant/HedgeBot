@@ -76,9 +76,7 @@ class BannedWords extends PluginBase
         {
             // Match against a banned word, we timeout
             if(strpos($message, $bannedWord) !== FALSE)
-            {
-                IRC::message($ev->channel, ".timeout ". $ev->nick. " 1");
-            }
+                IRC::message($ev->channel, ".timeout ". $ev->nick. " ". $timeoutDuration);
         }
 
         // Check against channel banned words
@@ -86,10 +84,9 @@ class BannedWords extends PluginBase
         {
             foreach($this->bannedWords[$ev->channel] as $bannedWord)
             {
+                // Match against a banned word, we timeout (duh)
                 if(strpos($message, $bannedWord) !== FALSE)
-                {
-                    IRC::message($ev->channel, ".timeout ". $ev->nick. " 1");
-                }
+                    IRC::message($ev->channel, ".timeout ". $ev->nick. " ". $timeoutDuration);
             }
         }
     }
