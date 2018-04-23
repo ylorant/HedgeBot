@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Tikal;
 
 class HttpRequest
@@ -23,8 +24,9 @@ class HttpRequest
     {
         $this->clientId = $clientId;
 
-        if(!empty($data))
+        if (!empty($data)) {
             $this->parse($data);
+        }
     }
 
     /**
@@ -34,8 +36,9 @@ class HttpRequest
      */
     public function __get($name)
     {
-        if(isset($this->$name))
+        if (isset($this->$name)) {
             return $this->$name;
+        }
 
         return null;
     }
@@ -43,7 +46,7 @@ class HttpRequest
     public function setRequestURI($url)
     {
         $this->requestURI = $url;
-        $this->completeURL = $this->host. $this->requestURI;
+        $this->completeURL = $this->host . $this->requestURI;
     }
 
     /**
@@ -59,13 +62,11 @@ class HttpRequest
         $metadata = explode("\r\n", $query[0]);
 
         // Parse metadata
-        foreach($metadata as $row)
-        {
+        foreach ($metadata as $row) {
             $saveHeader = true;
 
             $row = explode(' ', $row, 2);
-            switch($row[0])
-            {
+            switch ($row[0]) {
                 case 'POST':
                     $this->rawData = $this->data = $query[1];
                 case 'GET': //It's a GET request (main parameter)
@@ -75,28 +76,31 @@ class HttpRequest
                     $saveHeader = false;
                     break;
                 case 'Host:':
-                    $host = explode(':',$row[1], 2);
+                    $host = explode(':', $row[1], 2);
                     $this->host = $host[0];
-                    $this->port = isset($host[1]) ? $host[1] : NULL;
+                    $this->port = isset($host[1]) ? $host[1] : null;
                     break;
                 case 'Connection:':
-                    if($row[1] == 'keep-alive')
-                        $this->keepAlive = TRUE;
+                    if ($row[1] == 'keep-alive') {
+                        $this->keepAlive = true;
+                    }
                     break;
                 case 'Content-Type:':
                     $this->contentType = $row[1];
                     break;
             }
 
-            if($saveHeader)
+            if ($saveHeader) {
                 $this->headers[substr($row[0], 0, -1)] = $row[1];
+            }
         }
 
         // Parse data if needed
-        if(!empty($this->contentType) && $this->contentType == 'application/json')
+        if (!empty($this->contentType) && $this->contentType == 'application/json') {
             $this->data = json_decode($this->data);
+        }
 
-        $this->completeURL = $this->host. $this->requestURI;
+        $this->completeURL = $this->host . $this->requestURI;
         return $this;
     }
 }

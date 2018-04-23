@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Data;
 
 use HedgeBot\Core\HedgeBot;
@@ -22,14 +23,14 @@ class MemoryProvider extends Provider
         $keyComponents = explode('.', $key);
 
         $currentPath = &$this->data;
-        foreach($keyComponents as $component)
-        {
-            if(!isset($currentPath[$component]))
-                return NULL;
-            elseif(is_array($currentPath))
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
+                return null;
+            } elseif (is_array($currentPath)) {
                 $currentPath = &$currentPath[$component];
-            else
-                return FALSE;
+            } else {
+                return false;
+            }
         }
 
         return $currentPath;
@@ -51,18 +52,18 @@ class MemoryProvider extends Provider
         $varName = array_pop($keyComponents);
 
         $currentPath = &$this->data;
-        foreach($keyComponents as $component)
-        {
-            if(!isset($currentPath[$component]))
-                return FALSE;
-            elseif(is_array($currentPath[$component]))
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
+                return false;
+            } elseif (is_array($currentPath[$component])) {
                 $currentPath = &$currentPath[$component];
-            else
-                return FALSE;
+            } else {
+                return false;
+            }
         }
 
         $currentPath[$varName] = $data;
-        return TRUE;
+        return true;
     }
 
     /** Sets the location for the data to be located.

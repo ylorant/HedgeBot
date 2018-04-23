@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Service\Twitch\Kraken\Services;
 
 use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
@@ -42,13 +43,12 @@ class Users extends Service
 
     public function getUserId($username)
     {
-        if(empty(self::$userIdCache[$username]))
-        {   
+        if (empty(self::$userIdCache[$username])) {
             $response = $this->query(Kraken::QUERY_TYPE_GET, "", ['login' => $username]);
             $user = reset($response->users);
-            
+
             self::$userIdCache[$username] = $user->_id;
-            
+
         }
         return self::$userIdCache[$username];
     }

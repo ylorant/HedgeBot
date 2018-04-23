@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Tikal;
 
 use HedgeBot\Core\HedgeBot;
@@ -28,8 +29,7 @@ class Server
         $address = !empty($config->address) ? $config->address : null;
         $port = !empty($config->port) ? $config->port : null;
 
-        if(empty($config->token))
-        {
+        if (empty($config->token)) {
             HedgeBot::message('Generating new token for the Tikal API...');
             $config->token = self::randomString(self::DEFAULT_KEY_LEN);
         }
@@ -37,9 +37,11 @@ class Server
         $this->baseUrl = $config->baseUrl ? $config->baseUrl : '/';
         $this->token = $config->token;
         $this->tokenlessMode = isset($config->tokenless) ? $config->tokenless : false;
-        
-        if($this->tokenlessMode)
-            HedgeBot::message("Token-less mode is insecure! We advise you to use a token unless you know what you're doing !", null, E_WARNING);
+
+        if ($this->tokenlessMode) {
+            HedgeBot::message("Token-less mode is insecure! We advise you to use a token unless you know what you're doing !",
+                null, E_WARNING);
+        }
 
         $this->httpServer = new HttpServer($address, $port);
     }
@@ -80,25 +82,29 @@ class Server
         $response = new HttpResponse($request);
         $url = $request->requestURI;
 
-        if(!$this->tokenlessMode && (empty($request->headers['X-Token']) || $request->headers['X-Token'] != $this->token))
+        if (!$this->tokenlessMode && (empty($request->headers['X-Token']) || $request->headers['X-Token'] != $this->token)) {
             return $this->sendErrorResponse($response, HttpResponse::UNAUTHORIZED);
+        }
 
-        if(!$this->hasEndpoint($url)) // Endpoint not found, return a 404
+        if (!$this->hasEndpoint($url)) // Endpoint not found, return a 404
+        {
             return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
+        }
 
-        if($request->method == "POST") // Only handle POST requests as JSON-RPC requests
+        if ($request->method == "POST") // Only handle POST requests as JSON-RPC requests
         {
             // Checking that we have JSON.
-            if($request->contentType != "application/json")
+            if ($request->contentType != "application/json") {
                 return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
+            }
 
             $request->setRequestURI($url); // Putting back formatted URL into request URI to avoid an extra parameter
             $result = $this->RPCExec($request, $response);
 
-            if($result)
+            if ($result) {
                 $this->httpServer->send($response);
-        }
-        elseif($request->method == "GET") // GET queries return the list of available methods for said endpoint
+            }
+        } elseif ($request->method == "GET") // GET queries return the list of available methods for said endpoint
         {
             $response->statusCode = HttpResponse::OK;
             $response->headers['Content-Type'] = 'application/json';
@@ -119,18 +125,18 @@ class Server
         $methodList = array();
         $reflectionClass = new ReflectionClass($this->getEndpoint($url));
 
-        foreach($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $reflectionMethod)
-        {
+        foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $reflectionMethod) {
             // Ignore all magic methods
-            if(strpos($reflectionMethod->getName(), "__") === 0)
+            if (strpos($reflectionMethod->getName(), "__") === 0) {
                 continue;
+            }
 
             $method = ['name' => $reflectionMethod->name, 'args' => []];
-            foreach($reflectionMethod->getParameters() as $reflectionParameter)
-            {
+            foreach ($reflectionMethod->getParameters() as $reflectionParameter) {
                 $type = "mixed";
-                if($reflectionParameter->hasType())
-                    $type = (string) $reflectionParameter->getType();
+                if ($reflectionParameter->hasType()) {
+                    $type = (string)$reflectionParameter->getType();
+                }
 
                 $method['args'][$reflectionParameter->getName()] = $type;
             }
@@ -143,7 +149,7 @@ class Server
 
     /**
      * Executes an RPC query.
-     * @param HttpRequest  $request  The HTTP Request containing the RPC.
+     * @param HttpRequest $request The HTTP Request containing the RPC.
      * @param HttpResponse $response The HTTP Response object to put the returned value into.
      */
     public function RPCExec(HttpRequest $request, HttpResponse $response)
@@ -151,41 +157,42 @@ class Server
         $rpcQuery = $request->data;
 
         // Raise an error if the required JSON-RPC fields aren't present
-        if(!isset($rpcQuery->jsonrpc) || !isset($rpcQuery->method) || !isset($rpcQuery->params))
+        if (!isset($rpcQuery->jsonrpc) || !isset($rpcQuery->method) || !isset($rpcQuery->params)) {
             return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
+        }
 
         $endpointClass = $this->getEndpoint($request->requestURI);
         $reflectionClass = new ReflectionClass($endpointClass);
 
         // Check that the method exists and it isn't a magic method
-        if(!$reflectionClass->hasMethod($rpcQuery->method) || strpos($rpcQuery->method, "__") === 0)
+        if (!$reflectionClass->hasMethod($rpcQuery->method) || strpos($rpcQuery->method, "__") === 0) {
             return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
+        }
 
         $reflectionMethod = $reflectionClass->getMethod($rpcQuery->method);
 
         // Binding parameters if they're named
-        if($rpcQuery->params instanceof stdClass)
-        {
+        if ($rpcQuery->params instanceof stdClass) {
             $orderedParams = array();
-            foreach($reflectionMethod->getParameters() as $reflectionParameter)
-            {
-                if(isset($rpcQuery->params->{$reflectionParameter->name}))
+            foreach ($reflectionMethod->getParameters() as $reflectionParameter) {
+                if (isset($rpcQuery->params->{$reflectionParameter->name})) {
                     $orderedParams[] = $rpcQuery->params->{$reflectionParameter->name};
-                elseif($reflectionParameter->isOptional())
+                } elseif ($reflectionParameter->isOptional()) {
                     $orderedParams[] = $reflectionParameter->getDefaultValue();
-                else
+                } else {
                     return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
+                }
             }
 
             $rpcQuery->params = $orderedParams;
         }
-        
-        HedgeBot::message("Tikal: Calling RPC method: $0::$1", [$reflectionClass->getShortName(), $reflectionMethod->getName()], E_DEBUG);
+
+        HedgeBot::message("Tikal: Calling RPC method: $0::$1",
+            [$reflectionClass->getShortName(), $reflectionMethod->getName()], E_DEBUG);
         $funcResult = $reflectionMethod->invokeArgs($endpointClass, $rpcQuery->params);
 
         // Send result only if this is not a notification, i.e. an ID is given
-        if(!empty($rpcQuery->id))
-        {
+        if (!empty($rpcQuery->id)) {
             $response->headers['Content-Type'] = 'application/json';
             $response->data = array("jsonrpc" => "2.0", "result" => $funcResult, "id" => $rpcQuery->id);
         }
@@ -213,16 +220,17 @@ class Server
     /**
      * Registers an endpoint for the API. The inner methods of the bound object will be automatically bound to it.
      * @param  string $endpoint Endpoint part URL.
-     * @param  object $class    The object to bind to the endpoint
+     * @param  object $class The object to bind to the endpoint
      * @return boolean          True if the endpoint bound successfully, False otherwise (mainly, endpoint already exists).
      */
     public function addEndpoint($endpoint, $class)
     {
-        if($this->hasEndpoint($endpoint))
+        if ($this->hasEndpoint($endpoint)) {
             return false;
+        }
 
-        HedgeBot::message("Adding Tikal endpoint '" . $endpoint. "' on class ". get_class($class));
-        
+        HedgeBot::message("Adding Tikal endpoint '" . $endpoint . "' on class " . get_class($class));
+
         $this->endpoints[$endpoint] = $class;
 
         return true;
@@ -230,13 +238,14 @@ class Server
 
     /**
      * Unregisters the endpoint from the API.
-     * @param  string  $endpoint The endpoint to release
+     * @param  string $endpoint The endpoint to release
      * @return boolean           True if it has been released successfully, False otherwise (mainly endpoint doesn't exist).
      */
     public function removeEndpoint($endpoint)
     {
-        if(!$this->hasEndpoint($endpoint))
+        if (!$this->hasEndpoint($endpoint)) {
             return false;
+        }
 
         $this->endpoints[$endpoint] = $class;
     }
@@ -258,8 +267,9 @@ class Server
      */
     public function getEndpoint($endpoint)
     {
-        if(!$this->hasEndpoint($endpoint))
+        if (!$this->hasEndpoint($endpoint)) {
             return false;
+        }
 
         return $this->endpoints[$endpoint];
     }
@@ -273,16 +283,19 @@ class Server
      * For PHP 7, random_int is a PHP core function
      * For PHP 5.x, depends on https://github.com/paragonie/random_compat
      *
-     * @param int $length      How many characters do we want?
+     * @param int $length How many characters do we want?
      * @param string $keyspace A string of all possible characters
      *                         to select from
      * @return string
      */
-    public static function randomString($length, $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    {
+    public static function randomString(
+        $length,
+        $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    ) {
         // If random_int() isn't available, try to load random_compat
-        if(!function_exists('random_int'))
-            require_once ROOT_DIR. "lib/random_compat/lib/random.php";
+        if (!function_exists('random_int')) {
+            require_once ROOT_DIR . "lib/random_compat/lib/random.php";
+        }
 
         $str = '';
         $max = strlen($keyspace) - 1;

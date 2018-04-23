@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\BlackJack;
 
 use HedgeBot\Core\HedgeBot;
@@ -48,18 +49,20 @@ class Game
 
     public function __toString()
     {
-        $string = "Game state: ". $this->channel. " (". $this->state. ")\n";
+        $string = "Game state: " . $this->channel . " (" . $this->state . ")\n";
         $string .= "Hands:\n";
 
-        foreach($this->hands as $player => $hand)
-            $string .= "\t". $player. ": ". join(', ', $hand). "\n";
+        foreach ($this->hands as $player => $hand) {
+            $string .= "\t" . $player . ": " . join(', ', $hand) . "\n";
+        }
 
-        $string .= "\nHouse hand: ". join(', ', $this->houseHand). "\n";
+        $string .= "\nHouse hand: " . join(', ', $this->houseHand) . "\n";
 
         $string .= "\nBets:\n";
 
-        foreach($this->bets as $player => $bet)
-            $string .= "\t". $player. ": ". $bet. "\n";
+        foreach ($this->bets as $player => $bet) {
+            $string .= "\t" . $player . ": " . $bet . "\n";
+        }
 
         return $string;
     }
@@ -73,8 +76,7 @@ class Game
      */
     public function init()
     {
-        if($this->state == self::STATE_IDLE)
-        {
+        if ($this->state == self::STATE_IDLE) {
             $this->state = self::STATE_JOIN;
             $this->players = [];
             $this->idleTime = time();
@@ -106,8 +108,9 @@ class Game
      */
     public function joinGame($playerName, $bet)
     {
-        if(isset($this->players[$playerName]))
+        if (isset($this->players[$playerName])) {
             return false;
+        }
 
         $player = new stdClass();
         $player->hand = [];
@@ -123,18 +126,20 @@ class Game
      * Starts the game. At least one player has to be entered to play.
      *
      * \return If there is an error it will return False. If it has been correctly started, it will return an array containing
-     * 		   the players.
+     *           the players.
      */
     public function startGame()
     {
-        if($this->state != self::STATE_JOIN)
+        if ($this->state != self::STATE_JOIN) {
             return false;
+        }
 
         $this->state = self::STATE_PLAY;
         $this->generateDeck();
 
-        foreach($this->players as $player => $playing)
+        foreach ($this->players as $player => $playing) {
             $this->draw($player, 2);
+        }
 
         $this->drawHouse(2);
     }
@@ -149,18 +154,18 @@ class Game
      */
     public function draw($player, $count = 1)
     {
-        if(empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) // Is the player still in the game ?
+        if (empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) // Is the player still in the game ?
+        {
             return false;
+        }
 
         // Draw cards as many times as necessary
-        for($i = 0; $i < $count; $i++)
-        {
+        for ($i = 0; $i < $count; $i++) {
             $card = array_shift($this->deck);
             $this->players[$player]->hand[] = $card;
 
             // Refill the deck if it is empty
-            if(empty($this->deck))
-            {
+            if (empty($this->deck)) {
                 $this->deck = $this->discard;
                 $this->discard = [];
                 shuffle($this->deck);
@@ -168,20 +173,24 @@ class Game
         }
 
         // If the player has more than 21, he lost
-        if($this->computeHandValue($this->players[$player]->hand) > 21)
+        if ($this->computeHandValue($this->players[$player]->hand) > 21) {
             $this->players[$player]->status = self::PLAYER_LOST;
+        }
 
         // Check blackjacks (value must be 21 and card count must be 2)
-        if($this->computeHandValue($this->players[$player]->hand) == 21 && count($this->players[$player]->hand) == 2)
+        if ($this->computeHandValue($this->players[$player]->hand) == 21 && count($this->players[$player]->hand) == 2) {
             $this->players[$player]->status = self::PLAYER_BLACKJACK;
+        }
 
         return true;
     }
 
     public function stay($player)
     {
-        if(empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) // Is the player still in the game ?
+        if (empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) // Is the player still in the game ?
+        {
             return false;
+        }
 
         $this->players[$player]->status = self::PLAYER_STAY;
         return true;
@@ -195,14 +204,12 @@ class Game
     public function drawHouse($count = 1)
     {
         // Draw cards as many times as necessary
-        for($i = 0; $i < $count; $i++)
-        {
+        for ($i = 0; $i < $count; $i++) {
             $card = array_shift($this->deck);
             $this->house->hand[] = $card;
 
             // Refill the deck if it is empty
-            if(empty($this->deck))
-            {
+            if (empty($this->deck)) {
                 $this->deck = $this->discard;
                 $this->discard = [];
                 shuffle($this->deck);
@@ -212,12 +219,14 @@ class Game
         $handValue = $this->computeHandValue($this->house->hand);
 
         // If the player has more than 21, he lost
-        if($handValue > 21)
+        if ($handValue > 21) {
             $this->house->status = self::PLAYER_LOST;
+        }
 
         // Check blackjacks (value must be 21 and card count must be 2)
-        if($handValue == 21 && count($this->house->hand) == 2)
+        if ($handValue == 21 && count($this->house->hand) == 2) {
             $this->house->status = self::PLAYER_BLACKJACK;
+        }
 
         return true;
     }
@@ -229,17 +238,21 @@ class Game
      */
     public function finishGame()
     {
-        if($this->getPlayers(true) == 0)
+        if ($this->getPlayers(true) == 0) {
             return false;
+        }
 
-        if($this->house->status == self::PLAYER_BLACKJACK)
+        if ($this->house->status == self::PLAYER_BLACKJACK) {
             return true;
+        }
 
-        while($this->computeHandValue($this->house->hand) < 17)
+        while ($this->computeHandValue($this->house->hand) < 17) {
             $this->drawHouse();
+        }
 
-        if($this->house->status != self::PLAYER_LOST)
+        if ($this->house->status != self::PLAYER_LOST) {
             $this->house->status = self::PLAYER_STAY;
+        }
 
         $this->state = self::STATE_IDLE;
 
@@ -256,12 +269,11 @@ class Game
         $this->deck = array();
 
         $deckCount = $this->plugin->getConfigParameter($this->channel, 'deckCount');
-        for($i = 0; $i < $deckCount; $i++)
-        {
-            foreach(BlackJack::CARDS_COLORS as $color)
-            {
-                foreach(BlackJack::CARDS_VALUES as $value)
-                    $this->deck[] = $value. $color;
+        for ($i = 0; $i < $deckCount; $i++) {
+            foreach (BlackJack::CARDS_COLORS as $color) {
+                foreach (BlackJack::CARDS_VALUES as $value) {
+                    $this->deck[] = $value . $color;
+                }
             }
         }
 
@@ -276,21 +288,20 @@ class Game
         $handTotal = 0;
         $orderedCards = $this->reorderCards($cardList);
 
-        foreach($orderedCards as $card)
-        {
+        foreach ($orderedCards as $card) {
             $value = str_replace(BlackJack::CARDS_COLORS, '', $card); // strip color
-            switch($value)
-            {
+            switch ($value) {
                 case 'J':
                 case 'Q':
                 case 'K':
                     $handTotal += 10;
                     break;
                 case 'A';
-                    if($handTotal > 10)
+                    if ($handTotal > 10) {
                         $handTotal += 1;
-                    else
+                    } else {
                         $handTotal += 11;
+                    }
                     break;
                 default:
                     $handTotal += $value;
@@ -307,8 +318,7 @@ class Game
     {
         $sortedCards = $cardList;
 
-        $sortFunction = function($a, $b)
-        {
+        $sortFunction = function ($a, $b) {
             $aValue = substr($a, 0, -1);
             $bValue = substr($b, 0, -1);
 
@@ -348,10 +358,11 @@ class Game
      */
     public function getPlayers($active = false)
     {
-        if($active)
+        if ($active) {
             return array_filter(array_keys($this->players), array($this, 'isPlaying'));
-        else
+        } else {
             return array_keys($this->players);
+        }
     }
 
     /**
@@ -372,12 +383,14 @@ class Game
      */
     public function getPlayer($player, $getHandValue = false)
     {
-        if(!isset($this->players[$player]))
+        if (!isset($this->players[$player])) {
             return false;
+        }
 
         $playerObject = clone $this->players[$player];
-        if($getHandValue)
+        if ($getHandValue) {
             $playerObject->handValue = $this->computeHandValue($playerObject->hand);
+        }
 
         return $playerObject;
     }
@@ -390,8 +403,9 @@ class Game
     public function getHouse($getHandValue = false)
     {
         $houseObject = clone $this->house;
-        if($getHandValue)
+        if ($getHandValue) {
             $houseObject->handValue = $this->computeHandValue($houseObject->hand);
+        }
 
         return $houseObject;
     }

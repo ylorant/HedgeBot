@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\TestManager;
 
 use SplFileInfo;
@@ -34,27 +35,24 @@ class TestManager extends PluginBase
         $this->manager = Plugin::getManager();
 
         // Opening log if necessary
-        if(!empty($this->config['logfile']))
-        {
+        if (!empty($this->config['logfile'])) {
             $fileInfo = new SplFileInfo($this->config['logfile']);
             $this->logfile = $fileInfo->openFile('a+');
         }
 
         // Getting tested bot name
-        if(!empty($this->config['botName']))
+        if (!empty($this->config['botName'])) {
             $this->botName = strtolower($this->config['botName']);
-        else
-        {
+        } else {
             HedgeBot::message("There isn't any bot name defined for tests.", null, E_ERROR);
             return false;
         }
 
         // Loading tested bot config
-        if(!empty($this->config['botConfig']))
-        {
-            $this->botConfig = HedgeBot::getInstance()->loadStorage($this->testedBotConfig, (object) $this->config['botConfig']);
-            if($this->botConfig === false)
-            {
+        if (!empty($this->config['botConfig'])) {
+            $this->botConfig = HedgeBot::getInstance()->loadStorage($this->testedBotConfig,
+                (object)$this->config['botConfig']);
+            if ($this->botConfig === false) {
                 HedgeBot::message("Cannot load tested bot configuration.", null, E_ERROR);
                 return false;
             }
@@ -73,23 +71,25 @@ class TestManager extends PluginBase
      */
     public function RoutineProcessQueue()
     {
-        if(!empty($this->currentTest))
+        if (!empty($this->currentTest)) {
             $this->processTestQueue();
+        }
     }
 
     public function ServerPrivmsg(ServerEvent $ev)
     {
-        if($ev->channel == $this->testChannel && $ev->nick == $this->botName && !empty($this->currentTest))
+        if ($ev->channel == $this->testChannel && $ev->nick == $this->botName && !empty($this->currentTest)) {
             $this->currentTest->pushMessage($ev->message);
+        }
     }
 
     public function ServerJoin(ServerEvent $ev)
     {
         // Autostart when first joining the channel if the config option is set
-        if($ev->nick == Server::getNick())
-        {
-            if(!empty($this->config['autostart']) && HedgeBot::parseRBool($this->config['autostart']))
+        if ($ev->nick == Server::getNick()) {
+            if (!empty($this->config['autostart']) && HedgeBot::parseRBool($this->config['autostart'])) {
                 $this->CommandExecTests($ev);
+            }
         }
     }
 
@@ -118,27 +118,23 @@ class TestManager extends PluginBase
 
         $testedPlugins = explode(',', $this->config['testedPlugins']);
 
-        foreach($testedPlugins as $pluginName)
-        {
+        foreach ($testedPlugins as $pluginName) {
             $pluginName = trim($pluginName);
 
             // Load plugin config with a FileProvider
             $config = $this->manager->getPluginDefinition($pluginName);
 
-            if(!empty($config->pluginDefinition->testClass))
-            {
-                $testClassName = PluginManager::PLUGINS_NAMESPACE. $pluginName. "\\". $config->pluginDefinition->testClass;
+            if (!empty($config->pluginDefinition->testClass)) {
+                $testClassName = PluginManager::PLUGINS_NAMESPACE . $pluginName . "\\" . $config->pluginDefinition->testClass;
                 $this->currentTestObject = new $testClassName();
 
                 $reflectionClass = new ReflectionClass($this->currentTestObject);
                 $methods = $reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
-                foreach($methods as $method)
-                {
+                foreach ($methods as $method) {
                     // Valid test method names are those who begin by "test"
-                    if(strpos($method->name, 'test') === 0)
-                    {
-                        $testCase = $this->testQueue[$testClassName. '::'. $method->name] = new TestCase($this);
+                    if (strpos($method->name, 'test') === 0) {
+                        $testCase = $this->testQueue[$testClassName . '::' . $method->name] = new TestCase($this);
                         $testCase->init($method);
                         $this->currentTestObject->{$method->name}($testCase);
                     }
@@ -153,8 +149,8 @@ class TestManager extends PluginBase
 
         $this->log('');
         $this->log('--------------------------');
-        $this->log('Starting executing tests at: '. date('r'));
-        $this->log('Tests to process: '. count($this->testQueue));
+        $this->log('Starting executing tests at: ' . date('r'));
+        $this->log('Tests to process: ' . count($this->testQueue));
         $this->log('');
 
         $this->processTestQueue();
@@ -162,29 +158,22 @@ class TestManager extends PluginBase
 
     protected function processTestQueue()
     {
-        if(empty($this->currentTest) && !empty($this->testQueue))
-        {
+        if (empty($this->currentTest) && !empty($this->testQueue)) {
             $this->currentTest = array_shift($this->testQueue);
-            $this->log($this->currentTest->testName. ': ', false);
-        }
-        elseif(empty($this->currentTest))
+            $this->log($this->currentTest->testName . ': ', false);
+        } elseif (empty($this->currentTest)) {
             return $this->finishTests();
-
-        do
-        {
-            $this->currentTest->executeStep();
         }
-        while($this->currentTest->status == TestCase::STATUS_IDLE);
 
-        if(in_array($this->currentTest->status, array(TestCase::STATUS_FAILED, TestCase::STATUS_SUCCESS)))
-        {
-            if($this->currentTest->status == TestCase::STATUS_FAILED)
-            {
+        do {
+            $this->currentTest->executeStep();
+        } while ($this->currentTest->status == TestCase::STATUS_IDLE);
+
+        if (in_array($this->currentTest->status, array(TestCase::STATUS_FAILED, TestCase::STATUS_SUCCESS))) {
+            if ($this->currentTest->status == TestCase::STATUS_FAILED) {
                 $this->testStats['failures']++;
                 $this->log('FAIL');
-            }
-            elseif($this->currentTest->status == TestCase::STATUS_SUCCESS)
-            {
+            } elseif ($this->currentTest->status == TestCase::STATUS_SUCCESS) {
                 $this->testStats['successes']++;
                 $this->log('OK');
             }
@@ -193,34 +182,38 @@ class TestManager extends PluginBase
             $this->currentTest = null;
 
             // Check for tests end and report if necessary
-            if(empty($this->testQueue))
+            if (empty($this->testQueue)) {
                 $this->finishTests();
-            else
+            } else {
                 Plugin::getManager()->setTimeout(1, 'testprocess');
+            }
         }
     }
 
     protected function finishTests()
     {
         $successRate = 0;
-        if($this->testStats['failures'] > 0)
+        if ($this->testStats['failures'] > 0) {
             $successRate = round(($this->testStats['successes'] / $this->testStats['failures'] * 100), 2);
-        else
+        } else {
             $successRate = 100;
+        }
 
         $this->log('');
-        $this->log('Tests completed.').
-        $this->log('Successes: '. $this->testStats['successes']. '. Failures: '. $this->testStats['failures']. '.');
-        $this->log('Success rate: '. $successRate. '%');
-        $this->log('Total test time: '. round(microtime(true) - $this->startTime, 4). 's');
+        $this->log('Tests completed.') .
+        $this->log('Successes: ' . $this->testStats['successes'] . '. Failures: ' . $this->testStats['failures'] . '.');
+        $this->log('Success rate: ' . $successRate . '%');
+        $this->log('Total test time: ' . round(microtime(true) - $this->startTime, 4) . 's');
 
-        if(!empty($this->config['autostop']) && HedgeBot::parseRBool($this->config['autostop']))
+        if (!empty($this->config['autostop']) && HedgeBot::parseRBool($this->config['autostop'])) {
             HedgeBot::getInstance()->stop();
+        }
     }
 
     protected function log($message, $crlf = true)
     {
-        if(!empty($this->logfile))
-            $this->logfile->fwrite($message. ($crlf ? PHP_EOL : ""));
+        if (!empty($this->logfile)) {
+            $this->logfile->fwrite($message . ($crlf ? PHP_EOL : ""));
+        }
     }
 }

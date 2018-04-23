@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\API;
 
 use HedgeBot\Core\API\StaticSingleton;

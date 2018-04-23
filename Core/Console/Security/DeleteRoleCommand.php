@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,8 +17,8 @@ class DeleteRoleCommand extends StorageAwareCommand
     public function configure()
     {
         $this->setName('security:role-delete')
-             ->setDescription('Deletes a role.')
-             ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to delete.');
+            ->setDescription('Deletes a role.')
+            ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to delete.');
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
@@ -26,10 +27,11 @@ class DeleteRoleCommand extends StorageAwareCommand
 
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         $roleCreated = $accessControlManager->deleteRole($roleId);
-        
-        if(!$roleCreated)
-            throw new RuntimeException("Unable to delete role: ID '". $roleId. "' not found.");
-        
+
+        if (!$roleCreated) {
+            throw new RuntimeException("Unable to delete role: ID '" . $roleId . "' not found.");
+        }
+
         $accessControlManager->saveToStorage();
     }
 }

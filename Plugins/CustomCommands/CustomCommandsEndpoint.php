@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\CustomCommands;
 
 class CustomCommandsEndpoint
@@ -16,7 +17,7 @@ class CustomCommandsEndpoint
 
     /**
      * Gets the list of defined commands.
-     * 
+     *
      * @see CustomCommands::getCommands()
      */
     public function getCommands()
@@ -24,9 +25,9 @@ class CustomCommandsEndpoint
         return $this->plugin->getCommands();
     }
 
-    /** 
+    /**
      * Gets a command by its name.
-     * 
+     *
      * @see CustomCommands::getCommand()
      */
     public function getCommand($commandName)
@@ -36,7 +37,7 @@ class CustomCommandsEndpoint
 
     /**
      * Adds a custom command.
-     * 
+     *
      * @see CustomCommands::addCommand()
      */
     public function addCommand($commandName, $text, array $channels)
@@ -46,7 +47,7 @@ class CustomCommandsEndpoint
 
     /**
      * Removes a custom command.
-     * 
+     *
      * @see CustomCommands::removeCommand()
      */
     public function removeCommand($commandName)
@@ -56,7 +57,7 @@ class CustomCommandsEndpoint
 
     /**
      * Updates a command. Using this method, the command can change its name, but subsequent calls will have to use the new name.
-     * 
+     *
      * @see CustomCommands::updateCommand()
      */
     public function updateCommand($commandName, $commandData)

@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Service\Twitch\Kraken\Services;
 
 use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
@@ -22,7 +23,7 @@ abstract class Service extends Kraken
      */
     public function query($type, $url, array $parameters = [], $accessChannel = null)
     {
-        $url = $this->servicepath . '/'. trim($url, '/');
+        $url = $this->servicepath . '/' . trim($url, '/');
         return $this->kraken->query($type, $url, $parameters, $accessChannel);
     }
 

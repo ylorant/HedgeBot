@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,10 +17,12 @@ class RevokeRoleCommand extends StorageAwareCommand
     public function configure()
     {
         $this->setName('security:role-revoke')
-             ->setDescription('Revokes a role from an user.')
-             ->addArgument('username', InputArgument::REQUIRED, 'The nickname of the user that will have this role assigned.')
-             ->addArgument('roleId', InputArgument::OPTIONAL, 'The role ID to assign. Required if not using the --all modifier')
-             ->addOption('all', 'a', InputOption::VALUE_NONE, 'Add this option to revoke all roles from the user');
+            ->setDescription('Revokes a role from an user.')
+            ->addArgument('username', InputArgument::REQUIRED,
+                'The nickname of the user that will have this role assigned.')
+            ->addArgument('roleId', InputArgument::OPTIONAL,
+                'The role ID to assign. Required if not using the --all modifier')
+            ->addOption('all', 'a', InputOption::VALUE_NONE, 'Add this option to revoke all roles from the user');
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
@@ -28,20 +31,23 @@ class RevokeRoleCommand extends StorageAwareCommand
         $userName = $input->getArgument('username');
         $allRoles = $input->getOption('all');
 
-        if(!$allRoles && empty($roleId))
+        if (!$allRoles && empty($roleId)) {
             throw new InvalidArgumentException("Role ID has not been specified.");
+        }
 
         $accessControlManager = new AccessControlManager($this->getDataStorage());
 
         $roleRevoked = null;
-        if($allRoles)
+        if ($allRoles) {
             $roleRevoked = $accessControlManager->revokeAllRoles($userName);
-        else
+        } else {
             $roleRevoked = $accessControlManager->revokeRole($userName, $roleId);
-        
-        if(!$roleRevoked)
-            throw new RuntimeException("Unable to revoke role: ID '". $roleId. "' not found.");
-        
+        }
+
+        if (!$roleRevoked) {
+            throw new RuntimeException("Unable to revoke role: ID '" . $roleId . "' not found.");
+        }
+
         $accessControlManager->saveToStorage();
     }
 }

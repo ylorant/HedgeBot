@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Store\Formatter;
 
 interface FormatterInterface

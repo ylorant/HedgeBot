@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Documentor;
 
 use ReflectionClass;
@@ -16,7 +17,6 @@ class PluginDoc
     private $path;
     private $name;
     private $config;
-    private $instance;
 
     private $commands = [];
     private $pluginInfo;
@@ -26,7 +26,8 @@ class PluginDoc
     const PLUGIN_NAMESPACE = "HedgeBot\\Plugins";
 
     /**
-     * Constructor.
+     * PluginDoc constructor.
+     * @param $pluginPath
      */
     public function __construct($pluginPath)
     {
@@ -43,32 +44,30 @@ class PluginDoc
         $doc = "";
 
         // Start by the plugin title
-        $doc .= "# ". ucfirst($this->name). " Plugin\n\n";
+        $doc .= "# " . ucfirst($this->name) . " Plugin\n\n";
 
         // Show the plugin general info (tokens represented as paragraphs)
-        if(!empty($this->pluginInfo['description']))
-            $doc .= join("\n\n", $this->pluginInfo['description']) ."\n\n";
+        if (!empty($this->pluginInfo['description'])) {
+            $doc .= join("\n\n", $this->pluginInfo['description']) . "\n\n";
+        }
 
         // Configuration vars
         $doc .= "## Configuration settings\n\n";
 
-        if(!empty($this->pluginInfo['configvar']))
-        {
-            foreach($this->pluginInfo['configvar'] as $configToken)
-            {
+        if (!empty($this->pluginInfo['configvar'])) {
+            foreach ($this->pluginInfo['configvar'] as $configToken) {
                 list($var, $description) = explode(' ', $configToken, 2);
-                $doc .= "### ". $var. "\n";
-                $doc .= trim($description). "\n\n";
+                $doc .= "### " . $var . "\n";
+                $doc .= trim($description) . "\n\n";
             }
-        }
-        else
+        } else {
             $doc .= "*There are no configuration settings for this plugin.*\n";
+        }
 
         $doc .= "## Commands\n\n";
 
-        foreach($this->commands as $command)
-        {
-            $doc .= (string) $command;
+        foreach ($this->commands as $command) {
+            $doc .= (string)$command;
             $doc .= "--------\n";
         }
 
@@ -80,12 +79,13 @@ class PluginDoc
      */
     public function readPluginConfig()
     {
-        $configPath = $this->path. '/'. $this->name. '.ini';
+        $configPath = $this->path . '/' . $this->name . '.ini';
 
-        if(!is_file($configPath))
-            return FALSE;
+        if (!is_file($configPath)) {
+            return false;
+        }
 
-        $this->config = parse_ini_file($configPath, true);
+        return $this->config = parse_ini_file($configPath, true);
     }
 
     /**
@@ -94,8 +94,8 @@ class PluginDoc
     public function reflectPlugin()
     {
         // Get required data to instanciate plugin
-        $pluginNS = self::PLUGIN_NAMESPACE. '\\'. $this->config['pluginDefinition']['mainClass'];
-        $mainClass = $pluginNS. '\\'. $this->config['pluginDefinition']['mainClass'];
+        $pluginNS = self::PLUGIN_NAMESPACE . '\\' . $this->config['pluginDefinition']['mainClass'];
+        $mainClass = $pluginNS . '\\' . $this->config['pluginDefinition']['mainClass'];
 
         // Reflection \o/
         $this->reflectionClass = new ReflectionClass($mainClass);
@@ -111,11 +111,11 @@ class PluginDoc
         // Only consider public methods
         $pluginMethods = $this->reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC);
 
-        foreach($pluginMethods as $method)
-        {
+        foreach ($pluginMethods as $method) {
             // Check if ##the method looks like a command method
-            if(preg_match("#^Command([a-zA-Z0-9]+)$#", $method->getName()))
+            if (preg_match("#^Command([a-zA-Z0-9]+)$#", $method->getName())) {
                 $this->commands[] = new CommandDoc($method);
+            }
         }
     }
 

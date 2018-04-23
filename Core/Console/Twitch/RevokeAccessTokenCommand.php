@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Twitch;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,8 +15,8 @@ class RevokeAccessTokenCommand extends StorageAwareCommand
     public function configure()
     {
         $this->setName('twitch:revoke-access-token')
-             ->setDescription('Revokes an auth access token from a channel.')
-             ->addArgument('channel', InputArgument::REQUIRED, 'The channel from which the token will be revoked.');
+            ->setDescription('Revokes an auth access token from a channel.')
+            ->addArgument('channel', InputArgument::REQUIRED, 'The channel from which the token will be revoked.');
     }
 
     public function execute(InputInterface $input, OutputInterface $output)

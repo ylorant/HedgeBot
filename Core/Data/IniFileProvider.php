@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Data;
 
 use HedgeBot\Core\HedgeBot;
@@ -8,7 +9,6 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /** Use the first 2 section names as subdirectory/file name for the config. */
-
 class IniFileProvider extends Provider
 {
     private $dataDirectory; // Root storage directory
@@ -19,51 +19,49 @@ class IniFileProvider extends Provider
 
     const STORAGE_NAME = "ini";
 
-	/** Loads data from INI formatted files into a directory, recursively.
-	 * This function loads data from all .ini files in the given folder. It also loads the data found in all its sub-directories.
-	 * The files are proceeded as .ini files, but adds a useful feature to them : multi-level sections. Using the '.', users will be able to
-	 * define more than one level of data (useful for ordering). It does not parses the UNIX hidden directories.
-	 *
-	 * \param $dir The directory to analyze.
-	 * \param $reset Wether to reset internal data structure before loading or not. Defaults to true.
-	 * \return TRUE if the data loaded successfully, FALSE otherwise.
-	 */
-	public function loadData($dir, $reset = true)
-	{
+    /** Loads data from INI formatted files into a directory, recursively.
+     * This function loads data from all .ini files in the given folder. It also loads the data found in all its sub-directories.
+     * The files are proceeded as .ini files, but adds a useful feature to them : multi-level sections. Using the '.', users will be able to
+     * define more than one level of data (useful for ordering). It does not parses the UNIX hidden directories.
+     *
+     * \param $dir The directory to analyze.
+     * \param $reset Wether to reset internal data structure before loading or not. Defaults to true.
+     * \return TRUE if the data loaded successfully, FALSE otherwise.
+     */
+    public function loadData($dir, $reset = true)
+    {
         $dirContent = scandir($dir);
-		if(!$dirContent)
-			return FALSE;
+        if (!$dirContent) {
+            return false;
+        }
 
-        if($reset)
-		    $this->data = array();
+        if ($reset) {
+            $this->data = array();
+        }
 
-		$cfgdata = '';
-		foreach($dirContent as $file)
-		{
-            $fileData = NULL;
-			if(is_file($dir.'/'.$file) && pathinfo($file, PATHINFO_EXTENSION) == 'ini' && $file[0] != '.')
-            {
-				$fileData = $this->loadFile($dir.'/'.$file);
-                $this->fileLastModification[$dir.'/'.$file] = filemtime($dir.'/'.$file);
+        $cfgdata = '';
+        foreach ($dirContent as $file) {
+            $fileData = null;
+            if (is_file($dir . '/' . $file) && pathinfo($file, PATHINFO_EXTENSION) == 'ini' && $file[0] != '.') {
+                $fileData = $this->loadFile($dir . '/' . $file);
+                $this->fileLastModification[$dir . '/' . $file] = filemtime($dir . '/' . $file);
+            } elseif (is_dir($dir . '/' . $file) && !in_array($file, array('.', '..')) && $file[0] != '.') {
+                $fileData = $this->loadData($dir . '/' . $file, false);
+
+                if ($fileData === false) {
+                    HedgeBot::message('Parse error in $0 directory.', array($dir), E_WARNING);
+                    return false;
+                }
             }
-			elseif(is_dir($dir.'/'.$file) && !in_array($file, array('.', '..')) && $file[0] != '.')
-			{
-                $fileData = $this->loadData($dir.'/'.$file, false);
 
-				if($fileData === FALSE)
-				{
-					HedgeBot::message('Parse error in $0 directory.', array($dir), E_WARNING);
-					return FALSE;
-				}
-			}
-
-            if(!empty($fileData) && is_array($fileData))
+            if (!empty($fileData) && is_array($fileData)) {
                 $this->data = array_merge_recursive($this->data, $fileData);
+            }
 
-		}
+        }
 
-		return TRUE;
-	}
+        return true;
+    }
 
     /** Loads a file data and returns it.
      *
@@ -76,16 +74,16 @@ class IniFileProvider extends Provider
         HedgeBot::message('Loading file "$0"...', array($file), E_DEBUG);
         $fileContent = file_get_contents($file);
 
-        if(empty($fileContent))
+        if (empty($fileContent)) {
             return array();
+        }
 
         $data = $this->parseINIStringRecursive($fileContent);
-        if($data)
+        if ($data) {
             return $data;
-        else
-        {
+        } else {
             HedgeBot::message("Cannot load data from file $0", array($file), E_WARNING);
-            return FALSE;
+            return false;
         }
     }
 
@@ -98,99 +96,100 @@ class IniFileProvider extends Provider
      *
      * \return The resulting data array.
      */
-	public function parseINIStringRecursive($str)
-	{
-		$config = array();
+    public function parseINIStringRecursive($str)
+    {
+        $config = array();
 
-		//Parsing string and determining recursive array
-		$inidata = parse_ini_string($str, TRUE, INI_SCANNER_RAW);
-		if(!$inidata)
-			return FALSE;
-		foreach($inidata as $section => $content)
-		{
-			if(is_array($content))
-			{
-				$section = explode('.', $section);
-				//Getting reference on the config category pointed
-				$edit = &$config;
-				foreach($section as $el)
-					$edit = &$edit[$el];
-
-				$edit = str_replace('\\"', '"', $content);
-			}
-			else
-				HedgeBot::message('Orphan config parameter : $0', array($section), E_WARNING);
-		}
-
-		return $config;
-	}
-
-	/** Generates INI config string for recursive data.
-	 * This function takes configuration array passed in parameter and generates an INI configuration string with recursive sections.
-	 *
-	 * \param $data The data to be transformed.
-	 * \param $root The root section. Normally, this parameter is used by the function to recursively parse data by calling itself.
-	 *
-	 * \return The INI config data.
-	 */
-	public function generateINIStringRecursive($data = NULL, $root = "")
-	{
-		$out = "";
-
-		if($data === NULL)
-			$data = $this->config;
-
-		$arrays = array();
-
-		//Process data, saving sub-arrays, putting direct values in config.
-		foreach($data as $name => $value)
-		{
-            if(is_array($value))
-            {
-                // Handle numeric arrays.
-                $isNumeric = TRUE;
-                $flatArray = '';
-                foreach($value as $k => $v)
-                {
-                    if(!is_numeric($k))
-                    {
-                        $isNumeric = FALSE;
-                        break;
-                    }
-                    else
-                        $flatArray .= $name.'['.$k.']='. $this->escapeValue($v)."\n";
+        //Parsing string and determining recursive array
+        $inidata = parse_ini_string($str, true, INI_SCANNER_RAW);
+        if (!$inidata) {
+            return false;
+        }
+        foreach ($inidata as $section => $content) {
+            if (is_array($content)) {
+                $section = explode('.', $section);
+                //Getting reference on the config category pointed
+                $edit = &$config;
+                foreach ($section as $el) {
+                    $edit = &$edit[$el];
                 }
 
-                if($isNumeric)
-                    $out .= $flatArray;
-                else
-                    $arrays[$name] = $value;
+                $edit = str_replace('\\"', '"', $content);
+            } else {
+                HedgeBot::message('Orphan config parameter : $0', array($section), E_WARNING);
             }
-			elseif(is_object($value))
-				$arrays[$name] = $value;
-			elseif(is_bool($value))
-				$out .= $name.'='.($value ? 'yes' : 'no')."\n";
-			elseif(is_string($value) && !is_numeric($value))
-                $out .= $name.'="'. str_replace('"','\\"', $value). "\"\n";
-            else
-				$out .= $name.'='.$value."\n";
-		}
+        }
+
+        return $config;
+    }
+
+    /** Generates INI config string for recursive data.
+     * This function takes configuration array passed in parameter and generates an INI configuration string with recursive sections.
+     *
+     * \param $data The data to be transformed.
+     * \param $root The root section. Normally, this parameter is used by the function to recursively parse data by calling itself.
+     *
+     * \return The INI config data.
+     */
+    public function generateINIStringRecursive($data = null, $root = "")
+    {
+        $out = "";
+
+        if ($data === null) {
+            $data = $this->config;
+        }
+
+        $arrays = array();
+
+        //Process data, saving sub-arrays, putting direct values in config.
+        foreach ($data as $name => $value) {
+            if (is_array($value)) {
+                // Handle numeric arrays.
+                $isNumeric = true;
+                $flatArray = '';
+                foreach ($value as $k => $v) {
+                    if (!is_numeric($k)) {
+                        $isNumeric = false;
+                        break;
+                    } else {
+                        $flatArray .= $name . '[' . $k . ']=' . $this->escapeValue($v) . "\n";
+                    }
+                }
+
+                if ($isNumeric) {
+                    $out .= $flatArray;
+                } else {
+                    $arrays[$name] = $value;
+                }
+            } elseif (is_object($value)) {
+                $arrays[$name] = $value;
+            } elseif (is_bool($value)) {
+                $out .= $name . '=' . ($value ? 'yes' : 'no') . "\n";
+            } elseif (is_string($value) && !is_numeric($value)) {
+                $out .= $name . '="' . str_replace('"', '\\"', $value) . "\"\n";
+            } else {
+                $out .= $name . '=' . $value . "\n";
+            }
+        }
 
         // If the flat data is empty and there isn't any sub-sections, discard the parameter
-        if(empty($out) && empty($arrays))
+        if (empty($out) && empty($arrays)) {
             return "";
+        }
 
-        if($root)
-            $out = '['.$root.']'."\n". $out;
+        if ($root) {
+            $out = '[' . $root . ']' . "\n" . $out;
+        }
 
-		$out .= "\n";
+        $out .= "\n";
 
-		//Processing sub-sections
-		foreach($arrays as $name => $value)
-			$out .= $this->generateINIStringRecursive($value, $root.($root ? '.' : '').$name)."\n\n";
+        //Processing sub-sections
+        foreach ($arrays as $name => $value) {
+            $out .= $this->generateINIStringRecursive($value, $root . ($root ? '.' : '') . $name) . "\n\n";
+        }
 
-		return trim($out);
-	}
+        return trim($out);
+    }
 
     /** Gets a variable from the data storage.
      * This method gets a variable, scalar or complex, from the storage.
@@ -204,14 +203,14 @@ class IniFileProvider extends Provider
         $keyComponents = explode('.', $key);
 
         $currentPath = &$this->data;
-        foreach($keyComponents as $component)
-        {
-            if(!isset($currentPath[$component]))
-                return NULL;
-            elseif(is_array($currentPath))
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
+                return null;
+            } elseif (is_array($currentPath)) {
                 $currentPath = &$currentPath[$component];
-            else
-                return FALSE;
+            } else {
+                return false;
+            }
         }
 
         return $currentPath;
@@ -233,50 +232,50 @@ class IniFileProvider extends Provider
         $varName = array_pop($keyComponents);
 
         $currentPath = &$this->data;
-        foreach($keyComponents as $component)
-        {
-            if(!isset($currentPath[$component]))
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
                 $currentPath[$component] = array();
+            }
 
-            if(is_array($currentPath[$component]))
+            if (is_array($currentPath[$component])) {
                 $currentPath = &$currentPath[$component];
-            else
-                return FALSE;
+            } else {
+                return false;
+            }
         }
 
         $currentPath[$varName] = $data;
         $this->writeData();
-        return TRUE;
+        return true;
     }
 
     /** Checks if there is an update to the data files, and does it if necessary.
      */
     public function checkUpdate($dir = null)
     {
-        if(empty($dir))
+        if (empty($dir)) {
             $dir = $this->dataDirectory;
+        }
 
         $dirContent = scandir($dir);
-        if(!$dirContent)
+        if (!$dirContent) {
             return;
+        }
 
         $updated = false;
-        foreach($dirContent as $file)
-        {
-            if(is_file($dir.'/'.$file) && pathinfo($file, PATHINFO_EXTENSION) == 'ini')
-            {
-                $fileLastModification = filemtime($dir. '/'. $file);
+        foreach ($dirContent as $file) {
+            if (is_file($dir . '/' . $file) && pathinfo($file, PATHINFO_EXTENSION) == 'ini') {
+                $fileLastModification = filemtime($dir . '/' . $file);
 
-                if(!isset($this->fileLastModification[$dir.'/'.$file]) || $this->fileLastModification[$dir.'/'.$file] < $fileLastModification)
-                {
+                if (!isset($this->fileLastModification[$dir . '/' . $file]) || $this->fileLastModification[$dir . '/' . $file] < $fileLastModification) {
                     $updated = true;
-                    $data = $this->loadFile($dir.'/'.$file);
+                    $data = $this->loadFile($dir . '/' . $file);
                     $this->data = array_replace_recursive($this->data, $data);
-                    $this->fileLastModification[$dir.'/'.$file] = filemtime($dir.'/'.$file);
+                    $this->fileLastModification[$dir . '/' . $file] = filemtime($dir . '/' . $file);
                 }
+            } elseif (is_dir($dir . '/' . $file) && !in_array($file, array('.', '..')) && $file[0] != '.') {
+                $this->checkUpdate($dir . '/' . $file);
             }
-			elseif(is_dir($dir.'/'.$file) && !in_array($file, array('.', '..')) && $file[0] != '.')
-                $this->checkUpdate($dir.'/'.$file);
         }
 
         return $updated;
@@ -291,8 +290,9 @@ class IniFileProvider extends Provider
      */
     public function writeData()
     {
-        if($this->readonly)
+        if ($this->readonly) {
             return;
+        }
 
         $iniData = $this->generateINIStringRecursive($this->data);
         $flatData = parse_ini_string($iniData, true);
@@ -301,67 +301,64 @@ class IniFileProvider extends Provider
         $root = array(); // Root section
 
         // Separate each section.
-        foreach($flatData as $key => $data)
-        {
+        foreach ($flatData as $key => $data) {
             // An array can be a regular numeric array as well as a section
-            if(is_array($data))
-            {
-                $isNumeric = TRUE;
-                foreach($data as $k => $v)
-                {
-                    if(!is_numeric($key))
-                    {
-                        $isNumeric = FALSE;
+            if (is_array($data)) {
+                $isNumeric = true;
+                foreach ($data as $k => $v) {
+                    if (!is_numeric($key)) {
+                        $isNumeric = false;
                         break;
                     }
                 }
 
-                if(!$isNumeric)
+                if (!$isNumeric) {
                     $sections[$key] = $data;
-                else
+                } else {
                     $root[$key] = $data;
-            }
-            else
+                }
+            } else {
                 $root[$key] = $data;
+            }
         }
 
         // Backing up old data
-        if($this->backups)
+        if ($this->backups) {
             $this->backupData();
+        }
 
         // Remove all files in the destination directory
         $this->wipeDataDirectory();
 
         // Generate files
-        if(!$this->emptyRecursive($root))
-        {
+        if (!$this->emptyRecursive($root)) {
             $iniRoot = $this->generateINIStringRecursive($root);
-            file_put_contents($this->dataDirectory. '/root.ini', $iniRoot);
+            file_put_contents($this->dataDirectory . '/root.ini', $iniRoot);
         }
 
-        foreach($sections as $name => $section)
-        {
+        foreach ($sections as $name => $section) {
             $sectionComponents = explode('.', strtolower($name));
             $filename = "";
 
-            if(count($sectionComponents) == 1)
-                $filename = $sectionComponents[0]. ".ini";
-            elseif(count($sectionComponents) >= 2)
-            {
-                if(!is_dir($this->dataDirectory. '/'. $sectionComponents[0]))
-                    mkdir($this->dataDirectory. '/'. $sectionComponents[0]);
+            if (count($sectionComponents) == 1) {
+                $filename = $sectionComponents[0] . ".ini";
+            } elseif (count($sectionComponents) >= 2) {
+                if (!is_dir($this->dataDirectory . '/' . $sectionComponents[0])) {
+                    mkdir($this->dataDirectory . '/' . $sectionComponents[0]);
+                }
 
-                $filename = $sectionComponents[0]. "/". $sectionComponents[1]. ".ini";
+                $filename = $sectionComponents[0] . "/" . $sectionComponents[1] . ".ini";
             }
 
             $iniSection = $this->generateINIStringRecursive($section);
-            $iniSection = "[". $name. "]\n". $iniSection;
+            $iniSection = "[" . $name . "]\n" . $iniSection;
 
             // If there is already a file, add a line jump before writing
-            if(is_file($this->dataDirectory. '/'. $filename))
-                $iniSection = "\n\n". $iniSection;
+            if (is_file($this->dataDirectory . '/' . $filename)) {
+                $iniSection = "\n\n" . $iniSection;
+            }
 
-            file_put_contents($this->dataDirectory. '/'. $filename, $iniSection, FILE_APPEND);
+            file_put_contents($this->dataDirectory . '/' . $filename, $iniSection, FILE_APPEND);
         }
     }
 
@@ -374,34 +371,34 @@ class IniFileProvider extends Provider
 
         // If we're given an object configuration (from the boostrapping storage), load the location from it
         $location = null;
-        if(is_object($parameters))
-        {
+        if (is_object($parameters)) {
             $location = $parameters->basepath;
 
-            if(isset($parameters->backups) && HedgeBot::parseBool($parameters->backups))
+            if (isset($parameters->backups) && HedgeBot::parseBool($parameters->backups)) {
                 $this->backups = true;
-        }
-        else
+            }
+        } else {
             $location = $parameters;
+        }
 
         HedgeBot::message('Connecting to INI file storage at directory "$0"', array($location), E_DEBUG);
 
-        if(substr($location, -1) == '/')
-			$location = substr($location, 0, -1);
+        if (substr($location, -1) == '/') {
+            $location = substr($location, 0, -1);
+        }
 
-		if(is_dir($location))
-			$this->dataDirectory = $location;
-		elseif(is_file($location))
-			$this->dataDirectory = pathinfo($location, PATHINFO_DIRNAME);
-		else
-        {
+        if (is_dir($location)) {
+            $this->dataDirectory = $location;
+        } elseif (is_file($location)) {
+            $this->dataDirectory = pathinfo($location, PATHINFO_DIRNAME);
+        } else {
             HedgeBot::message("The specified directory for file data storage doesn't exist.", null, E_WARNING);
-            return FALSE;
+            return false;
         }
 
         $this->loadData($this->dataDirectory);
 
-        return TRUE;
+        return true;
     }
 
     /** Sets backup function.
@@ -421,21 +418,21 @@ class IniFileProvider extends Provider
      */
     private function backupData($currentDir = "")
     {
-        $baseDir = $this->dataDirectory. "/".$currentDir;
-        $backupDir = $this->dataDirectory. "/.backup/". $currentDir;
+        $baseDir = $this->dataDirectory . "/" . $currentDir;
+        $backupDir = $this->dataDirectory . "/.backup/" . $currentDir;
 
         $contents = scandir($baseDir);
-        foreach($contents as $file)
-        {
-            if(!in_array($file, array('.', '..', '.backup')))
-            {
-                if(!is_dir($backupDir))
+        foreach ($contents as $file) {
+            if (!in_array($file, array('.', '..', '.backup'))) {
+                if (!is_dir($backupDir)) {
                     mkdir($backupDir);
+                }
 
-                if(is_dir($baseDir.'/'.$file))
-                    $this->backupData($currentDir.'/'.$file);
-                else
-                    copy($baseDir.'/'.$file, $backupDir.'/'.$file);
+                if (is_dir($baseDir . '/' . $file)) {
+                    $this->backupData($currentDir . '/' . $file);
+                } else {
+                    copy($baseDir . '/' . $file, $backupDir . '/' . $file);
+                }
             }
         }
     }
@@ -446,20 +443,21 @@ class IniFileProvider extends Provider
     private function wipeDataDirectory()
     {
         $wipeDir = $this->dataDirectory;
-        if(!empty($dir))
+        if (!empty($dir)) {
             $wipeDir .= $dir;
+        }
 
         $iterator = new RecursiveDirectoryIterator($wipeDir, RecursiveDirectoryIterator::SKIP_DOTS);
-        $files = new RecursiveIteratorIterator($iterator, RecursiveIteratorIterator::CHILD_FIRST | RecursiveIteratorIterator::LEAVES_ONLY);
+        $files = new RecursiveIteratorIterator($iterator,
+            RecursiveIteratorIterator::CHILD_FIRST | RecursiveIteratorIterator::LEAVES_ONLY);
 
-        foreach($files as $file)
-        {
-            if(strpos($file->getPathname(), '.backup') === FALSE)
-            {
-                if ($file->isDir())
+        foreach ($files as $file) {
+            if (strpos($file->getPathname(), '.backup') === false) {
+                if ($file->isDir()) {
                     rmdir($file->getRealPath());
-                else
+                } else {
                     unlink($file->getRealPath());
+                }
             }
         }
     }
@@ -470,16 +468,17 @@ class IniFileProvider extends Provider
      */
     private function emptyRecursive($data)
     {
-        if(!is_array($data))
+        if (!is_array($data)) {
             return empty($data);
+        }
 
         $empty = true;
-        foreach($data as $el)
-        {
-            if(!is_array($el))
+        foreach ($data as $el) {
+            if (!is_array($el)) {
                 $empty = $empty && empty($el);
-            else
+            } else {
                 $empty = $empty && $this->emptyRecursive($el);
+            }
         }
 
         return $empty;
@@ -487,17 +486,19 @@ class IniFileProvider extends Provider
 
     /**
      * Escapes values to store them safely in the file.
-     * @param  mixed  $value The value to escape
+     * @param  mixed $value The value to escape
      * @return string        The escaped value
      */
     private function escapeValue($value)
     {
         // Convert int to string
-        if(is_numeric($value))
-            return (string) $value;
+        if (is_numeric($value)) {
+            return (string)$value;
+        }
 
-        if(is_string($value))
-            return '"'. str_replace('"', '\\"', $value). '"';
+        if (is_string($value)) {
+            return '"' . str_replace('"', '\\"', $value) . '"';
+        }
 
         return $value;
     }

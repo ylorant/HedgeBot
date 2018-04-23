@@ -17,11 +17,11 @@ $input = $options['i'] ?? $options['input'] ?? null;
 $output = $options['o'] ?? $options['output'] ?? null;
 $time = $options['t'] ?? $options['time'] ?? 1;
 
-if(empty($input) || empty($output))
+if (empty($input) || empty($output)) {
     die("Missing input or output file.\n");
+}
 
-while(true)
-{
+while (true) {
     file_put_contents($output, file_get_contents($input));
     sleep($time);
 }

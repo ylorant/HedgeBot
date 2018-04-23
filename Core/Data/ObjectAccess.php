@@ -51,14 +51,15 @@ class ObjectAccess
      */
     public function __get($name)
     {
-        $path = $this->currentPath. '.'. $name;
+        $path = $this->currentPath . '.' . $name;
         $path = trim($path, '.');
         $val = $this->provider->get($path);
 
-        if(is_null($val) || is_array($val))
+        if (is_null($val) || is_array($val)) {
             return new ObjectAccess($this->provider, $path);
-        else
+        } else {
             return $val;
+        }
     }
 
     /** Sets a var into the data storage.
@@ -69,7 +70,7 @@ class ObjectAccess
      */
     public function __set($name, $val)
     {
-        $path = $this->currentPath. '.'. $name;
+        $path = $this->currentPath . '.' . $name;
         $path = trim($path, '.');
 
         return $this->provider->set($path, $val);
@@ -84,12 +85,13 @@ class ObjectAccess
      */
     public function __isset($name)
     {
-        $path = $this->currentPath. '.'. $name;
+        $path = $this->currentPath . '.' . $name;
         $path = trim($path, '.');
         $val = $this->provider->get($path);
 
-        if(is_null($val))
+        if (is_null($val)) {
             return false;
+        }
 
         return true;
     }
@@ -101,7 +103,7 @@ class ObjectAccess
      */
     public function get($name)
     {
-        $path = trim($this->currentPath.'.'.$name, '.');
+        $path = trim($this->currentPath . '.' . $name, '.');
         return $this->provider->get($path);
     }
 
@@ -112,7 +114,7 @@ class ObjectAccess
      */
     public function set($name, $value)
     {
-        $path = trim($this->currentPath.'.'.$name, '.');
+        $path = trim($this->currentPath . '.' . $name, '.');
         return $this->provider->set($path, $value);
     }
 

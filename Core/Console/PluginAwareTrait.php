@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console;
 
 use HedgeBot\Core\Plugins\Plugin;

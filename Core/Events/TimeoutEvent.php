@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Events;
 
 class TimeoutEvent extends Event

@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,9 +29,10 @@ class UnsetRightCommand extends StorageAwareCommand
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         $role = $accessControlManager->getRole($roleId);
 
-        if(empty($role))
-            throw new InvalidArgumentException("Unable to load role '". $roleId. "': role does not exist.");
-        
+        if (empty($role)) {
+            throw new InvalidArgumentException("Unable to load role '" . $roleId . "': role does not exist.");
+        }
+
         $role->unsetRight($rightName);
         $accessControlManager->saveToStorage();
     }

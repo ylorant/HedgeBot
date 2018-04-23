@@ -10,8 +10,9 @@ spl_autoload_register("HedgeBot\Core\HedgeBot::autoload");
 
 $options = getopt("v", ["verbose"]);
 
-if(isset($options['v']) || isset($options['verbose']))
-	HedgeBot::$verbose = 2;
+if (isset($options['v']) || isset($options['verbose'])) {
+    HedgeBot::$verbose = 2;
+}
 
 $documentor = new Documentor();
 $documentor->generate();

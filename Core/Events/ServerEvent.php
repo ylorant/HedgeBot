@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Events;
 
 use HedgeBot\Core\Traits\Hydrator;

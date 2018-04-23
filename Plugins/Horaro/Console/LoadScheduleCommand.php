@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\Horaro\Console;
 
 use HedgeBot\Core\Console\StorageAwareCommand;
@@ -16,10 +17,10 @@ class LoadScheduleCommand extends StorageAwareCommand
     public function configure()
     {
         $this->setName('horaro:load-schedule')
-             ->setDescription('Loads a schedule into the bot.')
-             ->addOption('event', 'e', InputOption::VALUE_REQUIRED)
-             ->addOption('channel', 'C', InputOption::VALUE_REQUIRED)
-             ->addArgument('schedule', InputArgument::REQUIRED, 'The schedule slug or URL.');
+            ->setDescription('Loads a schedule into the bot.')
+            ->addOption('event', 'e', InputOption::VALUE_REQUIRED)
+            ->addOption('channel', 'C', InputOption::VALUE_REQUIRED)
+            ->addArgument('schedule', InputArgument::REQUIRED, 'The schedule slug or URL.');
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
@@ -31,25 +32,26 @@ class LoadScheduleCommand extends StorageAwareCommand
         $plugin = $this->getPlugin();
 
         $scheduleExists = $plugin->scheduleExists($scheduleId, $eventId);
-        if(!$scheduleExists)
+        if (!$scheduleExists) {
             throw new RuntimeException("Cannot load schedule, it has not been found on Horaro.");
+        }
 
         $scheduleIdentSlug = $plugin->loadSchedule($scheduleId, $eventId);
 
-        if(!$scheduleIdentSlug)
+        if (!$scheduleIdentSlug) {
             throw new RuntimeException("Cannot load schedule, it has been already loaded.");
-        
-        if(!empty($channel))
-        {
+        }
+
+        if (!empty($channel)) {
             /** @var Schedule $schedule */
             $schedule = $plugin->getScheduleByIdentSlug($scheduleIdentSlug);
             $schedule->setChannel($channel);
         }
 
         $plugin->saveData();
-        
+
         $output->writeln([
-            "Schedule ident slug: ". $scheduleIdentSlug,
+            "Schedule ident slug: " . $scheduleIdentSlug,
             "",
             "Use this ident slug to reference this schedule in all future console calls that need it."
         ]);

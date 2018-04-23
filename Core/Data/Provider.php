@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Data;
 
 use ReflectionClass;
@@ -67,18 +68,20 @@ abstract class Provider
 
         // Scanning the directory of this file, which contains the other classes.
         $currentDir = scandir(__DIR__);
-        foreach($currentDir as $file)
-        {
-            if(!is_file(__DIR__. '/'. $file))
+        foreach ($currentDir as $file) {
+            if (!is_file(__DIR__ . '/' . $file)) {
                 continue;
+            }
 
             $className = str_replace('.php', '', $file);
-            if(in_array($className, $ignoreClasses))
+            if (in_array($className, $ignoreClasses)) {
                 continue;
+            }
 
-            $className = $currentNamespace. "\\". $className;
-            if($className::getName() == $name)
+            $className = $currentNamespace . "\\" . $className;
+            if ($className::getName() == $name) {
                 return $className;
+            }
         }
 
         return false;

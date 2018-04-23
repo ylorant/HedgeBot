@@ -12,5 +12,6 @@ const ENV = "main";
 $hedgebot = new HedgeBot();
 $initialized = $hedgebot->init();
 
-if($initialized)
+if ($initialized) {
     $hedgebot->run();
+}

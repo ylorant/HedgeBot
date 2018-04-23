@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\Currency;
 
 use HedgeBot\Core\HedgeBot;
@@ -39,352 +40,372 @@ use HedgeBot\Core\Events\CommandEvent;
  */
 class Currency extends PluginBase
 {
-	private $accounts = array(); // Accounts, by channel
-	private $activityTimes = array(); // Last activity times for channels users
-	private $giveTimes = array(); // Last times money was given to users
+    private $accounts = array(); // Accounts, by channel
+    private $activityTimes = array(); // Last activity times for channels users
+    private $giveTimes = array(); // Last times money was given to users
 
-	// Plugin configuration variables by channel
-	private $currencyName = array(); // Money names
-	private $currencyNamePlural = array(); // Money plural name
-	private $statusCommand = array(); // Money status command names
-	private $statusMessage = array(); // Money status command message
-	private $initialAmount = array(); // Initial money amount
-	private $giveInterval = array(); // Money giving interval
-	private $giveAmount = array(); // Money giving amount
-	private $timeoutThreshold = array(); // Money giving timeout threshold
+    // Plugin configuration variables by channel
+    private $currencyName = array(); // Money names
+    private $currencyNamePlural = array(); // Money plural name
+    private $statusCommand = array(); // Money status command names
+    private $statusMessage = array(); // Money status command message
+    private $initialAmount = array(); // Initial money amount
+    private $giveInterval = array(); // Money giving interval
+    private $giveAmount = array(); // Money giving amount
+    private $timeoutThreshold = array(); // Money giving timeout threshold
 
-	// Global plugin configuration variables, used if no money name is overridden for the channel
-	private $globalCurrencyName; // Global money name
-	private $globalCurrencyNamePlural; // Global money plural name
-	private $globalStatusCommand; // Global money command
-	private $globalStatusMessage; // Global money message
-	private $globalInitialAmount; // Global initial money amount
-	private $globalGiveInterval; // Global money giving interval
-	private $globalGiveAmount; // Global money giving amout
-	private $globalTimeoutThreshold; // Global money giving timeout threshold, by channel
+    // Global plugin configuration variables, used if no money name is overridden for the channel
+    private $globalCurrencyName; // Global money name
+    private $globalCurrencyNamePlural; // Global money plural name
+    private $globalStatusCommand; // Global money command
+    private $globalStatusMessage; // Global money message
+    private $globalInitialAmount; // Global initial money amount
+    private $globalGiveInterval; // Global money giving interval
+    private $globalGiveAmount; // Global money giving amout
+    private $globalTimeoutThreshold; // Global money giving timeout threshold, by channel
 
-	const DEFAULT_CURRENCY_NAME = 'coin';
-	const DEFAULT_CURRENCY_NAME_PLURAL = 'coins';
-	const DEFAULT_STATUS_COMMAND = 'coins';
-	const DEFAULT_STATUS_MESSAGE  = '@name, you currently have @total @currency';
-	const DEFAULT_INITIAL_AMOUNT = 0;
-	const DEFAULT_GIVE_INTERVAL = 120;
-	const DEFAULT_GIVE_AMOUNT = 5;
-	const DEFAULT_TIMEOUT_THRESHOLD = 1800;
+    const DEFAULT_CURRENCY_NAME = 'coin';
+    const DEFAULT_CURRENCY_NAME_PLURAL = 'coins';
+    const DEFAULT_STATUS_COMMAND = 'coins';
+    const DEFAULT_STATUS_MESSAGE = '@name, you currently have @total @currency';
+    const DEFAULT_INITIAL_AMOUNT = 0;
+    const DEFAULT_GIVE_INTERVAL = 120;
+    const DEFAULT_GIVE_AMOUNT = 5;
+    const DEFAULT_TIMEOUT_THRESHOLD = 1800;
 
-	// Traits
-	use PropertyConfigMapping;
+    // Traits
+    use PropertyConfigMapping;
 
-	/** Plugin initialization */
-	public function init()
-	{
-		if(!empty($this->data->accounts))
-			$this->accounts = $this->data->accounts->toArray();
+    /**
+     * Plugin initialization
+     */
+    public function init()
+    {
+        if (!empty($this->data->accounts)) {
+            $this->accounts = $this->data->accounts->toArray();
+        }
 
-		$this->reloadConfig();
+        $this->reloadConfig();
 
         Plugin::getManager()->addRoutine($this, 'RoutineAddMoney', 10);
-	}
+    }
 
-	public function CoreEventConfigUpdate()
-	{
-		$this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
-		$this->reloadConfig();
-	}
+    /**
+     *
+     */
+    public function CoreEventConfigUpdate()
+    {
+        $this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
+        $this->reloadConfig();
+    }
 
-	/** Add money to guys standing on the chat for a certain time */
-	public function RoutineAddMoney()
-	{
-		$currentTime = time();
-		$accountsModified = false;
+    /**
+     * Add money to guys standing on the chat for a certain time
+     */
+    public function RoutineAddMoney()
+    {
+        $currentTime = time();
+        $accountsModified = false;
 
-		foreach($this->activityTimes as $channel => $channelTimes)
-		{
-			// Get the good interval config value
-			$giveInterval = $this->getConfigParameter($channel, 'giveInterval');
+        foreach ($this->activityTimes as $channel => $channelTimes) {
+            // Get the good interval config value
+            $giveInterval = $this->getConfigParameter($channel, 'giveInterval');
 
-			// Check that the give interval between money giving is elapsed, if not, go to next iteration
-			if(!empty($this->giveTimes[$channel]) && $this->giveTimes[$channel] + $giveInterval > $currentTime)
-				continue;
+            // Check that the give interval between money giving is elapsed, if not, go to next iteration
+            if (!empty($this->giveTimes[$channel]) && $this->giveTimes[$channel] + $giveInterval > $currentTime) {
+                continue;
+            }
 
-			// Get configuration settings
-			$timeoutThreshold = $this->getConfigParameter($channel, 'timeoutThreshold');
-			$giveAmount = $this->getConfigParameter($channel, 'giveAmount');
+            // Get configuration settings
+            $timeoutThreshold = $this->getConfigParameter($channel, 'timeoutThreshold');
+            $giveAmount = $this->getConfigParameter($channel, 'giveAmount');
 
-			// Setting any configuration value to specifically 0 skips giving money
-			if((!empty($this->giveAmount[$channel]) && $this->giveAmount[$channel] === 0) || $giveAmount === 0)
-				continue;
+            // Setting any configuration value to specifically 0 skips giving money
+            if ((!empty($this->giveAmount[$channel]) && $this->giveAmount[$channel] === 0) || $giveAmount === 0) {
+                continue;
+            }
 
-			// Finally, giving to people their money
-			foreach($channelTimes as $name => $time)
-			{
-				if($time + $timeoutThreshold > $currentTime)
-				{
-					$this->accounts[$channel][$name] += $giveAmount;
-					$accountsModified = true;
-				}
-			}
+            // Finally, giving to people their money
+            foreach ($channelTimes as $name => $time) {
+                if ($time + $timeoutThreshold > $currentTime) {
+                    $this->accounts[$channel][$name] += $giveAmount;
+                    $accountsModified = true;
+                }
+            }
 
-			// Updating the give time
-			$this->giveTimes[$channel] = time();
+            // Updating the give time
+            $this->giveTimes[$channel] = time();
 
-			// And saving the accounts
-			if($accountsModified)
-				$this->data->set('accounts', $this->accounts);
-		}
-	}
+            // And saving the accounts
+            if ($accountsModified) {
+                $this->data->set('accounts', $this->accounts);
+            }
+        }
+    }
 
-	/** Initializes an account on join */
-	public function ServerJoin(ServerEvent $ev)
-	{
-		if(!empty($this->accounts[$ev->channel][$ev->nick]))
-			return;
+    /**
+     * Initializes an account on join
+     */
+    public function ServerJoin(ServerEvent $ev)
+    {
+        if (!empty($this->accounts[$ev->channel][$ev->nick])) {
+            return;
+        }
 
-		$serverConfig = Server::getConfig();
-		if(strtolower($ev->nick) == strtolower($serverConfig['name']))
-		{
-			$this->activityTimes[$ev->channel] = array();
-			$this->giveTimes[$ev->channel] = time();
-			return;
-		}
+        $serverConfig = Server::getConfig();
+        if (strtolower($ev->nick) == strtolower($serverConfig['name'])) {
+            $this->activityTimes[$ev->channel] = array();
+            $this->giveTimes[$ev->channel] = time();
+            return;
+        }
 
-		$initialAmount = $this->getConfigParameter($ev->channel, 'initialAmount');
+        $initialAmount = $this->getConfigParameter($ev->channel, 'initialAmount');
 
-		$this->accounts[$ev->channel][$ev->nick] = $initialAmount;
-		$this->data->set('accounts', $this->accounts);
-	}
+        $this->accounts[$ev->channel][$ev->nick] = $initialAmount;
+        $this->data->set('accounts', $this->accounts);
+    }
 
-	/**
-	 * Initializes accounts for user that talk before the join notice comes in.
-	 * Handles status command calls too.
-	 * Updates last activity time for the user.
-	 */
-	public function ServerPrivmsg(ServerEvent $ev)
-	{
-		$this->ServerJoin($ev);
+    /**
+     * Initializes accounts for user that talk before the join notice comes in.
+     * Handles status command calls too.
+     * Updates last activity time for the user.
+     */
+    public function ServerPrivmsg(ServerEvent $ev)
+    {
+        $this->ServerJoin($ev);
 
-		$cmd = explode(' ', $ev->message);
-		if($cmd[0][0] == '!')
-		{
-			$cmd = substr($cmd[0], 1);
-			$statusCommand = $this->getConfigParameter($ev->channel, 'statusCommand');
-			if($statusCommand == $cmd)
-				$this->RealCommandAccount($ev);
-		}
+        $cmd = explode(' ', $ev->message);
+        if ($cmd[0][0] == '!') {
+            $cmd = substr($cmd[0], 1);
+            $statusCommand = $this->getConfigParameter($ev->channel, 'statusCommand');
+            if ($statusCommand == $cmd) {
+                $this->RealCommandAccount($ev);
+            }
+        }
 
-		$this->activityTimes[$ev->channel][$ev->nick] = time();
-	}
+        $this->activityTimes[$ev->channel][$ev->nick] = time();
+    }
 
-	/**
-	 * Handles whispers as regular messages for money status command.
-	 */
-	public function ServerWhisper(ServerEvent $ev)
-	{
-		$this->ServerPrivmsg($ev);
-	}
+    /**
+     * Handles whispers as regular messages for money status command.
+     */
+    public function ServerWhisper(ServerEvent $ev)
+    {
+        $this->ServerPrivmsg($ev);
+    }
 
-	/**
-	 * Adds a given amount of money to a given user.
-	 *
-	 * @access moderator
-	 *
-	 * @parameter user   The person on the chat you want to give money to.
-	 * @parameter amount The amount you want to give.
-	 *
-	 */
-	public function CommandGive(CommandEvent $ev)
-	{
-		// Check rights
-		if(!$ev->moderator)
-			return;
+    /**
+     * Adds a given amount of money to a given user.
+     *
+     * @access moderator
+     *
+     * @parameter user   The person on the chat you want to give money to.
+     * @parameter amount The amount you want to give.
+     */
+    public function CommandGive(CommandEvent $ev)
+    {
+        // Check rights
+        if (!$ev->moderator) {
+            return;
+        }
 
-		$args = $ev->arguments;
-		
-		// Check that arguments are there
-		if(count($args) < 2)
-			return IRC::reply($ev, 'Insufficient parameters.');
+        $args = $ev->arguments;
 
-		// Lowercasing the username
-		$nick = strtolower($args[0]);
+        // Check that arguments are there
+        if (count($args) < 2) {
+            return IRC::reply($ev, 'Insufficient parameters.');
+        }
 
-		// Check that the account exists
-		if(!isset($this->accounts[$ev->channel][$nick]))
-			return IRC::reply($ev, 'Unknown user.');
+        // Lowercasing the username
+        $nick = strtolower($args[0]);
 
-		$this->accounts[$ev->channel][$nick] += (int) $args[1];
-		$this->data->set('accounts', $this->accounts);
-	}
+        // Check that the account exists
+        if (!isset($this->accounts[$ev->channel][$nick])) {
+            return IRC::reply($ev, 'Unknown user.');
+        }
 
-	/**
-	 * Checks the current amount of money an user has.
+        $this->accounts[$ev->channel][$nick] += (int)$args[1];
+        $this->data->set('accounts', $this->accounts);
+    }
+
+    /**
+     * Checks the current amount of money an user has.
      *
      * @access moderator
      *
      * @parameter user The username of the person to check the money on.
-	 */
-	public function CommandCheck(CommandEvent $ev)
-	{
-		if(!$ev->moderator || count($args) < 1)
-			return;
-
-		$args = $ev->arguments;
-		$nick = strtolower($args[0]);
-		if(isset($this->accounts[$ev->channel][$nick]))
-		{
-			$message = $this->formatMessage("Admin check (@name): @total @currency", $ev->channel, $nick);
-			IRC::reply($ev, $message);
-		}
-	}
-
-	/**
-	 * Removes a given amount of money from an user.
-	 *
-	 * @access moderator
-	 *
-	 * @parameter user   The username of the person to take money from.
-	 * @parameter amount The amount of money to take from that user.
      */
-	public function CommandTake(CommandEvent $ev)
-	{
-		// Check rights
-		if(!$ev->moderator)
-			return;
+    public function CommandCheck(CommandEvent $ev)
+    {
+        if (!$ev->moderator || count($args) < 1) {
+            return;
+        }
 
-		$args = $ev->arguments;
+        $args = $ev->arguments;
+        $nick = strtolower($args[0]);
+        if (isset($this->accounts[$ev->channel][$nick])) {
+            $message = $this->formatMessage("Admin check (@name): @total @currency", $ev->channel, $nick);
+            IRC::reply($ev, $message);
+        }
+    }
 
-		// Check that arguments are there
-		if(count($args) < 2)
-			return IRC::reply($ev, 'Insufficient parameters.');
+    /**
+     * Removes a given amount of money from an user.
+     *
+     * @access moderator
+     *
+     * @parameter user   The username of the person to take money from.
+     * @parameter amount The amount of money to take from that user.
+     */
+    public function CommandTake(CommandEvent $ev)
+    {
+        // Check rights
+        if (!$ev->moderator) {
+            return;
+        }
 
-		// Lowercasing the username
-		$nick = strtolower($args[0]);
+        $args = $ev->arguments;
 
-		// Check that the account exists
-		if(!isset($this->accounts[$ev->channel][$nick]))
-			return IRC::reply($ev, 'Unknown user.');
+        // Check that arguments are there
+        if (count($args) < 2) {
+            return IRC::reply($ev, 'Insufficient parameters.');
+        }
 
-		// Perform account operations
-		$sum = (int) $args[1];
+        // Lowercasing the username
+        $nick = strtolower($args[0]);
 
-		if($this->accounts[$ev->channel][$nick] - $sum > 0)
-			$this->accounts[$ev->channel][$nick] -= $sum;
-		else
-			$this->accounts[$ev->channel][$nick] = 0;
+        // Check that the account exists
+        if (!isset($this->accounts[$ev->channel][$nick])) {
+            return IRC::reply($ev, 'Unknown user.');
+        }
 
-		$this->data->set('accounts', $this->accounts);
-	}
+        // Perform account operations
+        $sum = (int)$args[1];
 
-	/** Real account show command, shows the current amount of currency for the user */
-	public function RealCommandAccount(ServerEvent $ev)
-	{
-		$message = $this->getConfigParameter($ev->channel, 'statusMessage');
-		IRC::reply($ev, $this->formatMessage($message, $ev->channel, $ev->nick));
-	}
+        if ($this->accounts[$ev->channel][$nick] - $sum > 0) {
+            $this->accounts[$ev->channel][$nick] -= $sum;
+        } else {
+            $this->accounts[$ev->channel][$nick] = 0;
+        }
 
-	/** Formats a currency message, with plural forms and everything. */
-	private function formatMessage($message, $channel, $name)
-	{
-		if(!empty($this->currencyName[$channel]))
-		{
-			$currencyName = $this->currencyName[$channel];
-			$currencyNamePlural = $this->currencyNamePlural[$channel];
-		}
-		else
-		{
-			$currencyName = $this->globalCurrencyName;
-			$currencyNamePlural = $this->globalCurrencyNamePlural;
-		}
+        $this->data->set('accounts', $this->accounts);
+    }
 
-		$message = str_replace(	array(	'@name',
-										'@total',
-										'@currency'),
-								array(	$name,
-										$this->accounts[$channel][$name],
-										$this->accounts[$channel][$name] > 1 ?
-											$currencyNamePlural
-										:	$currencyName),
-								$message);
+    /** Real account show command, shows the current amount of currency for the user */
+    public function RealCommandAccount(ServerEvent $ev)
+    {
+        $message = $this->getConfigParameter($ev->channel, 'statusMessage');
+        IRC::reply($ev, $this->formatMessage($message, $ev->channel, $ev->nick));
+    }
 
-		return $message;
-	}
+    /** Formats a currency message, with plural forms and everything. */
+    private function formatMessage($message, $channel, $name)
+    {
+        if (!empty($this->currencyName[$channel])) {
+            $currencyName = $this->currencyName[$channel];
+            $currencyNamePlural = $this->currencyNamePlural[$channel];
+        } else {
+            $currencyName = $this->globalCurrencyName;
+            $currencyNamePlural = $this->globalCurrencyNamePlural;
+        }
 
-	// API methods
+        $message = str_replace(array(
+            '@name',
+            '@total',
+            '@currency'
+        ),
+            array(
+                $name,
+                $this->accounts[$channel][$name],
+                $this->accounts[$channel][$name] > 1 ?
+                    $currencyNamePlural
+                    : $currencyName
+            ),
+            $message);
 
-	/** Reloads configuration variables */
-	public function reloadConfig()
-	{
-		$parameters = [
-		                'currencyName',
-						'currencyNamePlural',
-						'statusCommand',
-						'statusMessage',
-						'initialAmount',
-						'giveInterval',
-                        'giveAmount',
-						'timeoutThreshold'
-					  ];
+        return $message;
+    }
 
-		$this->globalCurrencyName = self::DEFAULT_CURRENCY_NAME;
-		$this->globalCurrencyNamePlural = self::DEFAULT_CURRENCY_NAME_PLURAL;
-		$this->globalStatusCommand = self::DEFAULT_STATUS_COMMAND;
-		$this->globalStatusMessage = self::DEFAULT_STATUS_MESSAGE;
-		$this->globalInitialAmount = self::DEFAULT_INITIAL_AMOUNT;
-		$this->globalGiveInterval = self::DEFAULT_GIVE_INTERVAL;
-		$this->globalGiveAmount = self::DEFAULT_GIVE_AMOUNT;
-		$this->globalTimeoutThreshold = self::DEFAULT_TIMEOUT_THRESHOLD;
+    // API methods
 
-		$this->mapConfig($this->config, $parameters);
-	}
+    /** Reloads configuration variables */
+    public function reloadConfig()
+    {
+        $parameters = [
+            'currencyName',
+            'currencyNamePlural',
+            'statusCommand',
+            'statusMessage',
+            'initialAmount',
+            'giveInterval',
+            'giveAmount',
+            'timeoutThreshold'
+        ];
 
-	/** Gets a persons' account balance, inside a channel.
-	 *
-	 * \param $channel The channel to search the user from.
-	 * \param $name The user to get the balance of.
-	 *
-	 * \return The balance if found, null otherwise.
-	 */
-	public function getBalance($channel, $name)
-	{
-		if(empty($this->accounts[$channel]))
-			return null;
+        $this->globalCurrencyName = self::DEFAULT_CURRENCY_NAME;
+        $this->globalCurrencyNamePlural = self::DEFAULT_CURRENCY_NAME_PLURAL;
+        $this->globalStatusCommand = self::DEFAULT_STATUS_COMMAND;
+        $this->globalStatusMessage = self::DEFAULT_STATUS_MESSAGE;
+        $this->globalInitialAmount = self::DEFAULT_INITIAL_AMOUNT;
+        $this->globalGiveInterval = self::DEFAULT_GIVE_INTERVAL;
+        $this->globalGiveAmount = self::DEFAULT_GIVE_AMOUNT;
+        $this->globalTimeoutThreshold = self::DEFAULT_TIMEOUT_THRESHOLD;
 
-		if(empty($this->accounts[$channel][$name]))
-			return null;
+        $this->mapConfig($this->config, $parameters);
+    }
 
-		return $this->accounts[$channel][$name];
-	}
+    /** Gets a persons' account balance, inside a channel.
+     *
+     * @param string $channel The channel to search the user from
+     * @param string $name The user to get the balance of
+     * @return object|null The balance if found, null otherwise
+     */
+    public function getBalance($channel, $name)
+    {
+        if (empty($this->accounts[$channel])) {
+            return null;
+        }
 
-	/** Gives money to someone on a channel.
-	 *
-	 * \param $channel The channel on which execute the operation.
-	 * \param $name The name of the person to give money to.
-	 * \return The new balance if the money has been given, false otherwise.
-	 */
-	public function giveAmount($channel, $name, $amount)
-	{
-		if(empty($this->getBalance($channel, $name)))
-			return false;
+        if (empty($this->accounts[$channel][$name])) {
+            return null;
+        }
 
-		$this->accounts[$channel][$name] += $amount;
-		$this->data->set('accounts', $this->accounts);
+        return $this->accounts[$channel][$name];
+    }
 
-		return $this->accounts[$channel][$name];
-	}
+    /** Gives money to someone on a channel.
+     *
+     * @param string $channel The channel on which execute the operation
+     * @param string $name The name of the person to give money to
+     * @return object|bool The new balance if the money has been given, false otherwise
+     */
+    public function giveAmount($channel, $name, $amount)
+    {
+        if (empty($this->getBalance($channel, $name))) {
+            return false;
+        }
 
-	/** Takes money from someone on a channel.
-	 *
-	 * \param $channel The channel on which execute the operation.
-	 * \param $name The name of the person to take money from.
-	 * \return The new balance if the money has been taken, false otherwise.
-	 */
-	public function takeAmount($channel, $name, $amount)
-	{
-		if(empty($this->getBalance($channel, $name)))
-			return false;
+        $this->accounts[$channel][$name] += $amount;
+        $this->data->set('accounts', $this->accounts);
 
-		$this->accounts[$channel][$name] -= $amount;
-		$this->data->set('accounts', $this->accounts);
+        return $this->accounts[$channel][$name];
+    }
 
-		return $this->accounts[$channel][$name];
-	}
+    /** Takes money from someone on a channel.
+     *
+     * @param string $channel The channel on which execute the operation.
+     * @param string $name The name of the person to take money from.
+     * @return object The new balance if the money has been taken, false otherwise.
+     */
+    public function takeAmount($channel, $name, $amount)
+    {
+        if (empty($this->getBalance($channel, $name))) {
+            return false;
+        }
+
+        $this->accounts[$channel][$name] -= $amount;
+        $this->data->set('accounts', $this->accounts);
+
+        return $this->accounts[$channel][$name];
+    }
 }

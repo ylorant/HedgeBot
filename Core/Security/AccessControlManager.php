@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Security;
 
 use HedgeBot\Core\Data\Provider as DataProvider;
@@ -55,7 +56,7 @@ class AccessControlManager
         $roleData = $this->dataProvider->get('access');
 
         // Initializing role data if no data has been found
-        if(empty($roleData)) {
+        if (empty($roleData)) {
             $roleData = [
                 "roles" => [],
                 "users" => []
@@ -66,14 +67,15 @@ class AccessControlManager
         $this->userList = $roleData["users"] ?? [];
 
         // Creating role objects
-        foreach($roleList as $role)
+        foreach ($roleList as $role) {
             $this->roleList[$role['id']] = SecurityRole::fromArray($role);
+        }
 
         // Binding parents to their roles, a bit redundant, but necessary
-        foreach($roleList as $role)
-        {
-            if(!$this->roleList[$role['id']]->getParent() && !empty($role['parent']))
+        foreach ($roleList as $role) {
+            if (!$this->roleList[$role['id']]->getParent() && !empty($role['parent'])) {
                 $this->roleList[$role['id']]->setParent($role['parent']);
+            }
         }
     }
 
@@ -84,9 +86,10 @@ class AccessControlManager
     {
         $roleList = [];
 
-        foreach($this->roleList as $role)
+        foreach ($this->roleList as $role) {
             $roleList[$role->getId()] = $role->toArray();
-        
+        }
+
         $this->dataProvider->set('access', [
             "roles" => $roleList,
             "users" => $this->userList
@@ -101,9 +104,10 @@ class AccessControlManager
      */
     public function addRole(SecurityRole $role)
     {
-        if(isset($this->roleList[$role->getId()]))
+        if (isset($this->roleList[$role->getId()])) {
             return false;
-        
+        }
+
         $this->roleList[$role->getId()] = $role;
 
         return true;
@@ -112,78 +116,82 @@ class AccessControlManager
     /**
      * Deletes a role.
      *
-     * @param  string  $roleId The role ID.
+     * @param  string $roleId The role ID.
      * @return boolean         True if the role has been deleted, False if not (role not found).
      */
     public function deleteRole($roleId)
     {
         // Check if role exists
         $role = $this->getRole($roleId);
-        if(empty($role))
+        if (empty($role)) {
             return false;
+        }
 
         // Assign rights from this role to children rôles to minimize impact when deleting a role
         $this->reassignRightsToChildren($role);
-        
+
         // Delete the role
         unset($this->roleList[$roleId]);
 
         // Delete role references in user list
-        foreach($this->userList as &$user)
-        {
+        foreach ($this->userList as &$user) {
             $key = array_search($roleId, $user);
-            if($key !== false)
+            if ($key !== false) {
                 unset($user[$key]);
+            }
         }
-        
+
         return true;
     }
 
     /**
      * Gets a role by its ID.
      *
-     * @param  string            $roleId The identifier of the role to get.
+     * @param  string $roleId The identifier of the role to get.
      * @return SecurityRole|null         The security role if found, null if not.
      */
     public function getRole($roleId)
     {
-        if(isset($this->roleList[$roleId]))
+        if (isset($this->roleList[$roleId])) {
             return $this->roleList[$roleId];
-        
+        }
+
         return null;
     }
 
     /**
      * Assigns a role to an user.
      *
-     * @param  string  $user   The user to assign a role to. If it doesn't exist in the database, it will be created.
-     * @param  string  $roleId The role ID to assign.
+     * @param  string $user The user to assign a role to. If it doesn't exist in the database, it will be created.
+     * @param  string $roleId The role ID to assign.
      * @return boolean         True if the role has been assigned successfully, false if not (the role hasn't been found).
      */
     public function assignRole($user, $roleId)
     {
-        if(!isset($this->userList[$user]))
+        if (!isset($this->userList[$user])) {
             $this->userList[$user] = [];
-        
+        }
+
         // Check if the role exists
-        if(!$this->getRole($roleId))
+        if (!$this->getRole($roleId)) {
             return false;
-        
-        if(!in_array($roleId, $this->userList[$user]))
+        }
+
+        if (!in_array($roleId, $this->userList[$user])) {
             $this->userList[$user][] = $roleId;
-        
+        }
+
         return true;
     }
 
     public function revokeRole($user, $roleId)
     {
-        if(isset($this->userList[$user]))
-        {
-            if(!$this->getRole($roleId))
+        if (isset($this->userList[$user])) {
+            if (!$this->getRole($roleId)) {
                 return false;
-            
-            if(in_array($roleId, $this->userList[$user]))
-            {
+            }
+
+            if (in_array($roleId, $this->userList[$user])) {
                 $key = array_search($roleId, $this->userList[$user]);
                 unset($this->userList[$user][$key]);
             }
@@ -194,30 +202,32 @@ class AccessControlManager
 
     public function revokeAllRoles($user)
     {
-        if(isset($this->userList[$user]))
+        if (isset($this->userList[$user])) {
             $this->userList[$user] = [];
-        
+        }
+
         return true;
     }
 
     /**
      * Replaces users by the new ones.
-     * 
+     *
      * @param string $roleId The role ID.
      * @param array $users The new users.
      */
     public function replaceUsers($roleId, $newUsers)
     {
         // Remove the role from all the users
-        foreach ($this->userList as $user => $roles)
-        {
-            if(($key = array_search($roleId, $roles)) !== false)
+        foreach ($this->userList as $user => $roles) {
+            if (($key = array_search($roleId, $roles)) !== false) {
                 unset($roles[$key]);
+            }
         }
 
         // Reinsert the role into the new users
-        foreach ($newUsers as $user)
+        foreach ($newUsers as $user) {
             $this->assignRole($user, $roleId);
+        }
 
         return true;
     }
@@ -234,22 +244,21 @@ class AccessControlManager
     {
         // Find user
         $userRoles = $this->getUserRoles($user);
-        if(!empty($userRoles))
-        {
+        if (!empty($userRoles)) {
             // Check all the roles from the user for the right
-            foreach($userRoles as $role)
-            {
-                if($this->roleList[$role]->hasRight($right))
+            foreach ($userRoles as $role) {
+                if ($this->roleList[$role]->hasRight($right)) {
                     return true;
+                }
             }
         }
 
         // Check default roles for the right too
         $defaultRoles = $this->getDefaultRolesList();
-        foreach($defaultRoles as $defaultRole)
-        {
-            if($this->roleList[$defaultRole]->hasRight($right))
+        foreach ($defaultRoles as $defaultRole) {
+            if ($this->roleList[$defaultRole]->hasRight($right)) {
                 return true;
+            }
         }
 
         // No role allows the right
@@ -258,34 +267,34 @@ class AccessControlManager
 
     /**
      * Adds a right to the right list.
-     * 
+     *
      * @param string $rightNames The name of the right to add. Variadic.
      */
     public function addRights(...$rightNames)
     {
-        foreach($rightNames as $rightName)
-        {
-            if(!in_array($rightName, $this->rightList))
+        foreach ($rightNames as $rightName) {
+            if (!in_array($rightName, $this->rightList)) {
                 $this->rightList[] = $rightName;
+            }
         }
-        
+
         $this->rightList = array_values($this->rightList); // Re-index the right list
     }
 
-    /** 
+    /**
      * Removes a right from the right list.
-     * 
+     *
      * @param string $rightName The name of the right to remove.
      */
     public function removeRights(...$rightNames)
     {
-        foreach($rightNames as $rightNames)
-        {
+        foreach ($rightNames as $rightNames) {
             $rightKey = array_search($rightNames, $this->rightList);
-            if($rightKey !== false)
+            if ($rightKey !== false) {
                 unset($this->rightList[$rightKey]);
+            }
         }
-        
+
         $this->rightList = array_values($this->rightList); // Re-index the right list
     }
 
@@ -299,90 +308,90 @@ class AccessControlManager
 
     /**
      * Check if the 2 given roles are in a relation one to each other (one is already in the parent/children chain to another).
-     * 
+     *
      * @param SecurityRole $role1 The first role.
      * @param SecurityRole $role2 The second role.
-     * 
+     *
      * @return bool True if the roles have a relation in common, false otherwise.
      */
     public function rolesHaveRelation(SecurityRole $role1, SecurityRole $role2)
     {
         $tmpRole = $role1;
 
-        do
-        {
-            if($tmpRole->getId() == $role2->getId())
+        do {
+            if ($tmpRole->getId() == $role2->getId()) {
                 return true;
-            
+            }
+
             $tmpRole = $tmpRole->getParent();
-        } while($tmpRole != null);
+        } while ($tmpRole != null);
 
         $tmpRole = $role2;
 
-        do
-        {
-            if($tmpRole->getId() == $role1->getId())
+        do {
+            if ($tmpRole->getId() == $role1->getId()) {
                 return true;
-            
+            }
+
             $tmpRole = $tmpRole->getParent();
-        } while($tmpRole != null);
+        } while ($tmpRole != null);
 
         return false;
     }
 
     /**
      * Gets the role relationship complete tree.
-     * 
+     *
      * @return array The hierarchy of roles, with each role as a SecurityRole object.
      */
     public function getRoleTree()
     {
         // This anonymous function fills a branch
-        $fillBranchFunc = function($base) use(&$fillBranchFunc)
-        {
+        $fillBranchFunc = function ($base) use (&$fillBranchFunc) {
             $branch = [];
 
-            foreach($this->roleList as $role)
-            {
-                if($base === $role->getParent() || !is_null($role->getParent()) && $role->getParent()->getId() == $base)
+            foreach ($this->roleList as $role) {
+                if ($base === $role->getParent() || !is_null($role->getParent()) && $role->getParent()->getId() == $base) {
                     $branch[] = [
                         'role' => $role,
                         'children' => $fillBranchFunc($role->getId())
                     ];
+                }
             }
 
             return $branch;
         };
-        
-          return $fillBranchFunc(null);  
+
+        return $fillBranchFunc(null);
     }
 
     /**
      * Gets the roles from an user
-     * @param  string     $user The username to get the roles of.
+     * @param  string $user The username to get the roles of.
      * @return array|null       An array containing the roles of the user, or NULL if the user hasn't been found.
      */
     public function getUserRoles($user)
     {
-        if(!isset($this->userList[$user]))
+        if (!isset($this->userList[$user])) {
             return null;
+        }
 
         return $this->userList[$user];
     }
 
     /**
      * Gets the roles that are marked as default.
-     * 
+     *
      * @return array The list of default roles.
      */
     public function getDefaultRolesList()
     {
         $roleList = [];
 
-        foreach($this->roleList as $role)
-        {
-            if($role->isDefault())
+        foreach ($this->roleList as $role) {
+            if ($role->isDefault()) {
                 $roleList[] = $role->getId();
+            }
         }
 
         return $roleList;
@@ -401,15 +410,15 @@ class AccessControlManager
     public function getRoleUsers($roleId)
     {
         $users = [];
-        foreach($this->userList as $user => $userRoles)
-        {
-            if(in_array($roleId, $userRoles))
+        foreach ($this->userList as $user => $userRoles) {
+            if (in_array($roleId, $userRoles)) {
                 $users[] = $user;
+            }
         }
 
         return $users;
     }
-    
+
     /**
      * Gets the list of registered users.
      * @return array The user list.
@@ -421,20 +430,21 @@ class AccessControlManager
 
     /**
      * Gets an user's roles.
-     * 
+     *
      * @param  string $username The name of the user.
      * @return array            The user's roles. If the user is not found, it'll return an empty array.
      */
     public function getUser($username)
     {
-        if(isset($this->userList[$username]))
+        if (isset($this->userList[$username])) {
             return $this->userList[$username];
+        }
     }
 
     /**
      * Reassigns parent roles and rights to the children roles of the given role, basically
      * making the role orphan and ready for removal, while minimizing impact on other roles.
-     * 
+     *
      * @param SecurityRole $parentRole The role to reassign the children of.
      */
     protected function reassignRightsToChildren($parentRole)
@@ -443,10 +453,8 @@ class AccessControlManager
 
         // Cycle through all roles to find children roles of this role.
         /** @var SecurityRole $role */
-        foreach($this->roleList as $role)
-        {
-            if(!empty($role->getParent()) && $role->getParent()->getId() == $parentRole->getId())
-            {
+        foreach ($this->roleList as $role) {
+            if (!empty($role->getParent()) && $role->getParent()->getId() == $parentRole->getId()) {
                 //Reassign parent role's parent role (i.e. grandparent role) to child, or null if it's null
                 $role->setParent($parentRole->getParent() ?? null);
 

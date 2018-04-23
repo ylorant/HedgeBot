@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -18,7 +19,8 @@ class SetRightCommand extends StorageAwareCommand
             ->setDescription('Sets a right to a role. Implicitely, the right is granted, but you can deny it explicitely too.')
             ->addArgument('roleId', InputArgument::REQUIRED, 'The ID of the role to add a right to.')
             ->addArgument('rightName', InputArgument::REQUIRED, 'The right to set.')
-            ->addOption('denied', 'd', InputOption::VALUE_NONE, 'Use this option to explicitly set the right to denied.');
+            ->addOption('denied', 'd', InputOption::VALUE_NONE,
+                'Use this option to explicitly set the right to denied.');
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
@@ -30,9 +32,10 @@ class SetRightCommand extends StorageAwareCommand
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         $role = $accessControlManager->getRole($roleId);
 
-        if(empty($role))
-            throw new InvalidArgumentException("Unable to load role '". $roleId. "': role does not exist.");
-        
+        if (empty($role)) {
+            throw new InvalidArgumentException("Unable to load role '" . $roleId . "': role does not exist.");
+        }
+
         $role->setRight($rightName, $rightGranted);
         $accessControlManager->saveToStorage();
     }

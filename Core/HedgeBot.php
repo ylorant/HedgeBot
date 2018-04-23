@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core;
 
 use HedgeBot\Core\API\ServerList;
@@ -8,7 +9,6 @@ use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Config;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Security;
-use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\Server\ServerInstance;
@@ -34,215 +34,228 @@ use HedgeBot\Core\API\Store as StoreAPI;
 
 define('E_DEBUG', 32768);
 
+/**
+ * Class HedgeBot
+ * @package HedgeBot\Core
+ */
 class HedgeBot
 {
-	public $config;
-	public $data;
-	public $servers;
-	private static $_lastError;
-	public static $verbose;
-	public $plugins;
-	public $initialized;
-	public $tikalServer;
-	public $accessControl;
-	public $store;
+    public $config;
+    public $data;
+    public $servers;
+    private static $_lastError;
+    public static $verbose;
+    public $plugins;
+    public $initialized;
+    public $tikalServer;
+    public $accessControl;
+    public $store;
 
-	private $run;
+    private $run;
 
-	private static $instance;
+    private static $instance;
 
-	const VENDOR_NAMESPACE = "HedgeBot"; // Base "vendor" namespace for autoloading
-	const DEFAULT_CONFIG_DIR = "./conf";
+    const VENDOR_NAMESPACE = "HedgeBot"; // Base "vendor" namespace for autoloading
+    const DEFAULT_CONFIG_DIR = "./conf";
 
-	/**
-	 * Initializes the bot, connects the storages, loads the plugins, load peripheral services...
-	 *
-	 * TODO: Instead of initializing services like that, why not do a service container of some sorts ?
-	 * 
-	 * @return bool True if the bot initialized correctly, false if not.
-	 */
-	public function init()
-	{
-		HedgeBot::$instance = $this;
-		HedgeBot::$verbose = 1;
+    /**
+     * Initializes the bot, connects the storages, loads the plugins, load peripheral services...
+     *
+     * TODO: Instead of initializing services like that, why not do a service container of some sorts ?
+     *
+     * @return bool True if the bot initialized correctly, false if not.
+     */
+    public function init()
+    {
+        HedgeBot::$instance = $this;
+        HedgeBot::$verbose = 1;
 
-		$options = $this->parseCLIOptions();
+        $options = $this->parseCLIOptions();
 
-		if(isset($options['verbose']) || isset($options['v']))
-			HedgeBot::$verbose = 2;
+        if (isset($options['verbose']) || isset($options['v'])) {
+            HedgeBot::$verbose = 2;
+        }
 
-		$configDir = self::DEFAULT_CONFIG_DIR;
-		if(isset($options['config']) || isset($options['c']))
-			$configDir = !empty($options['config']) ? $options['config'] : $options['c'];
+        $configDir = self::DEFAULT_CONFIG_DIR;
+        if (isset($options['config']) || isset($options['c'])) {
+            $configDir = !empty($options['config']) ? $options['config'] : $options['c'];
+        }
 
-		HedgeBot::message('Starting HedgeBot...');
-		HedgeBot::message('Starting in verbose mode.', null, E_DEBUG);
+        HedgeBot::message('Starting HedgeBot...');
+        HedgeBot::message('Starting in verbose mode.', null, E_DEBUG);
 
-		ServerList::setMain($this);
+        ServerList::setMain($this);
 
-		$this->initialized = false;
+        $this->initialized = false;
 
-		HedgeBot::message('Bootstrapping storage...');
+        HedgeBot::message('Bootstrapping storage...');
 
-		// Bootstrapping storages consists of loading the config and data storage configuration from
-		// config files in the given configuration directory.
-		$fileProvider = new IniFileProvider();
-		$this->config = new ObjectAccess($fileProvider);
-		$connected = $fileProvider->connect($configDir);
+        // Bootstrapping storages consists of loading the config and data storage configuration from
+        // config files in the given configuration directory.
+        $fileProvider = new IniFileProvider();
+        $this->config = new ObjectAccess($fileProvider);
+        $connected = $fileProvider->connect($configDir);
 
-		if(!$connected)
-			return HedgeBot::message('Cannot locate configuration directory', null, E_ERROR);
+        if (!$connected) {
+            return HedgeBot::message('Cannot locate configuration directory', null, E_ERROR);
+        }
 
-		// Loading real storage now
-		$storageConfig = $this->config->storage->config;
-		$dataStorage = $this->config->storage->data;
+        // Loading real storage now
+        $storageConfig = $this->config->storage->config;
+        $dataStorage = $this->config->storage->data;
 
-		HedgeBot::message('Loading main storages...');
+        HedgeBot::message('Loading main storages...');
 
-		$storageLoaded = $this->loadStorage($this->config, $storageConfig);
-		if(!$storageLoaded)
-			return HedgeBot::message('Cannot load config storage.', null, E_ERROR);
+        $storageLoaded = $this->loadStorage($this->config, $storageConfig);
+        if (!$storageLoaded) {
+            return HedgeBot::message('Cannot load config storage.', null, E_ERROR);
+        }
 
-		$storageLoaded = $this->loadStorage($this->data, $dataStorage);
-		if(!$storageLoaded)
-			return HedgeBot::message('Cannot load data storage.', null, E_ERROR);
+        $storageLoaded = $this->loadStorage($this->data, $dataStorage);
+        if (!$storageLoaded) {
+            return HedgeBot::message('Cannot load data storage.', null, E_ERROR);
+        }
 
-		Data::setObject($this->data);
-		Config::setObject($this->config);
+        Data::setObject($this->data);
+        Config::setObject($this->config);
 
-		// Setting verbosity
-		if(HedgeBot::$verbose == 1 && !empty($this->config->general->verbosity))
-			HedgeBot::$verbose = $this->config->general->verbosity;
+        // Setting verbosity
+        if (HedgeBot::$verbose == 1 && !empty($this->config->general->verbosity)) {
+            HedgeBot::$verbose = $this->config->general->verbosity;
+        }
 
-		// Loading internal store
-		$this->store = new Store();
-		StoreAPI::setObject($this->store);
-		
-		// Initializing access control manager
-		$this->accessControl = new AccessControlManager($this->data->getProvider());
-		Security::setObject($this->accessControl);
+        // Loading internal store
+        $this->store = new Store();
+        StoreAPI::setObject($this->store);
 
-		// Initializing Twitch API connector
-		HedgeBot::message("Initializing Twitch API client...", null, E_DEBUG);
-		
-		$clientID = $this->config->get('twitch.auth.clientId');
-		$clientSecret = $this->config->get('twitch.auth.clientSecret');
+        // Initializing access control manager
+        $this->accessControl = new AccessControlManager($this->data->getProvider());
+        Security::setObject($this->accessControl);
 
-		$authManager = new TwitchAuthManager($clientID, $clientSecret, $this->data->getProvider());
-		$kraken = new Kraken($authManager);
-		$helix = new Helix($authManager);
-		$kraken->discoverServices();
-		KrakenAPI::setObject($kraken);
-		HelixAPI::setObject($helix);
-		TwitchAuth::setObject($authManager);
+        // Initializing Twitch API connector
+        HedgeBot::message("Initializing Twitch API client...", null, E_DEBUG);
 
-		// Initializing "Tikal" API server
-		if(!empty($this->config->tikal) && $this->config->tikal->enabled == true)
-		{
-			HedgeBot::message("Initializing Tikal API server...");
-			$this->tikalServer = new TikalServer($this->config->tikal);
-			Tikal::setObject($this->tikalServer);
+        $clientID = $this->config->get('twitch.auth.clientId');
+        $clientSecret = $this->config->get('twitch.auth.clientSecret');
 
-			// Binding core API to the server
-			Tikal::addEndpoint('/', new TikalCoreEndpoint());
-			Tikal::addEndpoint('/plugin', new TikalPluginEndpoint());
-			Tikal::addEndpoint('/security', new TikalSecurityEndpoint());
-			Tikal::addEndpoint('/server', new TikalServerEndpoint());
-			Tikal::addEndpoint('/twitch', new TikalTwitchEndpoint());
-		}
+        $authManager = new TwitchAuthManager($clientID, $clientSecret, $this->data->getProvider());
+        $kraken = new Kraken($authManager);
+        $helix = new Helix($authManager);
+        $kraken->discoverServices();
+        KrakenAPI::setObject($kraken);
+        HelixAPI::setObject($helix);
+        TwitchAuth::setObject($authManager);
 
-		// Loading plugins
-		HedgeBot::message('Loading plugins...');
+        // Initializing "Tikal" API server
+        if (!empty($this->config->tikal) && $this->config->tikal->enabled == true) {
+            HedgeBot::message("Initializing Tikal API server...");
+            $this->tikalServer = new TikalServer($this->config->tikal);
+            Tikal::setObject($this->tikalServer);
 
-		$pluginList = $this->config->general->plugins;
-		if(empty($pluginList))
-			return HedgeBot::message('No plugin to load. This bot is pretty much useless without plugins.', null, E_ERROR);
+            // Binding core API to the server
+            Tikal::addEndpoint('/', new TikalCoreEndpoint());
+            Tikal::addEndpoint('/plugin', new TikalPluginEndpoint());
+            Tikal::addEndpoint('/security', new TikalSecurityEndpoint());
+            Tikal::addEndpoint('/server', new TikalServerEndpoint());
+            Tikal::addEndpoint('/twitch', new TikalTwitchEndpoint());
+        }
 
-		$pluginList = explode(',', $pluginList);
-		$pluginList = array_map('trim', $pluginList);
+        // Loading plugins
+        HedgeBot::message('Loading plugins...');
 
-		$this->plugins = new PluginManager($this->config->general->pluginsDirectory);
-		Plugin::setManager($this->plugins);
+        $pluginList = $this->config->general->plugins;
+        if (empty($pluginList)) {
+            return HedgeBot::message('No plugin to load. This bot is pretty much useless without plugins.', null,
+                E_ERROR);
+        }
 
-		$this->plugins->loadPlugins($pluginList);
+        $pluginList = explode(',', $pluginList);
+        $pluginList = array_map('trim', $pluginList);
 
-		// Loading core events handler
-		$coreEvents = new CoreEvents($this->plugins, $this);
+        $this->plugins = new PluginManager($this->config->general->pluginsDirectory);
+        Plugin::setManager($this->plugins);
 
-		$servers = $this->config->get('servers');
+        $this->plugins->loadPlugins($pluginList);
 
-		if(empty($servers))
-			return HedgeBot::message('No server to connect to. Stopping.', null, E_ERROR);
+        // Loading core events handler
+        $coreEvents = new CoreEvents($this->plugins, $this);
 
-		HedgeBot::message('Loading servers...');
-		$loadedServers = 0;
-		foreach($servers as $name => $server)
-		{
-			HedgeBot::message('Loading server $0', array($name));
-			$this->servers[$name] = new ServerInstance();
-			IRC::setObject($this->servers[$name]);
-			Server::setObject($this->servers[$name]);
-			$loaded = $this->servers[$name]->load($server);
+        $servers = $this->config->get('servers');
 
-			if(!$loaded)
-			{
-				HedgeBot::message('Cannot connect to server $0.', array($name), E_WARNING);
-				unset($this->servers[$name]);
-				continue;
-			}
+        if (empty($servers)) {
+            return HedgeBot::message('No server to connect to. Stopping.', null, E_ERROR);
+        }
 
-			$loadedServers++;
-		}
+        HedgeBot::message('Loading servers...');
+        $loadedServers = 0;
+        foreach ($servers as $name => $server) {
+            HedgeBot::message('Loading server $0', array($name));
+            $this->servers[$name] = new ServerInstance();
+            IRC::setObject($this->servers[$name]);
+            Server::setObject($this->servers[$name]);
+            $loaded = $this->servers[$name]->load($server);
 
-		if($loadedServers == 0)
-			return HedgeBot::message('Cannot connect to any servers, stopping.', null, E_ERROR);
+            if (!$loaded) {
+                HedgeBot::message('Cannot connect to server $0.', array($name), E_WARNING);
+                unset($this->servers[$name]);
+                continue;
+            }
 
-		HedgeBot::message('Loaded servers.');
+            $loadedServers++;
+        }
 
-		// Start the Tikal API Server
-		if(!empty($this->tikalServer))
-			$this->tikalServer->start();
+        if ($loadedServers == 0) {
+            return HedgeBot::message('Cannot connect to any servers, stopping.', null, E_ERROR);
+        }
 
-		return true;
-	}
+        HedgeBot::message('Loaded servers.');
 
-	/**
-	 * Autoloads a class depending on its namespace. Kinda follows PSR-4 ?
-	 * 
-	 * @param string $class the class trying to be loaded.
-	 * @return null
-	 */
-	public static function autoload($class)
-	{
-		$components = explode('\\', $class);
-		$currentDir = '';
-		$path = null;
+        // Start the Tikal API Server
+        if (!empty($this->tikalServer)) {
+            $this->tikalServer->start();
+        }
 
-		// Remove the vendor namespace if necessary
-		if($components[0] == self::VENDOR_NAMESPACE)
-			array_shift($components);
-		else // It's not from the vendor namespace, it should be an external lib then.
-			$currentDir .= "lib/";
+        return true;
+    }
 
-		foreach($components as $comp)
-		{
-			if(is_dir($currentDir. $comp))
-				$currentDir .= $comp."/";
-			elseif(is_file($currentDir.$comp.".php"))
-			{
-				$path = $currentDir. $comp. ".php";
-				break;
-			}
-			else
-				return;
-		}
+    /**
+     * Autoloads a class depending on its namespace. Kinda follows PSR-4 ?
+     *
+     * @param string $class the class trying to be loaded.
+     * @return null
+     */
+    public static function autoload($class)
+    {
+        $components = explode('\\', $class);
+        $currentDir = '';
+        $path = null;
 
-		// The path is complete, we load the class.
-		if(!empty($path))
-			require $path;
-	}
+        // Remove the vendor namespace if necessary
+        if ($components[0] == self::VENDOR_NAMESPACE) {
+            array_shift($components);
+        } else // It's not from the vendor namespace, it should be an external lib then.
+        {
+            $currentDir .= "lib/";
+        }
 
-	/**
+        foreach ($components as $comp) {
+            if (is_dir($currentDir . $comp)) {
+                $currentDir .= $comp . "/";
+            } elseif (is_file($currentDir . $comp . ".php")) {
+                $path = $currentDir . $comp . ".php";
+                break;
+            } else {
+                return;
+            }
+        }
+
+        // The path is complete, we load the class.
+        if (!empty($path)) {
+            require $path;
+        }
+    }
+
+    /**
      * Returns true if the stream supports colorization.
      *
      * Colorization is disabled if not supported by the stream:
@@ -250,10 +263,10 @@ class HedgeBot
      *  -  Windows without Ansicon, ConEmu or Mintty
      *  -  non tty consoles
      *
-	 * This function was taken shamelessly from the Symfony Console component.
-	 * 
+     * This function was taken shamelessly from the Symfony Console component.
+     *
      * @return bool true if the stream supports colorization, false otherwise
-	 * @author Fabien Potencier <fabien@symfony.com>
+     * @author Fabien Potencier <fabien@symfony.com>
      */
     protected static function hasColorSupport()
     {
@@ -263,237 +276,273 @@ class HedgeBot
         return function_exists('posix_isatty') && @posix_isatty(STDOUT);
     }
 
-	public static function getInstance()
-	{
-		return self::$instance;
-	}
+    /**
+     * @return mixed
+     */
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
 
-	public static function parseBool($var)
-	{
-		if(in_array(strtolower($var), array('1', 'on', 'true', 'yes')))
-			return TRUE;
-		else
-			return FALSE;
-	}
+    /**
+     * @param $var
+     * @return bool
+     */
+    public static function parseBool($var)
+    {
+        if (in_array(strtolower($var), array('1', 'on', 'true', 'yes'))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-	public static function parseRBool($var)
-	{
-		if(in_array(strtolower($var), array('0', 'off', 'false', 'no')))
-			return FALSE;
-		else
-			return TRUE;
-	}
+    /**
+     * @param $var
+     * @return bool
+     */
+    public static function parseRBool($var)
+    {
+        if (in_array(strtolower($var), array('0', 'off', 'false', 'no'))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
-	/**
-	 * Outputs a message on the console. This is the main way this bot has to communicate with the user.
-	 * Every message can have a type/gravity assigned to it and, depending on the verbosity settings, this
-	 * gravity will be allowed to be displayed by the bot. Also, the message can be written in a template-like
-	 * fashion, using a `$keyname` syntax, where "keyname" is the key of the element to be inserted in the $args
-	 * array. This has been made to allow for future translations of the bot messages.
-	 * 
-	 * Depending on the console capabilities, some messages will be colored.
-	 * 
-	 * TODO: Use a real logger service, to allow logging these into a file & more.
-	 * 
-	 * @param string $message The message to output. You can use tokens in the form `$keyname` to substitute vars.
-	 * @param array  $vars    The vars to substitute the tokens with in the message.
-	 * @param int    $type    The type/gravity of the message. Verbosity will make the message show or not depending
-	 * 						  on this setting.
-	 * 
-	 * @return bool True for non-error messages (notice, debug) and false for error-level messages (warning, error).
-	 */
-	public static function message($message, $args = array(), $type = E_NOTICE)
-	{
-		$returnVal = true;
-		$verbosity = 1;
-		$prefix = "";
+    /**
+     * Outputs a message on the console. This is the main way this bot has to communicate with the user.
+     * Every message can have a type/gravity assigned to it and, depending on the verbosity settings, this
+     * gravity will be allowed to be displayed by the bot. Also, the message can be written in a template-like
+     * fashion, using a `$keyname` syntax, where "keyname" is the key of the element to be inserted in the $args
+     * array. This has been made to allow for future translations of the bot messages.
+     *
+     * Depending on the console capabilities, some messages will be colored.
+     *
+     * TODO: Use a real logger service, to allow logging these into a file & more.
+     *
+     * @param string $message The message to output. You can use tokens in the form `$keyname` to substitute vars.
+     * @param array $args The vars to substitute the tokens with in the message.
+     * @param int $type The type/gravity of the message. Verbosity will make the message show or not depending
+     *                          on this setting.
+     *
+     * @return bool True for non-error messages (notice, debug) and false for error-level messages (warning, error).
+     */
+    public static function message($message, $args = array(), $type = E_NOTICE)
+    {
+        $returnVal = true;
+        $verbosity = 1;
 
-		$hasColors = self::hasColorSupport();
+        $hasColors = self::hasColorSupport();
 
-		//Getting type string
-		switch($type)
-		{
-			case E_NOTICE:
-			case E_USER_NOTICE:
-				$prefix = 'Notice';
-				break;
-			case E_WARNING:
-			case E_USER_WARNING:
-			$prefix = 'Warning';
-				if($hasColors) // If we are on Linux, we use colors
-					echo "\033[0;33m";
-				break;
-			case E_ERROR:
-			case E_USER_ERROR:
-				$prefix = 'Error';
-				$force = TRUE;
-				$verbosity = 0;
-				if($hasColors) // If we are on Linux, we use colors (yes, I comment twice)
-					echo "\033[0;31m";
-				break;
-			case E_DEBUG:
-				$prefix = 'Debug';
-				$verbosity = 2;
-				if($hasColors) // If we are on Linux, we use colors
-					echo "\033[38;5;245m";
-				break;
-			default:
-				$prefix = 'Unknown';
-		}
+        //Getting type string
+        switch ($type) {
+            case E_NOTICE:
+            case E_USER_NOTICE:
+                $prefix = 'Notice';
+                break;
+            case E_WARNING:
+            case E_USER_WARNING:
+                $prefix = 'Warning';
+                if ($hasColors) // If we are on Linux, we use colors
+                {
+                    echo "\033[0;33m";
+                }
+                break;
+            case E_ERROR:
+            case E_USER_ERROR:
+                $prefix = 'Error';
+                $verbosity = 0;
+                if ($hasColors) // If we are on Linux, we use colors (yes, I comment twice)
+                {
+                    echo "\033[0;31m";
+                }
+                break;
+            case E_DEBUG:
+                $prefix = 'Debug';
+                $verbosity = 2;
+                if ($hasColors) // If we are on Linux, we use colors
+                {
+                    echo "\033[38;5;245m";
+                }
+                break;
+            default:
+                $prefix = 'Unknown';
+        }
 
-		//Parsing message vars
-		if(!is_array($args))
-			$args = array($args);
-		foreach($args as $id => $value)
-			$message = str_replace('$'.$id, $value, $message);
+        //Parsing message vars
+        if (!is_array($args)) {
+            $args = array($args);
+        }
+        foreach ($args as $id => $value) {
+            $message = str_replace('$' . $id, $value, $message);
+        }
 
-		if(in_array($type, array(E_USER_ERROR, E_ERROR, E_WARNING, E_USER_WARNING)))
-		{
-			$returnVal = false;
-			HedgeBot::$_lastError = $message;
-		}
+        if (in_array($type, array(E_USER_ERROR, E_ERROR, E_WARNING, E_USER_WARNING))) {
+            $returnVal = false;
+            HedgeBot::$_lastError = $message;
+        }
 
-		//Put it in log, if is opened
-		if(HedgeBot::$verbose >= $verbosity)
-		{
-			echo date("m/d/Y h:i:s A").' -- '.$prefix.' -- '.$message.PHP_EOL;
-			if($hasColors)
-				echo "\033[0m";
-		}
+        //Put it in log, if is opened
+        if (HedgeBot::$verbose >= $verbosity) {
+            echo date("m/d/Y h:i:s A") . ' -- ' . $prefix . ' -- ' . $message . PHP_EOL;
+            if ($hasColors) {
+                echo "\033[0m";
+            }
+        }
 
-		return $returnVal;
-	}
+        return $returnVal;
+    }
 
-	public function dumpArray($array)
-	{
-		if(!is_array($array))
-			$array = array(gettype($array) => $array);
+    /**
+     * @param $array
+     * @return string
+     */
+    public function dumpArray($array)
+    {
+        if (!is_array($array)) {
+            $array = array(gettype($array) => $array);
+        }
 
-		$return = array();
+        $return = array();
 
-		foreach($array as $id => $el)
-		{
-			if(is_array($el))
-				$return[] = $id.'=Array';
-			elseif(is_object($el))
-				$return[] = $id.'='.get_class($el).' object';
-			elseif(is_string($el))
-				$return[] = $id.'="'.$el.'"';
-			elseif(is_bool($el))
-				$return[] = $id.'='.($el ? 'TRUE' : 'FALSE');
-			else
-				$return[] = $id.'='.(is_null($el) ? 'NULL' : $el);
-		}
+        foreach ($array as $id => $el) {
+            if (is_array($el)) {
+                $return[] = $id . '=Array';
+            } elseif (is_object($el)) {
+                $return[] = $id . '=' . get_class($el) . ' object';
+            } elseif (is_string($el)) {
+                $return[] = $id . '="' . $el . '"';
+            } elseif (is_bool($el)) {
+                $return[] = $id . '=' . ($el ? 'TRUE' : 'FALSE');
+            } else {
+                $return[] = $id . '=' . (is_null($el) ? 'NULL' : $el);
+            }
+        }
 
-		return join(', ', $return);
-	}
+        return join(', ', $return);
+    }
 
-	public static function getServerName($object)
-	{
-		$self = HedgeBot::getInstance();
-		foreach($self->servers as $name => $server)
-		{
-			if($server == $object)
-				return $name;
-		}
+    /**
+     * @param $object
+     * @return int|null|string
+     */
+    public static function getServerName($object)
+    {
+        $self = HedgeBot::getInstance();
+        foreach ($self->servers as $name => $server) {
+            if ($server == $object) {
+                return $name;
+            }
+        }
 
-		return NULL;
-	}
+        return null;
+    }
 
-	public function parseCLIOptions()
-	{
-		// Setting up options for CLI parsing
-		$shortOpts = array(
-			"c:",
-			"v"
-		);
+    /**
+     * @return array
+     */
+    public function parseCLIOptions()
+    {
+        // Setting up options for CLI parsing
+        $shortOpts = array(
+            "c:",
+            "v"
+        );
 
-		$longOps = array(
-			"config::",
-			"verbose"
-		);
+        $longOps = array(
+            "config::",
+            "verbose"
+        );
 
-		return getopt(join('', $shortOpts), $longOps);
-	}
+        return getopt(join('', $shortOpts), $longOps);
+    }
 
-	public function loadStorage(&$target, $parameters)
-	{
-		// Getting storage type
-		$storageName = $parameters->type;
-		if(empty($storageName))
-		{
-			HedgeBot::message('Cannot load storage: storage type undefined.', null, E_ERROR);
-			return false;
-		}
+    /**
+     * @param $target
+     * @param $parameters
+     * @return bool
+     */
+    public function loadStorage(&$target, $parameters)
+    {
+        // Getting storage type
+        $storageName = $parameters->type;
+        if (empty($storageName)) {
+            HedgeBot::message('Cannot load storage: storage type undefined.', null, E_ERROR);
+            return false;
+        }
 
-		// Checking that requested storage exists.
-		$providerClass = Provider::resolveStorage($storageName);
-		if($providerClass === false)
-		{
-			HedgeBot::message('Cannot load storage "$0": Storage does not exist.', array($storageName), E_ERROR);
-			return false;
-		}
+        // Checking that requested storage exists.
+        $providerClass = Provider::resolveStorage($storageName);
+        if ($providerClass === false) {
+            HedgeBot::message('Cannot load storage "$0": Storage does not exist.', array($storageName), E_ERROR);
+            return false;
+        }
 
-		// Try to load the storage
-		$provider = new $providerClass();
-		$target = new ObjectAccess($provider);
-		$connected = $provider->connect($parameters);
+        // Try to load the storage
+        $provider = new $providerClass();
+        $target = new ObjectAccess($provider);
+        $connected = $provider->connect($parameters);
 
-		if(!$connected)
-		{
-			HedgeBot::message('Cannot connect to storage.', null, E_ERROR);
-			return false;
-		}
+        if (!$connected) {
+            HedgeBot::message('Cannot connect to storage.', null, E_ERROR);
+            return false;
+        }
 
-		// Initializing readonly state, present for all storage types
-		if(!empty($parameters->readonly))
-			$provider->readonly = true;
+        // Initializing readonly state, present for all storage types
+        if (!empty($parameters->readonly)) {
+            $provider->readonly = true;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	/**
-	 * Main loop.
-	 * @return TRUE.
-	 */
-	public function run()
-	{
-		$this->run = TRUE;
+    /**
+     * Main loop
+     *
+     * @return bool
+     */
+    public function run()
+    {
+        $this->run = true;
 
-		while($this->run)
-		{
-			foreach($this->servers as $name => $server)
-			{
-				//Setting servers for static inner API
-				IRC::setObject($this->servers[$name]->getIRC());
-				Server::setObject($this->servers[$name]);
+        while ($this->run) {
+            foreach ($this->servers as $name => $server) {
+                //Setting servers for static inner API
+                IRC::setObject($this->servers[$name]->getIRC());
+                Server::setObject($this->servers[$name]);
 
-				// Only try to process server if it's connected
-				if($this->servers[$name]->isConnected())
-					$this->servers[$name]->step();
+                // Only try to process server if it's connected
+                if ($this->servers[$name]->isConnected()) {
+                    $this->servers[$name]->step();
+                }
 
-				usleep(1000);
-			}
+                usleep(1000);
+            }
 
-			if($this->initialized)
-				$this->plugins->callAllRoutines();
+            if ($this->initialized) {
+                $this->plugins->callAllRoutines();
+            }
 
-			// Process Tikal API calls if there are some
-			if(!empty($this->tikalServer))
-				$this->tikalServer->process();
-		}
+            // Process Tikal API calls if there are some
+            if (!empty($this->tikalServer)) {
+                $this->tikalServer->process();
+            }
+        }
 
-		foreach($this->servers as $name => $server)
-			$server->disconnect();
+        foreach ($this->servers as $name => $server) {
+            $server->disconnect();
+        }
 
-		foreach($this->plugins->getLoadedPlugins() as $plugin)
-			$this->plugins->unloadPlugin($plugin);
+        foreach ($this->plugins->getLoadedPlugins() as $plugin) {
+            $this->plugins->unloadPlugin($plugin);
+        }
 
-		return TRUE;
-	}
+        return true;
+    }
 
-	public function stop()
-	{
-		$this->run = false;
-	}
+    public function stop()
+    {
+        $this->run = false;
+    }
 }

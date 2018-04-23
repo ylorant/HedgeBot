@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Traits;
 
 /** Allows property mapping for configuration.
@@ -20,30 +21,32 @@ trait PropertyConfigMapping
         $nameParts = explode('.', $name);
         $name = array_shift($nameParts);
 
-        $globalName = 'global'. ucfirst($name);
+        $globalName = 'global' . ucfirst($name);
 
         $configValue = null;
-        if(isset($this->{$name}[$channel]))
+        if (isset($this->{$name}[$channel])) {
             $configValue = $this->{$name}[$channel];
-        elseif(isset($this->$globalName))
+        } elseif (isset($this->$globalName)) {
             $configValue = $this->$globalName;
+        }
 
-        if(is_array($configValue) && !empty($nameParts))
-        {
-            if(isset($this->$globalName))
+        if (is_array($configValue) && !empty($nameParts)) {
+            if (isset($this->$globalName)) {
                 $backupConfigValue = $this->$globalName;
+            }
 
-            foreach($nameParts as $part)
-            {
-                if(isset($configValue[$part]))
+            foreach ($nameParts as $part) {
+                if (isset($configValue[$part])) {
                     $configValue = $configValue[$part];
-                elseif(isset($backupConfigValue[$part]))
+                } elseif (isset($backupConfigValue[$part])) {
                     $configValue = $backupConfigValue[$part];
-                else
+                } else {
                     return null;
+                }
 
-                if(isset($backupConfigValue[$part]))
+                if (isset($backupConfigValue[$part])) {
                     $backupConfigValue = $backupConfigValue[$part];
+                }
             }
         }
 
@@ -60,7 +63,7 @@ trait PropertyConfigMapping
      * the previous value in the configuration (assumed as the default value), recursively.
      *
      * tl;dr Parses config into properties, per channel. Global settings are prefixed by the keyword "global" if channel var
-     * 		 with the same name exists. Arrays are merged instead of replaced.
+     *         with the same name exists. Arrays are merged instead of replaced.
      *
      * \param $config The key/value array given to walk through. Refer to the above boring text to understand how it works.
      * \param $parameters The parameter names to keep.
@@ -68,35 +71,33 @@ trait PropertyConfigMapping
     public function mapConfig(array $config, $parameters = null)
     {
         // Handling global config parameters
-		foreach($config as $name => $value)
-		{
+        foreach ($config as $name => $value) {
             // Defining property name to map
-            $globalName = 'global'. ucfirst($name);
+            $globalName = 'global' . ucfirst($name);
             $varParameter = $name;
-            if(isset($this->$name) && is_array($this->$name) && isset($this->$globalName))
-			    $varParameter = $globalName;
-
-			if($name != "channel" && (empty($parameters) || in_array($name, $parameters)))
-            {
-                if(is_array($this->$varParameter) && is_array($value))
-                    $this->$varParameter = array_merge_recursive($this->$varParameter, $value);
-                else
-                    $this->$varParameter = $value;
+            if (isset($this->$name) && is_array($this->$name) && isset($this->$globalName)) {
+                $varParameter = $globalName;
             }
-		}
 
-		// Handling per-channel config parameters
-		if(!empty($config['channel']))
-		{
-			foreach($config['channel'] as $channel => $configElement)
-			{
-				foreach($configElement as $name => $value)
-				{
-					if(in_array($name, $parameters))
+            if ($name != "channel" && (empty($parameters) || in_array($name, $parameters))) {
+                if (is_array($this->$varParameter) && is_array($value)) {
+                    $this->$varParameter = array_merge_recursive($this->$varParameter, $value);
+                } else {
+                    $this->$varParameter = $value;
+                }
+            }
+        }
+
+        // Handling per-channel config parameters
+        if (!empty($config['channel'])) {
+            foreach ($config['channel'] as $channel => $configElement) {
+                foreach ($configElement as $name => $value) {
+                    if (in_array($name, $parameters)) {
                         $this->{$name}[$channel] = $configElement[$name];
-				}
-			}
-		}
+                    }
+                }
+            }
+        }
     }
 
     /** Gets a parameter from a defined dataset.
@@ -115,46 +116,44 @@ trait PropertyConfigMapping
         $valNameParts = explode('.', $valname);
         $valName = array_shift($valNameParts);
 
-        if(isset($data['channel'][$channel][$valName]))
-        {
+        if (isset($data['channel'][$channel][$valName])) {
             $value = $data['channel'][$channel][$valName];
-            if(empty($valNameParts))
+            if (empty($valNameParts)) {
                 return $value;
+            }
 
-            foreach($valNameParts as $part)
-            {
-                if(is_array($value) && !empty($value[$part]))
+            foreach ($valNameParts as $part) {
+                if (is_array($value) && !empty($value[$part])) {
                     $value = $value[$part];
-                else
-                {
+                } else {
                     $value = null;
                     break;
                 }
             }
 
-            if(!empty($value))
+            if (!empty($value)) {
                 return $value;
+            }
         }
 
-        if(isset($data[$valName]))
-        {
+        if (isset($data[$valName])) {
             $value = $data[$valName];
-            if(empty($valNameParts))
+            if (empty($valNameParts)) {
                 return $value;
+            }
 
-            foreach($valNameParts as $part)
-            {
-                if(is_array($value) && !empty($value[$part]))
+            foreach ($valNameParts as $part) {
+                if (is_array($value) && !empty($value[$part])) {
                     $value = $value[$part];
-                else
-                {
+                } else {
                     $value = null;
                     break;
                 }
             }
 
-            if(!empty($value))
+            if (!empty($value)) {
                 return $value;
+            }
         }
 
         return $defaultValue;

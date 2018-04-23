@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Tikal;
 
 use HedgeBot\Core\Events\Event;
@@ -9,8 +10,9 @@ class HttpEvent extends Event
     {
         parent::__construct($eventName);
 
-        foreach($data as $key => $value)
+        foreach ($data as $key => $value) {
             $this->$key = $value;
+        }
     }
 
     public static function getType()

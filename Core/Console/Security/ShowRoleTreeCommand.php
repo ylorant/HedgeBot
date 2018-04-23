@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -21,8 +22,8 @@ class ShowRoleTreeCommand extends StorageAwareCommand
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $accessControlManager = new AccessControlManager($this->getDataStorage());
-        $roleTree = $accessControlManager->getRoleTree();    
-        
+        $roleTree = $accessControlManager->getRoleTree();
+
         $this->showRoles($output, $roleTree);
     }
 
@@ -30,17 +31,18 @@ class ShowRoleTreeCommand extends StorageAwareCommand
     {
         $prefix = str_repeat("   ", $level > 0 ? $level - 1 : 0);
 
-        foreach($roles as $role)
-        {
+        foreach ($roles as $role) {
             $output->writeln([
-                ($level > 0 ? $prefix. "\xE2\x94\x94> " : ""). $role['role']->getName(). " [". $role['role']->getId(). "]"
+                ($level > 0 ? $prefix . "\xE2\x94\x94> " : "") . $role['role']->getName() . " [" . $role['role']->getId() . "]"
             ]);
 
-            if(!empty($role['children']))
+            if (!empty($role['children'])) {
                 $this->showRoles($output, $role['children'], $level + 1);
-            
-            if($level == 0)
+            }
+
+            if ($level == 0) {
                 $output->writeln("");
+            }
         }
     }
 }

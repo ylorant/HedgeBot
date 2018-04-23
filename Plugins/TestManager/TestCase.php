@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\TestManager;
 
 use ReflectionMethod;
@@ -44,9 +45,12 @@ class TestCase
 
     public function addStep($stepName, $parameters)
     {
-        if(in_array($stepName, self::ALLOWED_STEPS))
-            $this->steps[] = ["name" => $stepName,
-                              "params" => $parameters];
+        if (in_array($stepName, self::ALLOWED_STEPS)) {
+            $this->steps[] = [
+                "name" => $stepName,
+                "params" => $parameters
+            ];
+        }
     }
 
     /**
@@ -58,8 +62,7 @@ class TestCase
     {
         $this->messageStack[] = $message;
 
-        if($this->status == self::STATUS_WAITREPLY)
-        {
+        if ($this->status == self::STATUS_WAITREPLY) {
             $this->status = self::STATUS_IDLE;
             $this->currentStep++;
         }
@@ -67,36 +70,41 @@ class TestCase
 
     public function executeStep()
     {
-        if(!empty($this->steps[$this->currentStep]))
-        {
+        if (!empty($this->steps[$this->currentStep])) {
             $step = $this->steps[$this->currentStep];
 
-            switch($step['name'])
-            {
+            switch ($step['name']) {
                 case 'send':
                     IRC::message($this->manager->getChannel(), $step['params'][0]);
                     break;
 
                 case 'execute':
                     $res = $step['params'][0]();
-                    if($res === false)
+                    if ($res === false) {
                         $this->status = self::STATUS_FAILED;
+                    }
                     break;
 
                 case 'getReply':
                     $this->status = self::STATUS_WAITREPLY;
 
-                    if($this->lastActionTime + 15 <= time()) // Handle timeout for message wait
+                    if ($this->lastActionTime + 15 <= time()) // Handle timeout for message wait
+                    {
                         $this->status = self::STATUS_FAILED;
-                    else if(!empty($this->messageStack)) // We received a message ?
-                        $this->status = self::STATUS_IDLE;
+                    } else {
+                        if (!empty($this->messageStack)) // We received a message ?
+                        {
+                            $this->status = self::STATUS_IDLE;
+                        }
+                    }
                     break;
 
                 case 'wait':
-                    if($this->lastActionTime + $step['params'][0] <= time())
+                    if ($this->lastActionTime + $step['params'][0] <= time()) {
                         $this->status = self::STATUS_IDLE;
-                    else
+                    } else {
                         $this->status = self::STATUS_WAIT;
+                    }
                     break;
 
                 case 'match':
@@ -105,32 +113,31 @@ class TestCase
                     $found = false;
                     $i = 0;
                     $matches = null;
-                    foreach($this->messageStack as $i => $message)
-                    {
-                        if(preg_match($regexp, $message, $matches))
-                        {
+                    foreach ($this->messageStack as $i => $message) {
+                        if (preg_match($regexp, $message, $matches)) {
                             $found = true;
                             $this->lastMatch = $matches;
                             break;
                         }
                     }
 
-                    if($found)
+                    if ($found) {
                         array_splice($this->messageStack, $i, 1);
-                    else
+                    } else {
                         $this->status = self::STATUS_FAILED;
+                    }
                     break;
             }
         }
 
-        if(!in_array($this->status, array(self::STATUS_WAITREPLY, self::STATUS_WAIT)))
-        {
+        if (!in_array($this->status, array(self::STATUS_WAITREPLY, self::STATUS_WAIT))) {
             $this->currentStep++;
             $this->lastActionTime = time();
         }
 
-        if($this->currentStep >= count($this->steps) && $this->status != self::STATUS_FAILED)
+        if ($this->currentStep >= count($this->steps) && $this->status != self::STATUS_FAILED) {
             $this->status = self::STATUS_SUCCESS;
+        }
     }
 
     /**

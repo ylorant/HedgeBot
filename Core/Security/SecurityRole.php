@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Security;
 
 use HedgeBot\Core\Security\SecurityRole;
@@ -30,17 +31,18 @@ class SecurityRole
 
     /**
      * Constructor.
-     * 
+     *
      * @constructor
      * @param       string $id The role ID.
-     * 
+     *
      * @throws InvalidArgumentException
      */
     public function __construct($id)
     {
         // Check if the given role id is a valid id or the role doesn't already exist
-        if(!self::checkId($id))
+        if (!self::checkId($id)) {
             throw new InvalidArgumentException("Role ID is invalid");
+        }
 
         $this->id = $id;
         $this->rights = [];
@@ -50,7 +52,7 @@ class SecurityRole
 
     /**
      * Gets the role ID.
-     * 
+     *
      * @return string The role ID.
      */
     public function getId()
@@ -60,7 +62,7 @@ class SecurityRole
 
     /**
      * Gets the role name.
-     * 
+     *
      * @return string The role name.
      */
     public function getName()
@@ -70,7 +72,7 @@ class SecurityRole
 
     /**
      * Sets the role name.
-     * 
+     *
      * @param string $name The role name to set.
      */
     public function setName($name)
@@ -80,7 +82,7 @@ class SecurityRole
 
     /**
      * Gets the parent role.
-     * 
+     *
      * @return SecurityRole $role|null The parent role.
      */
     public function getParent()
@@ -90,21 +92,21 @@ class SecurityRole
 
     /**
      * Sets the parent role.
-     * 
+     *
      * @param SecurityRole|null $parent The parent role.
      */
     public function setParent($parent)
     {
-        if($parent instanceof SecurityRole)
+        if ($parent instanceof SecurityRole) {
             $this->parent = $parent;
-        elseif(is_string($parent))
-        {
+        } elseif (is_string($parent)) {
             $role = Security::getRole($parent);
-            if(!empty($role))
+            if (!empty($role)) {
                 $this->parent = $role;
-        }
-        elseif(is_null($parent))
+            }
+        } elseif (is_null($parent)) {
             $this->parent = null;
+        }
     }
 
     /**
@@ -122,7 +124,7 @@ class SecurityRole
      */
     public function setDefault($default)
     {
-        $this->default = (bool) $default;
+        $this->default = (bool)$default;
     }
 
     public function getRights()
@@ -135,17 +137,18 @@ class SecurityRole
      */
     public function getInheritedRights()
     {
-        if(empty($this->parent))
+        if (empty($this->parent)) {
             return [];
-        
+        }
+
         return array_merge($this->parent->getRights(), $this->parent->getInheritedRights());
     }
 
     /**
      * Adds a right to the role.
      *
-     * @param string $right   The right name.
-     * @param bool   $granted True if the right is granted, false if it is explicitely denied. Default to true.
+     * @param string $right The right name.
+     * @param bool $granted True if the right is granted, false if it is explicitely denied. Default to true.
      * @return void
      */
     public function setRight($right, $granted = true)
@@ -161,13 +164,14 @@ class SecurityRole
      */
     public function unsetRight($right)
     {
-        if(isset($this->rights[$right]))
+        if (isset($this->rights[$right])) {
             unset($this->rights[$right]);
+        }
     }
 
     /**
      * Replaces the rights in this role by the ones given in parameter.
-     * 
+     *
      * @param array $newRights The new rights to assign to this role.
      */
     public function replaceRights(array $newRights)
@@ -198,51 +202,57 @@ class SecurityRole
         ];
     }
 
-    /** 
+    /**
      * Unserializes a role from an array.
-     * @param  array        $data The data to unserialize.
+     * @param  array $data The data to unserialize.
      * @return SecurityRole       The unserialized role.
      */
     public static function fromArray(array $data)
     {
-        if(!isset($data['id']))
+        if (!isset($data['id'])) {
             return null;
+        }
 
         $role = new SecurityRole($data['id']);
 
-        if(!empty($data['name']))
+        if (!empty($data['name'])) {
             $role->name = $data['name'];
+        }
 
-        if(!empty($data['rights']))
+        if (!empty($data['rights'])) {
             $role->rights = $data['rights'];
-        
-        if(!empty($data['parent']))
-            $role->setParent($data['parent']);
+        }
 
-        if(!empty($data['default']))
+        if (!empty($data['parent'])) {
+            $role->setParent($data['parent']);
+        }
+
+        if (!empty($data['default'])) {
             $role->setDefault($data['default']);
-        
+        }
+
         return $role;
     }
 
     /**
      * Checks if this role has a particular right.
      * It'll bubble up on the parent role if there is one.
-     * @param  string  $right The right to check.
+     * @param  string $right The right to check.
      * @return boolean        True if the role has the asked right, false otherwise.
      */
     public function hasRight($right)
     {
-        foreach($this->rights as $rightName => $allowed)
-        {
+        foreach ($this->rights as $rightName => $allowed) {
             // If the right is present, return its value
-            if($rightName == $right)
+            if ($rightName == $right) {
                 return $allowed;
+            }
         }
 
         // Bubble up if there's a parent
-        if(!empty($this->parent))
+        if (!empty($this->parent)) {
             return $this->parent->hasRight($right);
+        }
 
         // If we don't find anything at all, we return denied as default
         return false;
@@ -272,15 +282,16 @@ class SecurityRole
 
         $text = strtolower($text);
 
-        if (empty($text))
+        if (empty($text)) {
             return null;
+        }
 
         return $text;
     }
 
     /**
      * Checks if the ID is a valid role ID syntax.
-     * 
+     *
      * @param string $id The ID to check.
      * @return bool True if the ID is a valid ID, false if not.
      */

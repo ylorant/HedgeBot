@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -31,21 +32,22 @@ class SetParentRoleCommand extends StorageAwareCommand
         $role = $accessControlManager->getRole($roleId);
         $parentRole = null;
 
-        if(empty($role))
-            throw new InvalidArgumentException("Unable to load role '". $roleId. "': role does not exist.");
-        
-        if(!$deleteParent)
-        {
-            $parentRole = $accessControlManager->getRole($parentRoleId);
-            if(empty($parentRole))
-                throw new InvalidArgumentException("Unable to load role '". $parentRoleId. "': role does not exist.");
-            
-            if($accessControlManager->rolesHaveRelation($role, $parentRole))
-                throw new InvalidArgumentException("Unable to set parent of '". $roleId. "' to '". $parentRoleId."': Roles already have a parent/child relation.");
+        if (empty($role)) {
+            throw new InvalidArgumentException("Unable to load role '" . $roleId . "': role does not exist.");
         }
 
-        
-        
+        if (!$deleteParent) {
+            $parentRole = $accessControlManager->getRole($parentRoleId);
+            if (empty($parentRole)) {
+                throw new InvalidArgumentException("Unable to load role '" . $parentRoleId . "': role does not exist.");
+            }
+
+            if ($accessControlManager->rolesHaveRelation($role, $parentRole)) {
+                throw new InvalidArgumentException("Unable to set parent of '" . $roleId . "' to '" . $parentRoleId . "': Roles already have a parent/child relation.");
+            }
+        }
+
+
         $role->setParent($parentRole);
         $accessControlManager->saveToStorage();
     }

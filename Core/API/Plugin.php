@@ -1,16 +1,17 @@
 <?php
+
 namespace HedgeBot\Core\API;
 
 class Plugin
 {
-	private static $_instance;
-	private $_manager;
+    private static $_instance;
+    private $_manager;
 
-	public static function setManager($manager)
-	{
-		$self = self::getInstance();
-		$self->_manager = $manager;
-	}
+    public static function setManager($manager)
+    {
+        $self = self::getInstance();
+        $self->_manager = $manager;
+    }
 
     public static function getManager()
     {
@@ -18,13 +19,14 @@ class Plugin
         return $self->_manager;
     }
 
-	private static function getInstance()
-	{
-		if(empty(self::$_instance))
-			self::$_instance = new Plugin();
+    private static function getInstance()
+    {
+        if (empty(self::$_instance)) {
+            self::$_instance = new Plugin();
+        }
 
-		return self::$_instance;
-	}
+        return self::$_instance;
+    }
 
     public static function get($name)
     {

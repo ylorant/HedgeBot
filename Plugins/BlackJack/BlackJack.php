@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\BlackJack;
 
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
@@ -8,6 +9,10 @@ use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\Events\CommandEvent;
 
+/**
+ * Class BlackJack
+ * @package HedgeBot\Plugins\BlackJack
+ */
 class BlackJack extends PluginBase
 {
     private $games = []; // Games, by channel
@@ -76,30 +81,32 @@ class BlackJack extends PluginBase
     //Traits
     use PropertyConfigMapping;
 
+    /**
+     * @return bool|void
+     */
     public function init()
     {
         $this->currency = Plugin::get('Currency');
         $this->reloadConfig();
 
         $pluginManager = Plugin::getManager();
-        $pluginManager->addRoutine($this, 'RoutineJoinTimeout');
+        $pluginManager->addRoutine($this, 'routineJoinTimeout');
     }
 
+    /**
+     *
+     */
     public function RoutineJoinTimeout()
     {
         $time = time();
-        foreach($this->games as $channel => $game)
-        {
-            if($game->getState() == Game::STATE_JOIN)
-            {
+        foreach ($this->games as $channel => $game) {
+            if ($game->getState() == Game::STATE_JOIN) {
                 $joinTimeout = $this->getConfigParameter($channel, 'joinTimeout');
-                if($time - $game->getIdleTime() >= $joinTimeout)
-                {
+                if ($time - $game->getIdleTime() >= $joinTimeout) {
                     // If there is players, trigger a start command, else, reset the game
-                    if(count($game->getPlayers()) > 0)
+                    if (count($game->getPlayers()) > 0) {
                         $this->CommandStart(array('channel' => $channel), array());
-                    else
-                    {
+                    } else {
                         $game->reset();
                         IRC::message($channel, $this->getConfigParameter($channel, 'messages.gameReset'));
                     }
@@ -111,12 +118,16 @@ class BlackJack extends PluginBase
     /**
      * Initializes a blackjack game. Basically, one game per channel at a time, and a game can be
      * reused after it has been finished, with the deck not being reinitialized.
+     *
+     * @param CommandEvent $ev
+     * @return bool
      */
     public function CommandBlackJack(CommandEvent $ev)
     {
         // Create a game if it doesn't exist
-        if(empty($this->games[$ev->channel]))
+        if (empty($this->games[$ev->channel])) {
             $this->games[$ev->channel] = new Game($ev->channel, $this);
+        }
 
         $messages = $this->getConfigParameter($ev->channel, 'messages');
         $game = $this->games[$ev->channel];
@@ -124,16 +135,18 @@ class BlackJack extends PluginBase
         $initialized = $game->init(); // Initialize that s**t
 
         // Check if the game isn't already started
-        if(!$initialized)
+        if (!$initialized) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.gameInProgress'));
+        }
 
         IRC::message($ev->channel, $this->getConfigParameter($ev->channel, 'messages.init'));
 
         // Show join timeout if necessary
         $joinTimeout = $this->getConfigParameter($ev->channel, 'joinTimeout');
         $startMessage = 'messages.joinStart';
-        if($joinTimeout > 0)
+        if ($joinTimeout > 0) {
             $startMessage = 'messages.joinTimeout';
+        }
 
         $message = str_replace('@timeout', $joinTimeout, $this->getConfigParameter($ev->channel, $startMessage));
         IRC::message($ev->channel, $message);
@@ -147,8 +160,9 @@ class BlackJack extends PluginBase
     public function CommandJoin(CommandEvent $ev)
     {
         // Check the parameters are there
-        if(!isset($ev->arguments[0]) || !is_numeric($ev->arguments[0]))
+        if (!isset($ev->arguments[0]) || !is_numeric($ev->arguments[0])) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.missingBet'));
+        }
 
         // Get the bet amount and the account balance for the player
         $bet = intval($ev->arguments[0]);
@@ -157,24 +171,27 @@ class BlackJack extends PluginBase
         // Check all there is to check on the game and the player.
         $canJoin = false;
         $errorMsg = null;
-        if(empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() == Game::STATE_IDLE)
+        if (empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() == Game::STATE_IDLE) {
             $errorMsg = 'messages.noGame';
-        elseif($this->games[$ev->channel]->getState() == Game::STATE_PLAY)
+        } elseif ($this->games[$ev->channel]->getState() == Game::STATE_PLAY) {
             $errorMsg = 'messages.gameInProgress';
-        elseif($balance < $bet)
+        } elseif ($balance < $bet) {
             $errorMsg = 'messages.notEnoughMoney';
-        else
+        } else {
             $canJoin = true;
+        }
 
         // If the player can't join the game, show the error and return.
-        if(!$canJoin)
+        if (!$canJoin) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, $errorMsg));
+        }
 
         // Join the game and handle the errors.
         $result = $this->games[$ev->channel]->joinGame($ev->nick, $bet);
 
-        if(!$result)
+        if (!$result) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.alreadyInGame'));
+        }
 
         // Remove the bet from the account of the player
         $this->currency->takeAmount($ev->channel, $ev->nick, $bet);
@@ -188,16 +205,19 @@ class BlackJack extends PluginBase
         $channel = $ev->channel;
 
         // Checking that the game exists
-        if(empty($this->games[$channel]) || $this->games[$channel]->getState() == Game::STATE_IDLE)
+        if (empty($this->games[$channel]) || $this->games[$channel]->getState() == Game::STATE_IDLE) {
             return IRC::message($channel, $this->getConfigParameter($channel, 'messages.noGame'));
+        }
 
         // Checking that the game isn't already playing
-        if($this->games[$channel]->getState() == Game::STATE_PLAY)
+        if ($this->games[$channel]->getState() == Game::STATE_PLAY) {
             return IRC::message($channel, $this->getConfigParameter($channel, 'messages.gameInProgress'));
+        }
 
         // The game cannot start if there is no player entered.
-        if(count($this->games[$channel]->getPlayers()) == 0)
+        if (count($this->games[$channel]->getPlayers()) == 0) {
             return IRC::message($channel, $this->getConfigParameter($channel, 'messages.noPlayer'));
+        }
 
         IRC::message($channel, $this->getConfigParameter($channel, 'messages.gameStarted'));
 
@@ -206,27 +226,28 @@ class BlackJack extends PluginBase
         $this->showHands($channel);
 
         $blackjacks = [];
-        foreach($game->getPlayers() as $player)
-        {
+        foreach ($game->getPlayers() as $player) {
             $player = $game->getPlayer($player);
-            if($player->status == Game::PLAYER_BLACKJACK)
+            if ($player->status == Game::PLAYER_BLACKJACK) {
                 $blackjacks[] = $player;
+            }
         }
 
         // Handling players who have blackjacks
-        if(!empty($blackjacks))
-        {
+        if (!empty($blackjacks)) {
             // Preparing message
             $message = $this->getConfigParameter($channel, 'messages.playerBlackjack');
 
             // Giving the players who have blackjack its earnings and telling that they won
-            foreach($blackjacks as $player)
+            foreach ($blackjacks as $player) {
                 IRC::message($channel, str_replace('@player', $player->name, $message));
+            }
         }
 
         // Show the instructions only if there is still players in the game
-        if(!empty($game->getPlayers(true)))
+        if (!empty($game->getPlayers(true))) {
             IRC::message($channel, $this->getConfigParameter($channel, 'messages.playInstructions'));
+        }
     }
 
     /**
@@ -235,18 +256,20 @@ class BlackJack extends PluginBase
     public function CommandDraw(CommandEvent $ev)
     {
         // Checking that there is a game
-        if(empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() != Game::STATE_PLAY)
+        if (empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() != Game::STATE_PLAY) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.noGame'));
+        }
 
         // Trying to draw
         $return = $this->games[$ev->channel]->draw($ev->nick);
-        if(!$return)
+        if (!$return) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.notPlaying'));
+        }
 
         $this->showHand($ev->channel, $ev->nick);
-        if($this->games[$ev->channel]->getPlayer($ev->nick)->status == Game::PLAYER_LOST)
-        {
-            IRC::reply($ev, str_replace('@player', $ev->nick, $this->getConfigParameter($ev->channel, 'messages.playerLost')));
+        if ($this->games[$ev->channel]->getPlayer($ev->nick)->status == Game::PLAYER_LOST) {
+            IRC::reply($ev,
+                str_replace('@player', $ev->nick, $this->getConfigParameter($ev->channel, 'messages.playerLost')));
             $this->finishGameIfNecessary($ev->channel);
         }
     }
@@ -257,13 +280,15 @@ class BlackJack extends PluginBase
     public function CommandStay(CommandEvent $ev)
     {
         // Checking that there is a game
-        if(empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() != Game::STATE_PLAY)
+        if (empty($this->games[$ev->channel]) || $this->games[$ev->channel]->getState() != Game::STATE_PLAY) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.noGame'));
+        }
 
         // Trying to draw
         $return = $this->games[$ev->channel]->stay($ev->nick);
-        if(!$return)
+        if (!$return) {
             return IRC::reply($ev, $this->getConfigParameter($ev->channel, 'messages.notPlaying'));
+        }
 
         $this->finishGameIfNecessary($ev->channel);
     }
@@ -271,26 +296,29 @@ class BlackJack extends PluginBase
     /**
      * Event on configuration update detection. Reloads the configuration.
      */
-	public function CoreEventConfigUpdate()
-	{
-		$this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
-		$this->reloadConfig();
-	}
+    public function CoreEventConfigUpdate()
+    {
+        $this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
+        $this->reloadConfig();
+    }
 
     /**
      * Shows the hands of every player, with the house hand.
-     * \param $channel The channel from which display the hands.
-     * \return True if success, false otherwise (channel hasn't got a game or game isn't playing).
+     *
+     * @param string $channel The channel from which display the hands.
+     * @return bool True if success, false otherwise (channel hasn't got a game or game isn't playing).
      */
     private function showHands($channel)
     {
-        if(empty($this->games[$channel]) || $this->games[$channel]->getState() != Game::STATE_PLAY)
+        if (empty($this->games[$channel]) || $this->games[$channel]->getState() != Game::STATE_PLAY) {
             return false;
+        }
 
         $players = $this->games[$channel]->getPlayers();
 
-        foreach($players as $player)
+        foreach ($players as $player) {
             $this->showHand($channel, $player);
+        }
 
         $this->showHouseHand($channel);
 
@@ -298,9 +326,10 @@ class BlackJack extends PluginBase
     }
 
     /**
-     * Shows the hand of one player.
-     * \param $channel The channel of the game.
-     * \param $player The player's hand.
+     *  Shows the hand of one player.
+     *
+     * @param string $channel The channel of the game
+     * @param object $player The player's hand
      */
     private function showHand($channel, $player)
     {
@@ -309,43 +338,47 @@ class BlackJack extends PluginBase
         $hand = $playerObject->hand;
         $playerHandMessage = str_replace('@player', $player, $handMessage);
         $playerHandMessage = str_replace('@hand', join('  ', $hand), $playerHandMessage);
-        IRC::message($channel, $playerHandMessage. ' ('. $playerObject->handValue. ')');
+        IRC::message($channel, $playerHandMessage . ' (' . $playerObject->handValue . ')');
     }
 
     /**
      * Shows only the house hand.
-     * @param $hidden Hides the second card or not. Defaults to true.
+     *
+     * @param bool $hidden Hides the second card or not. Defaults to true
      */
     private function showHouseHand($channel, $hidden = true, $messageName = 'messages.hand')
     {
         $handMessage = $this->getConfigParameter($channel, $messageName);
         $house = $this->games[$channel]->getHouse(true);
         $houseHand = $house->hand;
-        $handSuffix = " (". $house->handValue. ")";
+        $handSuffix = " (" . $house->handValue . ")";
 
-        if($hidden)
-        {
+        if ($hidden) {
             $houseHand[1] = "??";
             $handSuffix = "";
         }
 
         $houseHandMessage = str_replace('@player', $this->getConfigParameter($channel, "houseName"), $handMessage);
-        $houseHandMessage = str_replace('@hand', join('  ', $houseHand). $handSuffix, $houseHandMessage);
+        $houseHandMessage = str_replace('@hand', join('  ', $houseHand) . $handSuffix, $houseHandMessage);
         IRC::message($channel, $houseHandMessage);
     }
 
     /**
      * Finishes the game if everybody is staying or have lost.
-     * \param $channel The channel on which to do that.
+     *
+     * @param string $channel The channel on which to do that
+     * @return bool
      */
     private function finishGameIfNecessary($channel)
     {
-        if(empty($this->games[$channel]) || $this->games[$channel]->getState() != Game::STATE_PLAY)
+        if (empty($this->games[$channel]) || $this->games[$channel]->getState() != Game::STATE_PLAY) {
             return false;
+        }
 
         // The game is still on when there is still active players
-        if(count($this->games[$channel]->getPlayers(true)) > 0)
+        if (count($this->games[$channel]->getPlayers(true)) > 0) {
             return true;
+        }
 
         IRC::message($channel, $this->getConfigParameter($channel, 'messages.houseTurn'));
 
@@ -362,47 +395,47 @@ class BlackJack extends PluginBase
         $blackjacks = [];
 
         // Giving final scores and paying out
-        foreach($this->games[$channel]->getPlayers() as $player)
-        {
+        foreach ($this->games[$channel]->getPlayers() as $player) {
             $player = $this->games[$channel]->getPlayer($player, true);
-            switch($player->status)
-            {
+            switch ($player->status) {
                 case Game::PLAYER_STAY:
-                    if($house->status == Game::PLAYER_LOST)
+                    if ($house->status == Game::PLAYER_LOST) {
                         $winners[] = $player;
-                    elseif($house->status == Game::PLAYER_BLACKJACK)
+                    } elseif ($house->status == Game::PLAYER_BLACKJACK) {
                         $losers[] = $player;
-                    else // House is on stay
+                    } else // House is on stay
                     {
-                        if($house->handValue > $player->handValue)
+                        if ($house->handValue > $player->handValue) {
                             $losers[] = $player;
-                        elseif($house->handValue < $player->handValue)
+                        } elseif ($house->handValue < $player->handValue) {
                             $winners[] = $player;
-                        else
+                        } else {
                             $ties[] = $player;
+                        }
                     }
                     break;
                 case Game::PLAYER_LOST:
                     $losers[] = $player;
                     break;
                 case Game::PLAYER_BLACKJACK:
-                    if($house->status == Game::PLAYER_BLACKJACK)
+                    if ($house->status == Game::PLAYER_BLACKJACK) {
                         $ties[] = $player;
-                    else
+                    } else {
                         $blackjacks[] = $player;
+                    }
                     break;
             }
         }
 
         // Showing status of house + all the players
         $messageKey = null;
-        if($house->status == Game::PLAYER_LOST)
+        if ($house->status == Game::PLAYER_LOST) {
             $messageKey = 'messages.houseLost';
-        elseif($house->status == Game::PLAYER_BLACKJACK)
+        } elseif ($house->status == Game::PLAYER_BLACKJACK) {
             $messageKey = 'messages.houseBlackjack';
+        }
 
-        if(!empty($messageKey))
-        {
+        if (!empty($messageKey)) {
             $message = $this->getConfigParameter($channel, $messageKey);
             $houseName = $this->getConfigParameter($channel, 'houseName');
             $message = str_replace('@houseName', $this->getConfigParameter($channel, "houseName"), $message);
@@ -410,46 +443,49 @@ class BlackJack extends PluginBase
         }
 
         // Show players who won and give them their prize
-        if(!empty($winners))
-        {
+        if (!empty($winners)) {
             $message = $this->getConfigParameter($channel, 'messages.winnersList');
             $winMultiplicator = $this->getConfigParameter($channel, 'winMultiplicator');
 
-            $message = str_replace('@players', join(', ', array_map(__CLASS__. '::getPlayerName', $winners)), $message);
+            $message = str_replace('@players', join(', ', array_map(__CLASS__ . '::getPlayerName', $winners)),
+                $message);
             IRC::message($channel, $message);
 
-            foreach($winners as $player)
+            foreach ($winners as $player) {
                 $this->currency->giveAmount($channel, $player->name, $player->bet * (1 + $winMultiplicator));
+            }
         }
 
         // Show players who got a blackjack and give them their prize
-        if(!empty($blackjacks))
-        {
+        if (!empty($blackjacks)) {
             $message = $this->getConfigParameter($channel, 'messages.blackjackList');
             $blackjackMultiplicator = $this->getConfigParameter($channel, 'blackjackMultiplicator');
 
-            $messages = str_replace('@players', join(', ', array_map(__CLASS__. '::getPlayerName', $blackjacks)), $message);
+            $messages = str_replace('@players', join(', ', array_map(__CLASS__ . '::getPlayerName', $blackjacks)),
+                $message);
             IRC::message($channel, $message);
 
-            foreach($blackjacks as $player)
+            foreach ($blackjacks as $player) {
                 $this->currency->giveAmount($channel, $player->name, $player->bet * (1 + $blackjackMultiplicator));
+            }
         }
 
         // Show ties and give them their bet back
-        if(!empty($ties))
-        {
+        if (!empty($ties)) {
             $message = $this->getConfigParameter($channel, 'messages.tiesList');
 
-            $messages = str_replace('@players', join(', ', array_map(__CLASS__. '::getPlayerName', $ties)), $message);
+            $messages = str_replace('@players', join(', ', array_map(__CLASS__ . '::getPlayerName', $ties)), $message);
             IRC::message($channel, $message);
 
-            foreach($ties as $player)
+            foreach ($ties as $player) {
                 $this->currency->giveAmount($channel, $player->name, $player->bet);
+            }
         }
 
         // If there are no winners, show it
-        if(empty($blackjacks) && empty($winners) && empty($ties))
+        if (empty($blackjacks) && empty($winners) && empty($ties)) {
             IRC::message($channel, $this->getConfigParameter($channel, 'messages.noWinner'));
+        }
     }
 
     private function reloadConfig()

@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,9 +17,10 @@ class SetRoleDefaultCommand extends StorageAwareCommand
     public function configure()
     {
         $this->setName('security:role-set-default')
-             ->setDescription('Sets the default status of a role.')
-             ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to delete.')
-             ->addOption('disable', 'd', InputOption::VALUE_NONE, 'Set this option to disable the default status of the role.');
+            ->setDescription('Sets the default status of a role.')
+            ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to delete.')
+            ->addOption('disable', 'd', InputOption::VALUE_NONE,
+                'Set this option to disable the default status of the role.');
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
@@ -29,11 +31,12 @@ class SetRoleDefaultCommand extends StorageAwareCommand
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         $role = $accessControlManager->getRole($roleId);
 
-        if(!$role)
-            throw new RuntimeException("Unable to delete role: ID '". $roleId. "' not found.");
-        
+        if (!$role) {
+            throw new RuntimeException("Unable to delete role: ID '" . $roleId . "' not found.");
+        }
+
         $role->setDefault($default);
-        
+
         $accessControlManager->saveToStorage();
     }
 }

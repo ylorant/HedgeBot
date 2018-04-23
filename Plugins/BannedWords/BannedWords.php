@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\BannedWords;
 
 use HedgeBot\Core\HedgeBot;
@@ -61,59 +62,61 @@ class BannedWords extends PluginBase
     public function ServerPrivmsg(ServerEvent $ev)
     {
         // Moderators are exempted from being timeout'd
-        if($ev->moderator)
+        if ($ev->moderator) {
             return;
+        }
 
         $message = $this->normalize($ev->message);
         $timeoutDuration = $this->getConfigParameter($ev->channel, 'timeoutDuration');
 
         // Simple purge is a timeout of 1 second
-        if($timeoutDuration == 0)
+        if ($timeoutDuration == 0) {
             $timeoutDuration = 1;
+        }
 
         // Check against global banned words
-        foreach($this->globalBannedWords as $bannedWord)
-        {
+        foreach ($this->globalBannedWords as $bannedWord) {
             // Match against a banned word, we timeout
-            if(strpos($message, $bannedWord) !== FALSE)
-            {
-                IRC::message($ev->channel, ".timeout ". $ev->nick. " 1");
+            if (strpos($message, $bannedWord) !== false) {
+                IRC::message($ev->channel, ".timeout " . $ev->nick . " 1");
             }
         }
 
         // Check against channel banned words
-        if(!empty($this->bannedWords[$ev->channel]))
-        {
-            foreach($this->bannedWords[$ev->channel] as $bannedWord)
-            {
-                if(strpos($message, $bannedWord) !== FALSE)
-                {
-                    IRC::message($ev->channel, ".timeout ". $ev->nick. " 1");
+        if (!empty($this->bannedWords[$ev->channel])) {
+            foreach ($this->bannedWords[$ev->channel] as $bannedWord) {
+                if (strpos($message, $bannedWord) !== false) {
+                    IRC::message($ev->channel, ".timeout " . $ev->nick . " 1");
                 }
             }
         }
     }
 
-    /** Reloads the config using property mapping */
+    /**
+     * Reloads the config using property mapping
+     */
     public function reloadConfig()
     {
-        $parameters = ['bannedWords',
-                       'timeoutDuration'];
+        $parameters = [
+            'bannedWords',
+            'timeoutDuration'
+        ];
 
         $this->globalBannedWords = [];
-    	$this->globalTimeoutDuration = self::DEFAULT_TIMEOUT_DURATION;
+        $this->globalTimeoutDuration = self::DEFAULT_TIMEOUT_DURATION;
 
-    	$this->mapConfig($this->config, $parameters);
+        $this->mapConfig($this->config, $parameters);
 
-    	// Normalize all loaded words
-    	foreach($this->globalBannedWords as &$word)
-    	    $word = $this->normalize($word);
+        // Normalize all loaded words
+        foreach ($this->globalBannedWords as &$word) {
+            $word = $this->normalize($word);
+        }
 
-    	foreach($this->bannedWords as &$channel)
-    	{
-    	    foreach($channel as &$word)
-    	        $word = $this->normalize($word);
-    	}
+        foreach ($this->bannedWords as &$channel) {
+            foreach ($channel as &$word) {
+                $word = $this->normalize($word);
+            }
+        }
     }
 
     /**
@@ -123,7 +126,7 @@ class BannedWords extends PluginBase
      * \param string $str     The string to normalize.
      * \param string $charset The charset to use. Defaults to UTF-8.
      */
-    function normalize($str, $charset='utf-8')
+    public function normalize($str, $charset = 'utf-8')
     {
         $str = htmlentities($str, ENT_NOQUOTES, $charset);
 

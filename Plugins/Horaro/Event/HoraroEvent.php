@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\Horaro\Event;
 
 use HedgeBot\Core\Events\Event;

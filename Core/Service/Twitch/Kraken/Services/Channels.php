@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Service\Twitch\Kraken\Services;
 
 use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
@@ -67,11 +68,9 @@ class Channels extends Service
         $return->list = array();
 
         // Handling the return format
-        foreach($userList->follows as $user)
-        {
+        foreach ($userList->follows as $user) {
             // If needed, fetch a lot of info
-            if(!empty($parameters['detailed_info']))
-            {
+            if (!empty($parameters['detailed_info'])) {
                 $userObject = new stdClass();
                 $userObject->name = $user->user->name;
                 $userObject->followDate = new DateTime($user->created_at);
@@ -81,9 +80,10 @@ class Channels extends Service
                 $userObject->logo = $user->user->logo;
                 $userObject->bio = $user->user->bio;
                 $userObject->hasNotifications = $user->notifications;
-            }
-            else // Return only the nickname by default
+            } else // Return only the nickname by default
+            {
                 $return->list[] = $user->user->name;
+            }
         }
 
         return $return;
@@ -91,7 +91,7 @@ class Channels extends Service
 
     /**
      * Updates a channel's data. This method requires to have a valid access token, that can update a channel of course.
-     * 
+     *
      * @param $channel The channel to update.
      * @param $parameters The parameters to update. Available parameters:
      *                    - title: The channel title
@@ -111,7 +111,7 @@ class Channels extends Service
         ];
 
         $queryParameters["channel"] = array_filter($queryParameters["channel"]);
-        
+
         $channelId = $this->kraken->getService('users')->getUserId($channel);
         $response = $this->query(Kraken::QUERY_TYPE_PUT, "/$channelId", $queryParameters, $channel);
 
