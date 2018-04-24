@@ -5,7 +5,7 @@
 Hedgebot is a Twitch Bot written in PHP, aimed at a server-side use. It aims to provide a
 flexible and powerful setup for streamers and communities to improve their chatrooms.
 
-It requires at least PHP 5.6 to be used.
+It requires at least PHP 7.0 to be used.
 
 ## What it does
 

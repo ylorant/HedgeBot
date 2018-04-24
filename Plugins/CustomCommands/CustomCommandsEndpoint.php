@@ -36,16 +36,6 @@ class CustomCommandsEndpoint
     }
 
     /**
-     * Adds a custom command.
-     *
-     * @see CustomCommands::addCommand()
-     */
-    public function addCommand($commandName, $text, array $channels)
-    {
-        return $this->plugin->addCommand($commandName, $text, $channels);
-    }
-
-    /**
      * Removes a custom command.
      *
      * @see CustomCommands::removeCommand()
@@ -60,8 +50,8 @@ class CustomCommandsEndpoint
      *
      * @see CustomCommands::updateCommand()
      */
-    public function updateCommand($commandName, $commandData)
+    public function saveCommand($commandName, $commandData)
     {
-        return $this->plugin->updateCommand($commandName, $commandData);
+        return $this->plugin->saveCommand($commandName, (array) $commandData);
     }
 }
