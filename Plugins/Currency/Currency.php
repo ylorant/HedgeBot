@@ -145,6 +145,8 @@ class Currency extends PluginBase
 
     /**
      * Initializes an account on join
+     *
+     * @param ServerEvent $ev
      */
     public function ServerJoin(ServerEvent $ev)
     {
@@ -169,6 +171,8 @@ class Currency extends PluginBase
      * Initializes accounts for user that talk before the join notice comes in.
      * Handles status command calls too.
      * Updates last activity time for the user.
+     *
+     * @param ServerEvent $ev
      */
     public function ServerPrivmsg(ServerEvent $ev)
     {
@@ -188,6 +192,8 @@ class Currency extends PluginBase
 
     /**
      * Handles whispers as regular messages for money status command.
+     *
+     * @param ServerEvent $ev
      */
     public function ServerWhisper(ServerEvent $ev)
     {
@@ -198,9 +204,7 @@ class Currency extends PluginBase
      * Adds a given amount of money to a given user.
      *
      * @access moderator
-     *
-     * @parameter user   The person on the chat you want to give money to.
-     * @parameter amount The amount you want to give.
+     * @param CommandEvent $ev
      */
     public function CommandGive(CommandEvent $ev)
     {
@@ -232,8 +236,7 @@ class Currency extends PluginBase
      * Checks the current amount of money an user has.
      *
      * @access moderator
-     *
-     * @parameter user The username of the person to check the money on.
+     * @param CommandEvent $ev
      */
     public function CommandCheck(CommandEvent $ev)
     {
@@ -253,9 +256,7 @@ class Currency extends PluginBase
      * Removes a given amount of money from an user.
      *
      * @access moderator
-     *
-     * @parameter user   The username of the person to take money from.
-     * @parameter amount The amount of money to take from that user.
+     * @param CommandEvent $ev
      */
     public function CommandTake(CommandEvent $ev)
     {
@@ -291,14 +292,25 @@ class Currency extends PluginBase
         $this->data->set('accounts', $this->accounts);
     }
 
-    /** Real account show command, shows the current amount of currency for the user */
+    /**
+     * Real account show command, shows the current amount of currency for the user
+     *
+     * @param ServerEvent $ev
+     */
     public function RealCommandAccount(ServerEvent $ev)
     {
         $message = $this->getConfigParameter($ev->channel, 'statusMessage');
         IRC::reply($ev, $this->formatMessage($message, $ev->channel, $ev->nick));
     }
 
-    /** Formats a currency message, with plural forms and everything. */
+    /**
+     * Formats a currency message, with plural forms and everything
+     *
+     * @param $message
+     * @param $channel
+     * @param $name
+     * @return mixed
+     */
     private function formatMessage($message, $channel, $name)
     {
         if (!empty($this->currencyName[$channel])) {
@@ -373,10 +385,12 @@ class Currency extends PluginBase
         return $this->accounts[$channel][$name];
     }
 
-    /** Gives money to someone on a channel.
+    /**
+     * Gives money to someone on a channel.
      *
      * @param string $channel The channel on which execute the operation
-     * @param string $name The name of the person to give money to
+     * @param string $name  The name of the person to give money to
+     * @param int $amount
      * @return object|bool The new balance if the money has been given, false otherwise
      */
     public function giveAmount($channel, $name, $amount)
@@ -391,11 +405,13 @@ class Currency extends PluginBase
         return $this->accounts[$channel][$name];
     }
 
-    /** Takes money from someone on a channel.
+    /**
+     * Takes money from someone on a channel.
      *
      * @param string $channel The channel on which execute the operation.
      * @param string $name The name of the person to take money from.
-     * @return object The new balance if the money has been taken, false otherwise.
+     * @param int $amount
+     * @return object|bool The new balance if the money has been taken, false otherwise.
      */
     public function takeAmount($channel, $name, $amount)
     {

@@ -4,8 +4,11 @@ namespace HedgeBot\Core\Tikal;
 
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\API\Plugin as PluginAPI;
-use stdClass;
 
+/**
+ * Class HttpServer
+ * @package HedgeBot\Core\Tikal
+ */
 class HttpServer
 {
     private $socket; ///< Server socket
@@ -16,23 +19,30 @@ class HttpServer
     private $clients = [];
     private $times = [];
 
+    /**
+     * HttpServer constructor.
+     * @param null $address
+     * @param null $port
+     */
     public function __construct($address = null, $port = null)
     {
-        if (filter_var($address, FILTER_VALIDATE_IP)) //Match IP
-        {
+        //Match IP
+        if (filter_var($address, FILTER_VALIDATE_IP)) {
             $this->address = $address;
         } else {
             HedgeBot::message('HTTP: Address not valid : $0', [$address], E_WARNING);
         }
-
-        if (in_array($port, range(0, 65535))) //Match port
-        {
+        //Match port
+        if (in_array($port, range(0, 65535))) {
             $this->port = $port;
         } else {
             HedgeBot::message('HTTP: Port not valid : $0', [$port], E_WARNING);
         }
     }
 
+    /**
+     *
+     */
     public function start()
     {
         // Creating event listeners
@@ -51,6 +61,9 @@ class HttpServer
         HedgeBot::message('HTTP: Started listening on $0:$1', [$this->address, $this->port]);
     }
 
+    /**
+     *
+     */
     public function process()
     {
         //Some client want to connect
@@ -80,7 +93,6 @@ class HttpServer
 
         if ($modified > 0) {
             foreach ($read as $id => $client) {
-                $buffer = '';
                 $buffer = socket_read($this->clients[$id], 1024);
                 if ($buffer) {
                     $this->times[$id] = time();
@@ -100,6 +112,9 @@ class HttpServer
         }
     }
 
+    /**
+     * @param $id
+     */
     public function closeConnection($id)
     {
         if (isset($this->clients[$id])) {
@@ -113,6 +128,9 @@ class HttpServer
         }
     }
 
+    /**
+     * @param HttpResponse $response
+     */
     public function send(HttpResponse $response)
     {
         $replyString = $response->generate();

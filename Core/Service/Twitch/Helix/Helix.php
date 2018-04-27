@@ -4,7 +4,10 @@ namespace HedgeBot\Core\Service\Twitch\Helix;
 
 use HedgeBot\Core\Service\Twitch\AuthManager;
 
-
+/**
+ * Class Helix
+ * @package HedgeBot\Core\Service\Twitch\Helix
+ */
 class Helix
 {
     /** @var AuthManager The authentication manager this client will use. */

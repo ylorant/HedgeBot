@@ -6,6 +6,10 @@ use HedgeBot\Core\API\Security;
 use HedgeBot\Core\Security\SecurityRole;
 use stdClass;
 
+/**
+ * Class SecurityEndpoint
+ * @package HedgeBot\Core\Tikal\Endpoint
+ */
 class SecurityEndpoint
 {
     /**
@@ -50,7 +54,7 @@ class SecurityEndpoint
      * Saves a role into the security system.
      *
      * @param string $roleId The ID of the role to save. Must already exist. Use createRole() if not.
-     * @param object $roleData The data of the role. Refer to the output of the getRoles() method to see the
+     * @param stdClass $roleData The data of the role. Refer to the output of the getRoles() method to see the
      *                         expected format.
      *
      * @return bool True if the role has been successfully saved, false if an error occured.
@@ -135,6 +139,10 @@ class SecurityEndpoint
         return true;
     }
 
+    /**
+     * @param $roleId
+     * @return mixed
+     */
     public function deleteRole($roleId)
     {
         return Security::deleteRole($roleId);
@@ -150,7 +158,6 @@ class SecurityEndpoint
     public function getRoleTree()
     {
         $roleTree = Security::getRoleTree();
-        $roleTreeOut = [];
 
         $simplifyRoleTree = function (&$level) use (&$simplifyRoleTree) {
             foreach ($level as &$role) {

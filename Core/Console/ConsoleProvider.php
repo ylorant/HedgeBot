@@ -3,7 +3,6 @@
 namespace HedgeBot\Core\Console;
 
 use Symfony\Component\Console\Application;
-use HedgeBot\Core\Console\PluginAwareTrait;
 use HedgeBot\Core\Data\IniFileProvider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\HedgeBot;
@@ -41,6 +40,10 @@ class ConsoleProvider
 
     protected static $hedgebot;
 
+    /**
+     * ConsoleProvider constructor.
+     * @param array $arguments
+     */
     public function __construct(array $arguments)
     {
         if (empty(self::$hedgebot)) {
@@ -53,6 +56,9 @@ class ConsoleProvider
 
     /**
      * Populates the console application using both core commands and plugin commands.
+     *
+     * @param Application $application
+     * @throws \ReflectionException
      */
     public function populateApplication(Application $application)
     {
@@ -114,6 +120,7 @@ class ConsoleProvider
      * namespace, via reflection.
      *
      * @param Application $application The application to populate.
+     * @throws \ReflectionException
      */
     public function populateCoreCommands(Application $application)
     {
@@ -130,7 +137,8 @@ class ConsoleProvider
 
             $reflectionClass = new ReflectionClass($className);
 
-            if (!$reflectionClass->isAbstract() && !$reflectionClass->isInterface() && $reflectionClass->isSubclassOf(Command::class)) {
+            if (!$reflectionClass->isAbstract() && !$reflectionClass->isInterface()
+                && $reflectionClass->isSubclassOf(Command::class)) {
                 $obj = new $className();
 
                 // Give the config and the data provider to the class if it is storage-aware
@@ -144,6 +152,10 @@ class ConsoleProvider
         }
     }
 
+    /**
+     * @param Application $application
+     * @throws \ReflectionException
+     */
     public function populatePluginCommands(Application $application)
     {
         $pluginsDirectory = $this->config->general->pluginsDirectory;

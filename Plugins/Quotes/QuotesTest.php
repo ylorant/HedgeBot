@@ -3,9 +3,6 @@
 namespace HedgeBot\Plugins\Quotes;
 
 use HedgeBot\Plugins\TestManager\TestCase;
-use HedgeBot\Core\API\Plugin;
-use HedgeBot\Core\API\Server;
-use HedgeBot\Core\HedgeBot;
 use stdClass;
 
 /**

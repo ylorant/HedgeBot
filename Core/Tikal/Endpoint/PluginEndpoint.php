@@ -4,6 +4,10 @@ namespace HedgeBot\Core\Tikal\Endpoint;
 
 use HedgeBot\Core\API\Plugin;
 
+/**
+ * Class PluginEndpoint
+ * @package HedgeBot\Core\Tikal\Endpoint
+ */
 class PluginEndpoint
 {
     /**

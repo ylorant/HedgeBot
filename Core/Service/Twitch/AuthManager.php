@@ -14,11 +14,19 @@ class AuthManager
     protected $clientID;
     /** @var string The client App Secret that'll be used on authentication on Twitch. */
     protected $clientSecret;
-    /** @var array The list of user access tokens that can be used to interact with channels. Every access token is tied to a channel. */
+    /** @var array The list of user access tokens that can be used to interact with channels.
+     * Every access token is tied to a channel.
+     */
     protected $accessTokens;
     /** @var DataProvider The data provider where the data will be saved */
     protected $dataProvider;
 
+    /**
+     * AuthManager constructor.
+     * @param $clientID
+     * @param $clientSecret
+     * @param DataProvider $dataProvider
+     */
     public function __construct($clientID, $clientSecret, DataProvider $dataProvider)
     {
         $this->clientID = $clientID;
@@ -59,6 +67,10 @@ class AuthManager
         return $this->accessTokens;
     }
 
+    /**
+     * @param $channel
+     * @return bool
+     */
     public function hasAccessToken($channel)
     {
         $channel = strtolower($channel);

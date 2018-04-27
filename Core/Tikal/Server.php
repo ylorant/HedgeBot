@@ -9,6 +9,10 @@ use ReflectionClass;
 use ReflectionMethod;
 use stdClass;
 
+/**
+ * Class Server
+ * @package HedgeBot\Core\Tikal
+ */
 class Server
 {
     private $httpServer;
@@ -21,8 +25,9 @@ class Server
     const DEFAULT_KEY_LEN = 32;
 
     /**
-     * Constructor.
+     * Server constructor.
      * @param ObjectAccess $config The configuration for the API.
+     * @throws \Exception
      */
     public function __construct(ObjectAccess $config)
     {
@@ -72,8 +77,10 @@ class Server
 
     /**
      * Http request event callback. Called when the Http server has received a request.
-     * @param  HttpEvent $event The request event received.
-     * @return NULL
+     *
+     * @param HttpEvent $event The request event received
+     * @return bool
+     * @throws \ReflectionException
      */
     public function httpRequest(HttpEvent $event)
     {
@@ -115,10 +122,11 @@ class Server
     }
 
     /**
-     * Lists all the available methods in an endpoint.
+     * * Lists all the available methods in an endpoint.
      *
      * @param  string $url The endpoint's URL.
-     * @return array       The methods, with their parameters, in a multidimensional array.
+     * @return array The methods, with their parameters, in a multidimensional array.
+     * @throws \ReflectionException
      */
     public function getMethodList($url)
     {
@@ -149,8 +157,11 @@ class Server
 
     /**
      * Executes an RPC query.
+     *
      * @param HttpRequest $request The HTTP Request containing the RPC.
      * @param HttpResponse $response The HTTP Response object to put the returned value into.
+     * @return bool
+     * @throws \ReflectionException
      */
     public function RPCExec(HttpRequest $request, HttpResponse $response)
     {
@@ -166,7 +177,8 @@ class Server
         $endpointClass = $this->getEndpoint($request->requestURI);
         $reflectionClass = new ReflectionClass($endpointClass);
 
-        HedgeBot::message("Tikal: Called method: $0:$1", [$reflectionClass->getShortName(), $rpcQuery->method], E_DEBUG);
+        HedgeBot::message("Tikal: Called method: $0:$1", [$reflectionClass->getShortName(), $rpcQuery->method],
+            E_DEBUG);
 
         // Check that the method exists and it isn't a magic method
         if (!$reflectionClass->hasMethod($rpcQuery->method) || strpos($rpcQuery->method, "__") === 0) {
@@ -201,16 +213,17 @@ class Server
             $response->data = ["jsonrpc" => "2.0", "result" => $funcResult, "id" => $rpcQuery->id];
         }
 
-        HedgeBot::message("Tikal: Success. Reply: $0.", [!empty($response->data["result"]) ? gettype($response->data["result"]) : "null"], E_DEBUG);
+        HedgeBot::message("Tikal: Success. Reply: $0.",
+            [!empty($response->data["result"]) ? gettype($response->data["result"]) : "null"], E_DEBUG);
 
         return true;
     }
 
     /**
      * Generates and sends an error HttpResponse by its code.
-     * @param  $response    The HttpResponse to build from.
-     * @param  $code        The HTTP code to generate.
-     * @return boolean      False.
+     * @param HttpResponse $response    The HttpResponse to build from.
+     * @param int $code The HTTP code to generate.
+     * @return bool return always false
      */
     private function sendErrorResponse(HttpResponse $response, $code)
     {
@@ -228,7 +241,7 @@ class Server
      * Registers an endpoint for the API. The inner methods of the bound object will be automatically bound to it.
      * @param  string $endpoint Endpoint part URL.
      * @param  object $class The object to bind to the endpoint
-     * @return boolean          True if the endpoint bound successfully, False otherwise (mainly, endpoint already exists).
+     * @return boolean True if the endpoint bound successfully, False otherwise (mainly, endpoint already exists).
      */
     public function addEndpoint($endpoint, $class)
     {
@@ -246,7 +259,7 @@ class Server
     /**
      * Unregisters the endpoint from the API.
      * @param  string $endpoint The endpoint to release
-     * @return boolean           True if it has been released successfully, False otherwise (mainly endpoint doesn't exist).
+     * @return boolean True if it has been released successfully, False otherwise (mainly endpoint doesn't exist).
      */
     public function removeEndpoint($endpoint)
     {
@@ -285,7 +298,7 @@ class Server
 
     /**
      * Generate a random string, using a cryptographically secure
-     * pseudorandom number generator (random_int)
+     * pseudo-random number generator (random_int)
      *
      * For PHP 7, random_int is a PHP core function
      * For PHP 5.x, depends on https://github.com/paragonie/random_compat
@@ -294,6 +307,7 @@ class Server
      * @param string $keyspace A string of all possible characters
      *                         to select from
      * @return string
+     * @throws \Exception
      */
     public static function randomString(
         $length,

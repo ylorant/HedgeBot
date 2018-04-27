@@ -9,6 +9,10 @@ use HedgeBot\Core\Events\CoreEvent;
 use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\Events\CommandEvent;
 
+/**
+ * Class ServerInstance
+ * @package HedgeBot\Core\Server
+ */
 class ServerInstance
 {
     private $IRC;
@@ -17,12 +21,18 @@ class ServerInstance
     private $name;
     private $connected;
 
+    /**
+     * ServerInstance constructor.
+     */
     public function __construct()
     {
         $this->IRC = new IRCConnection(); // Init IRC connection handler
         $this->pluginManager = Plugin::getManager();
     }
 
+    /**
+     * @return bool|void
+     */
     public function connect()
     {
         $this->connected = $this->IRC->connect($this->config['address'], $this->config['port']);
@@ -47,23 +57,36 @@ class ServerInstance
         }
     }
 
+    /**
+     *
+     */
     public function disconnect()
     {
         $this->IRC->send("QUIT: Quitting...");
         $this->IRC->disconnect();
     }
 
+    /**
+     *
+     */
     public function reconnect()
     {
         $this->disconnect();
         $this->connect();
     }
 
+    /**
+     * @return bool
+     */
     public function isConnected()
     {
         return (bool)$this->connected;
     }
 
+    /**
+     * @param $config
+     * @return bool
+     */
     public function load($config)
     {
         $this->config = $config;
@@ -80,26 +103,41 @@ class ServerInstance
         return true;
     }
 
+    /**
+     * @return mixed
+     */
     public function getConfig()
     {
         return $this->config;
     }
 
+    /**
+     * @return mixed
+     */
     public function getName()
     {
         return $this->name;
     }
 
+    /**
+     * @return mixed
+     */
     public function getNick()
     {
         return $this->config['name'];
     }
 
+    /**
+     * @return IRCConnection
+     */
     public function getIRC()
     {
         return $this->IRC;
     }
 
+    /**
+     * @param null $data
+     */
     public function step($data = null)
     {
         if ($data == null) {

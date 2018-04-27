@@ -2,9 +2,10 @@
 
 namespace HedgeBot\Core\API;
 
-use HedgeBot\Core\API\StaticSingleton;
-
-
+/**
+ * Class Store
+ * @package HedgeBot\Core\API
+ */
 class Store
 {
     use StaticSingleton;

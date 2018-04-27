@@ -2,36 +2,53 @@
 
 namespace HedgeBot\Core\API;
 
+/**
+ * Class Plugin
+ * @package HedgeBot\Core\API
+ */
 class Plugin
 {
-    private static $_instance;
-    private $_manager;
+    private static $instance;
+    private $manager;
 
+    /**
+     * @param $manager
+     */
     public static function setManager($manager)
     {
         $self = self::getInstance();
-        $self->_manager = $manager;
+        $self->manager = $manager;
     }
 
+    /**
+     * @return mixed
+     */
     public static function getManager()
     {
         $self = self::getInstance();
-        return $self->_manager;
+        return $self->manager;
     }
 
+    /**
+     * @return Plugin
+     */
     private static function getInstance()
     {
-        if (empty(self::$_instance)) {
-            self::$_instance = new Plugin();
+        if (empty(self::$instance)) {
+            self::$instance = new Plugin();
         }
 
-        return self::$_instance;
+        return self::$instance;
     }
 
+    /**
+     * @param $name
+     * @return mixed
+     */
     public static function get($name)
     {
         $self = self::getInstance();
 
-        return $self->_manager->getPlugin($name);
+        return $self->manager->getPlugin($name);
     }
 }

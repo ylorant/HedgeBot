@@ -3,8 +3,6 @@
 namespace HedgeBot\Core\Security;
 
 use HedgeBot\Core\Data\Provider as DataProvider;
-use HedgeBot\Core\Security\SecurityRole;
-use InvalidArgumentException;
 use HedgeBot\Core\API\Security;
 
 /**
@@ -164,7 +162,7 @@ class AccessControlManager
      *
      * @param  string $user The user to assign a role to. If it doesn't exist in the database, it will be created.
      * @param  string $roleId The role ID to assign.
-     * @return boolean         True if the role has been assigned successfully, false if not (the role hasn't been found).
+     * @return boolean True if the role has been assigned successfully, false if not (the role hasn't been found).
      */
     public function assignRole($user, $roleId)
     {
@@ -184,6 +182,11 @@ class AccessControlManager
         return true;
     }
 
+    /**
+     * @param $user
+     * @param $roleId
+     * @return bool
+     */
     public function revokeRole($user, $roleId)
     {
         if (isset($this->userList[$user])) {
@@ -200,6 +203,10 @@ class AccessControlManager
         return true;
     }
 
+    /**
+     * @param $user
+     * @return bool
+     */
     public function revokeAllRoles($user)
     {
         if (isset($this->userList[$user])) {
@@ -213,7 +220,8 @@ class AccessControlManager
      * Replaces users by the new ones.
      *
      * @param string $roleId The role ID.
-     * @param array $users The new users.
+     * @param array $newUsers The new users.
+     * @return bool
      */
     public function replaceUsers($roleId, $newUsers)
     {
@@ -268,7 +276,7 @@ class AccessControlManager
     /**
      * Adds a right to the right list.
      *
-     * @param string $rightNames The name of the right to add. Variadic.
+     * @param mixed ...$rightNames The name of the right to add. Variadic.
      */
     public function addRights(...$rightNames)
     {
@@ -284,7 +292,7 @@ class AccessControlManager
     /**
      * Removes a right from the right list.
      *
-     * @param string $rightName The name of the right to remove.
+     * @param mixed ...$rightNames The name of the right to remove
      */
     public function removeRights(...$rightNames)
     {
@@ -307,7 +315,8 @@ class AccessControlManager
     }
 
     /**
-     * Check if the 2 given roles are in a relation one to each other (one is already in the parent/children chain to another).
+     * Check if the 2 given roles are in a relation one to each other
+     * (one is already in the parent/children chain to another).
      *
      * @param SecurityRole $role1 The first role.
      * @param SecurityRole $role2 The second role.
@@ -351,7 +360,8 @@ class AccessControlManager
             $branch = [];
 
             foreach ($this->roleList as $role) {
-                if ($base === $role->getParent() || !is_null($role->getParent()) && $role->getParent()->getId() == $base) {
+                if ($base === $role->getParent()
+                    || !is_null($role->getParent()) && $role->getParent()->getId() == $base) {
                     $branch[] = [
                         'role' => $role,
                         'children' => $fillBranchFunc($role->getId())
@@ -407,6 +417,10 @@ class AccessControlManager
         return $this->roleList;
     }
 
+    /**
+     * @param $roleId
+     * @return array
+     */
     public function getRoleUsers($roleId)
     {
         $users = [];

@@ -7,24 +7,46 @@ use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Security\AccessControlManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use RuntimeException;
 use HedgeBot\Core\Console\StorageAwareCommand;
 
+/**
+ * Class RevokeRoleCommand
+ * @package HedgeBot\Core\Console\Security
+ */
 class RevokeRoleCommand extends StorageAwareCommand
 {
+    /**
+     *
+     */
     public function configure()
     {
         $this->setName('security:role-revoke')
             ->setDescription('Revokes a role from an user.')
-            ->addArgument('username', InputArgument::REQUIRED,
-                'The nickname of the user that will have this role assigned.')
-            ->addArgument('roleId', InputArgument::OPTIONAL,
-                'The role ID to assign. Required if not using the --all modifier')
-            ->addOption('all', 'a', InputOption::VALUE_NONE, 'Add this option to revoke all roles from the user');
+            ->addArgument(
+                'username',
+                InputArgument::REQUIRED,
+                'The nickname of the user that will have this role assigned.'
+            )
+            ->addArgument(
+                'roleId',
+                InputArgument::OPTIONAL,
+                'The role ID to assign. Required if not using the --all modifier'
+            )
+            ->addOption(
+                'all',
+                'a',
+                InputOption::VALUE_NONE,
+                'Add this option to revoke all roles from the user'
+            );
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $roleId = $input->getArgument('roleId');

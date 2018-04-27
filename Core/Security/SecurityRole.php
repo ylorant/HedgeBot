@@ -2,15 +2,17 @@
 
 namespace HedgeBot\Core\Security;
 
-use HedgeBot\Core\Security\SecurityRole;
 use HedgeBot\Core\API\Security;
 use InvalidArgumentException;
 
 /**
+ * Class SecurityRole
  * Security Role container. Holds all the data related to a role in the security system.
  * A single parent/child inheritance system is available for the roles, meaning that a role can derive
  * from another role. In that case, all the rights from the parent role will be derived to the child role.
  * Then, the child role will be able to override rights.
+ *
+ * @package HedgeBot\Core\Security
  */
 class SecurityRole
 {
@@ -120,6 +122,7 @@ class SecurityRole
 
     /**
      * Sets the default nature of the role.
+     *
      * @param bool $default True if the role is a default role, false if not.
      */
     public function setDefault($default)
@@ -127,6 +130,9 @@ class SecurityRole
         $this->default = (bool)$default;
     }
 
+    /**
+     * @return array
+     */
     public function getRights()
     {
         return $this->rights;
@@ -134,6 +140,8 @@ class SecurityRole
 
     /**
      * Gets the inherited rights of this role.
+     *
+     * @return array
      */
     public function getInheritedRights()
     {

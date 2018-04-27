@@ -6,6 +6,10 @@ use HedgeBot\Core\Service\Horaro\Horaro;
 use DateTime;
 use DateInterval;
 
+/**
+ * Class Schedule
+ * @package HedgeBot\Plugins\Horaro\Entity
+ */
 class Schedule
 {
     /** @var string The event ID. Can be null. */
@@ -26,9 +30,15 @@ class Schedule
     protected $started;
     /** @var string The template for the channel title while this schedule is running */
     protected $titleTemplate;
-    /** @var string The template for the channel game while this schedule is running. Usually it's the column var for the game name. */
+    /**
+     * @var string The template for the channel game while this schedule is running.
+     * Usually it's the column var for the game name.
+     */
     protected $gameTemplate;
-    /** @var string The template for the announce for the next item. It'll be used only if you enable the announce feature in the config. */
+    /**
+     * @var string The template for the announce for the next item.
+     * It'll be used only if you enable the announce feature in the config.
+     */
     protected $announceTemplate;
     /** @var bool Wether the next item has been already announced in the chat or not. */
     protected $nextItemAnnounced;
@@ -48,6 +58,11 @@ class Schedule
         "nextItemAnnounced"
     ];
 
+    /**
+     * Schedule constructor.
+     * @param null $scheduleId
+     * @param null $eventId
+     */
     public function __construct($scheduleId = null, $eventId = null)
     {
         $this->scheduleId = $scheduleId;
@@ -169,9 +184,9 @@ class Schedule
     }
 
     /**
-     * Gets the channels where the schedule is active.
+     * Gets the channel where the schedule is active.
      *
-     * @return array The list of channels where the schedule is active.
+     * @return string
      */
     public function getChannel()
     {
@@ -181,7 +196,7 @@ class Schedule
     /**
      * Sets the channels where the schedule is active.
      *
-     * @param string $channels The new channels.
+     * @param string $channel
      */
     public function setChannel($channel)
     {
@@ -348,6 +363,7 @@ class Schedule
      * Gets the end time of the schedule. Basically the end time is the start time of the last item + its length.
      *
      * @return DateTime The end time of the schedule.
+     * @throws \Exception
      */
     public function getEndTime()
     {
@@ -407,6 +423,7 @@ class Schedule
      *
      * @param bool $normalizeSpaces Set to true to replace the spaces in the column names by an underscore,
      *                              to allow them to be used as variable names, for example.
+     * @return array
      */
     public function getColumns($normalizeSpaces = false)
     {

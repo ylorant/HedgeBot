@@ -7,6 +7,7 @@ use HedgeBot\Core\Store\Formatter\TextFormatter;
 
 
 /**
+ * Class Store
  * The Store is a way to share internal live data between plugins and more generally different parts of the bot.
  * Each part that does want to share data have to register a class implementing the StoreSource interface,
  * using the Store::registerSource() method. Then, classes who want it can access the store data using the
@@ -23,6 +24,8 @@ use HedgeBot\Core\Store\Formatter\TextFormatter;
  *
  * Also, there are some wrapper classes that can do additional work over that, for example the StoreTextFormatter,
  * which can parse a template string and inject data in it.
+ *
+ * @package HedgeBot\Core\Store
  */
 class Store
 {
@@ -45,7 +48,7 @@ class Store
     /**
      * Registers a store source.
      *
-     * @param StoreSource $source The source to register.
+     * @param StoreSourceInterface $source The source to register.
      * @return bool True if the source has been successfully registered, false if not.
      */
     public function registerSource(StoreSourceInterface $source)
@@ -58,6 +61,10 @@ class Store
         return true;
     }
 
+    /**
+     * @param StoreSourceInterface $source
+     * @return bool
+     */
     public function unregisterSource(StoreSourceInterface $source)
     {
         if (!in_array($source, $this->sources)) {
@@ -75,7 +82,6 @@ class Store
      * Registers a formatter.
      *
      * @param FormatterInterface $formatter The formatter.
-     *
      * @return bool True if the formatter has been registered correctly, false if not.
      */
     public function registerFormatter(FormatterInterface $formatter)

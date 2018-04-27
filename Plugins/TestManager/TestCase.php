@@ -5,6 +5,10 @@ namespace HedgeBot\Plugins\TestManager;
 use ReflectionMethod;
 use HedgeBot\Core\API\IRC;
 
+/**
+ * Class TestCase
+ * @package HedgeBot\Plugins\TestManager
+ */
 class TestCase
 {
     private $steps = [];
@@ -26,15 +30,20 @@ class TestCase
     const STATUS_FAILED = 3;
     const STATUS_SUCCESS = 4;
 
+    /**
+     * TestCase constructor.
+     * @param TestManager $manager
+     */
     public function __construct(TestManager $manager)
     {
         $this->manager = $manager;
     }
 
-    /** Initializes the test case.
+    /**
+     * Initializes the test case.
      * This method initializes the test case, giving it the reflection method for it to get various info.
      *
-     * \param $method The ReflectionMethod instance needed to get info for the test case.
+     * @param ReflectionMethod $method ReflectionMethod instance needed to get info for the test case.
      */
     public function init(ReflectionMethod $method)
     {
@@ -43,6 +52,10 @@ class TestCase
         $this->lastActionTime = time();
     }
 
+    /**
+     * @param $stepName
+     * @param $parameters
+     */
     public function addStep($stepName, $parameters)
     {
         if (in_array($stepName, self::ALLOWED_STEPS)) {
@@ -56,7 +69,7 @@ class TestCase
     /**
      * Pushes a message from the tested bot on the stack.
      *
-     * \param $message The message to push.
+     * @param $message The message to push.
      */
     public function pushMessage($message)
     {
@@ -68,6 +81,9 @@ class TestCase
         }
     }
 
+    /**
+     *
+     */
     public function executeStep()
     {
         if (!empty($this->steps[$this->currentStep])) {
@@ -88,12 +104,12 @@ class TestCase
                 case 'getReply':
                     $this->status = self::STATUS_WAITREPLY;
 
-                    if ($this->lastActionTime + 15 <= time()) // Handle timeout for message wait
-                    {
+                    // Handle timeout for message wait
+                    if ($this->lastActionTime + 15 <= time()) {
                         $this->status = self::STATUS_FAILED;
                     } else {
-                        if (!empty($this->messageStack)) // We received a message ?
-                        {
+                        // We received a message ?
+                        if (!empty($this->messageStack)) {
                             $this->status = self::STATUS_IDLE;
                         }
                     }
@@ -143,10 +159,9 @@ class TestCase
     /**
      * Implements various test method calls.
      *
-     * \param $name The function that is called.
-     * \param $args Array of arguments passed to said function.
-     *
-     * \return self, to allow chaining.
+     * @param $name The function that is called.
+     * @param $args Array of arguments passed to said function.
+     * @return $this self, to allow chaining.
      */
     public function __call($name, $args)
     {

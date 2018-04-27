@@ -64,6 +64,7 @@ class HedgeBot
      * TODO: Instead of initializing services like that, why not do a service container of some sorts ?
      *
      * @return bool True if the bot initialized correctly, false if not.
+     * @throws \ReflectionException
      */
     public function init()
     {
@@ -178,7 +179,7 @@ class HedgeBot
         $this->plugins->loadPlugins($pluginList);
 
         // Loading core events handler
-        $coreEvents = new CoreEvents($this->plugins, $this);
+        $coreEvents = new CoreEvents();
 
         $servers = $this->config->get('servers');
 
@@ -462,6 +463,7 @@ class HedgeBot
      * @param $target
      * @param $parameters
      * @return bool
+     * @throws \ReflectionException
      */
     public function loadStorage(&$target, $parameters)
     {

@@ -12,6 +12,10 @@ use InvalidArgumentException;
 use RuntimeException;
 use HedgeBot\Core\Console\StorageAwareCommand;
 
+/**
+ * Class CreateRoleCommand
+ * @package HedgeBot\Core\Console\Security
+ */
 class CreateRoleCommand extends StorageAwareCommand
 {
     public function configure()
@@ -25,6 +29,11 @@ class CreateRoleCommand extends StorageAwareCommand
             ->addArgument('roleName', InputArgument::REQUIRED, 'The name of the role');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $roleName = $input->getArgument('roleName');

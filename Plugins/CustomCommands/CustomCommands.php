@@ -2,7 +2,6 @@
 
 namespace HedgeBot\Plugins\CustomCommands;
 
-use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\Events\ServerEvent;

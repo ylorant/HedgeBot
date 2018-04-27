@@ -6,11 +6,13 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Security\AccessControlManager;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
-use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use HedgeBot\Core\Console\StorageAwareCommand;
 
+/**
+ * Class UnsetRightCommand
+ * @package HedgeBot\Core\Console\Security
+ */
 class UnsetRightCommand extends StorageAwareCommand
 {
     public function configure()
@@ -21,6 +23,11 @@ class UnsetRightCommand extends StorageAwareCommand
             ->addArgument('rightName', InputArgument::REQUIRED, 'The right to unset.');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $roleId = $input->getArgument('roleId');

@@ -5,27 +5,41 @@ namespace HedgeBot\Plugins\Horaro\Console;
 use HedgeBot\Core\Console\StorageAwareCommand;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use HedgeBot\Plugins\Horaro\Horaro;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Exception\RuntimeException;
 use HedgeBot\Plugins\Horaro\Entity\Schedule;
 
+/**
+ * Class SetSchedulePropertyCommand
+ * @package HedgeBot\Plugins\Horaro\Console
+ */
 class SetSchedulePropertyCommand extends StorageAwareCommand
 {
     use PluginAwareTrait;
 
+    /**
+     *
+     */
     public function configure()
     {
         $this->setName('horaro:set-schedule-property')
             ->setDescription('Sets a schedule property. Available properties: ' . join(', ', Schedule::EXPORTED_KEYS))
-            ->addArgument('identSlug', InputArgument::REQUIRED,
-                'The schedule ident slug given by the load-schedule command.')
+            ->addArgument(
+                'identSlug',
+                InputArgument::REQUIRED,
+                'The schedule ident slug given by the load-schedule command.'
+            )
             ->addArgument('property', InputArgument::REQUIRED, 'The property to set the value of.')
             ->addArgument('value', InputArgument::REQUIRED, 'The new property value. JSON can be used for arrays.');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $identSlug = $input->getArgument('identSlug');

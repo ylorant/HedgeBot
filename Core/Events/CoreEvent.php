@@ -2,6 +2,10 @@
 
 namespace HedgeBot\Core\Events;
 
+/**
+ * Class CoreEvent
+ * @package HedgeBot\Core\Events
+ */
 class CoreEvent extends Event
 {
     /**
@@ -20,6 +24,9 @@ class CoreEvent extends Event
         }
     }
 
+    /**
+     * @return string
+     */
     public static function getType()
     {
         return 'core';

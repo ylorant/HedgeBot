@@ -28,27 +28,31 @@ namespace HedgeBot\Core\Events;
 
 use HedgeBot\Core\HedgeBot;
 use ReflectionClass;
-use HedgeBot\Core\API\Security;
 
 /**
- * \brief EventManager class for Hedgebot.
+ * Class EventManager
+ * @package HedgeBot\Core\Events
  *
- * \warning For server events and commands, the manager will only handle 1 callback by event at a time. It is done for simplicity purposes, both at plugin's side
- * and at manager's side (I've noticed that it is not necessary to have multiple callbacks for an unique event, unless you can think about getting your code clear)
+ * @warning For server events and commands, the manager will only handle 1 callback by event at a time.
+ * It is done for simplicity purposes, both at plugin's side
+ * and at manager's side (I've noticed that it is not necessary to have multiple callbacks for an unique event,
+ * unless you can think about getting your code clear)
  */
 class EventManager
 {
     protected $events = []; ///< Events storage
     protected $autoMethods = []; ///< Method prefixes for automatic event recognition
 
-    /** Adds a custom event listener, with its auto-binding method prefix.
-     * This function adds a new event listener to the event system. It allows a plugin to create his own space of events, which it cans trigger after, allowing better
+    /**
+     * Adds a custom event listener, with its auto-binding method prefix.
+     * This function adds a new event listener to the event system.
+     * It allows a plugin to create his own space of events, which it cans trigger after, allowing better
      * and easier interaction between plugins.
      *
-     * \param $name The name the listener will get.
-     * \param $autoMethodPrefix The prefix there will be used by other plugins for automatic method binding.
+     * @param string $name The name the listener will get.
+     * @param $autoMethodPrefix The prefix there will be used by other plugins for automatic method binding.
      *
-     * \return TRUE if the listener was correctly created, FALSE otherwise.
+     * @return bool TRUE if the listener was correctly created, FALSE otherwise.
      */
     public function addEventListener($name, $autoMethodPrefix)
     {
@@ -63,12 +67,14 @@ class EventManager
         return true;
     }
 
-    /** Deletes an event listener.
-     * This functions deletes an event listener from the event system. The underlying events for this listener will be deleted as well.
+    /**
+     * Deletes an event listener.
+     * This functions deletes an event listener from the event system.
+     * The underlying events for this listener will be deleted as well.
      *
-     * \param $name The listener's name
+     * @param string $name The listener's name
      *
-     * \return TRUE if the listener has been deleted succesfully, FALSE otherwise.
+     * @return bool TRUE if the listener has been deleted succesfully, FALSE otherwise.
      */
     public function deleteEventListener($name)
     {
@@ -82,16 +88,18 @@ class EventManager
         return true;
     }
 
-    /** Adds an event to an event listener.
-     * This function adds an event to an anlready defined event listener. The callback linked to the event will be later distinguished of the others by an identifier
+    /**
+     * Adds an event to an event listener.
+     * This function adds an event to an anlready defined event listener.
+     * The callback linked to the event will be later distinguished of the others by an identifier
      * which must be unique in the same event.
      *
-     * \param $listener The listener in which the event will be added. Must be defined when adding the event.
-     * \param $id The callback identifier. Must be unique in the same event, can be duplicated across events.
-     * \param $event The event to which the callback will be linked.
-     * \param $callback The callback that will be called when the event is triggered.
+     * @param $listener The listener in which the event will be added. Must be defined when adding the event.
+     * @param $id The callback identifier. Must be unique in the same event, can be duplicated across events.
+     * @param $event The event to which the callback will be linked.
+     * @param $callback The callback that will be called when the event is triggered.
      *
-     * \return TRUE if the event added correctly, FALSE otherwise.
+     * @return bool TRUE if the event added correctly, FALSE otherwise.
      */
     public function addEvent($listener, $id, $event, $callback)
     {
@@ -112,8 +120,8 @@ class EventManager
             return false;
         }
 
-        if (!method_exists($callback[0], $callback[1])) //Check if method exists
-        {
+        //Check if method exists
+        if (!method_exists($callback[0], $callback[1])) {
             HedgeBot::message('Error : Target method does not exists.', [], E_DEBUG);
             return false;
         }
@@ -123,14 +131,16 @@ class EventManager
         return true;
     }
 
-    /** Deletes an event from the event listener.
-     * This function deletes an already defined callback (bound to an event) from the event listener, so it will not be called by event triggering again.
+    /**
+     * Deletes an event from the event listener.
+     * This function deletes an already defined callback (bound to an event) from the event listener,
+     * so it will not be called by event triggering again.
      *
-     * \param $listener The event listener from which the callback will be deleted.
-     * \param $event The event name (from which the callback is triggered).
-     * \param $id The callback's ID.
+     * @param string $listener The event listener from which the callback will be deleted.
+     * @param string $event The event name (from which the callback is triggered).
+     * @param $id The callback's ID.
      *
-     * \return TRUE if the event deleted correctly, FALSE otherwise.
+     * @return bool TRUE if the event deleted correctly, FALSE otherwise.
      */
     public function deleteEvent($listener, $event, $id)
     {
@@ -154,25 +164,23 @@ class EventManager
         return true;
     }
 
-    /** Returns the list of defined events on a listener.
+    /**
+     * Returns the list of defined events on a listener.
      * This function returns all the events defined for an event listener.
      *
-     * \param $listener The listener where we'll get the events.
-     *
-     * \return The list of the events from the listener.
+     * @param $listener The listener where we'll get the events.
+     * @return array The list of the events from the listener.
      */
     public function getEvents($listener)
     {
         return array_keys($this->events[$listener]);
     }
 
-    /** Calls an event for an event listener.
-     * This
+    /**
+     * Calls an event for an event listener.
      *
-     * \param $listener The listener from which the event will be called.
-     * \param $event The event to call.
-     *
-     * \return TRUE if event has been called correctly, FALSE otherwise.
+     * @param Event $event The event to call.
+     * @return bool TRUE if event has been called correctly, FALSE otherwise.
      */
     public function callEvent(Event $event)
     {
@@ -201,13 +209,14 @@ class EventManager
         return true;
     }
 
-    /** Tries to automatically register events.
+    /**
+     * Tries to automatically register events.
      * This methods tries to register events automatically depending on their methods names, using a defined
      * prefix common for the event listener (defined when the listener was created).
      *
-     * @param object $object The object to load events from.
-     *
+     * @param $object The object to load events from.
      * @return array The list of bound events.
+     * @throws \ReflectionException
      */
     public function autoload($object)
     {
@@ -237,11 +246,13 @@ class EventManager
         return $addedEvents;
     }
 
-    /** Gets events by their callee ID.
+    /**
+     * Gets events by their callee ID.
      * This method gets all events with a given callee function ID, regardless of its
      * listener.
      *
      * @param string $id The id to search.
+     * @return array
      */
     public function getEventsById($id)
     {

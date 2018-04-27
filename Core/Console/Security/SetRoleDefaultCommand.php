@@ -7,26 +7,41 @@ use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Security\AccessControlManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use HedgeBot\Core\Security\SecurityRole;
-use InvalidArgumentException;
 use RuntimeException;
 use HedgeBot\Core\Console\StorageAwareCommand;
 
+/**
+ * Class SetRoleDefaultCommand
+ * @package HedgeBot\Core\Console\Security
+ */
 class SetRoleDefaultCommand extends StorageAwareCommand
 {
+    /**
+     *
+     */
     public function configure()
     {
         $this->setName('security:role-set-default')
             ->setDescription('Sets the default status of a role.')
             ->addArgument('roleId', InputArgument::REQUIRED, 'The role ID to delete.')
-            ->addOption('disable', 'd', InputOption::VALUE_NONE,
-                'Set this option to disable the default status of the role.');
+            ->addOption(
+                'disable',
+                'd',
+                InputOption::VALUE_NONE,
+                'Set this option to disable the default status of the role.'
+            );
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $roleId = $input->getArgument('roleId');
-        $default = !$input->getOption('disable'); // The default status is basically the opposite of the presence of the disabled option
+        // The default status is basically the opposite of the presence of the disabled option
+        $default = !$input->getOption('disable');
 
         $accessControlManager = new AccessControlManager($this->getDataStorage());
         $role = $accessControlManager->getRole($roleId);

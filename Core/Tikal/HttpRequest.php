@@ -2,6 +2,10 @@
 
 namespace HedgeBot\Core\Tikal;
 
+/**
+ * Class HttpRequest
+ * @package HedgeBot\Core\Tikal
+ */
 class HttpRequest
 {
     private $clientId;
@@ -20,6 +24,11 @@ class HttpRequest
     private $raw;
     private $rawData;
 
+    /**
+     * HttpRequest constructor.
+     * @param $clientId
+     * @param null $data
+     */
     public function __construct($clientId, $data = null)
     {
         $this->clientId = $clientId;
@@ -43,6 +52,9 @@ class HttpRequest
         return null;
     }
 
+    /**
+     * @param $url
+     */
     public function setRequestURI($url)
     {
         $this->requestURI = $url;
@@ -69,6 +81,7 @@ class HttpRequest
             switch ($row[0]) {
                 case 'POST':
                     $this->rawData = $this->data = $query[1];
+                    break;
                 case 'GET': //It's a GET request (main parameter)
                     $this->method = $row[0];
                     $uri = explode(' ', $row[1]);

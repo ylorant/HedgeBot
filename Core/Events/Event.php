@@ -19,7 +19,6 @@ abstract class Event
      * Builds an event.
      *
      * @constructor
-     * @param       string $type The event type (listener).
      * @param       string $name The name of the event.
      */
     public function __construct($name)
@@ -55,8 +54,9 @@ abstract class Event
 
     /**
      * Normalizes an event name. For now, it only returns it in full lower case.
-     * \param  string  $name The event name to normalize
-     * \return string        The normalized event name.
+     *
+     * @param  string  $name The event name to normalize
+     * @return string        The normalized event name.
      */
     final public static function normalize($name)
     {

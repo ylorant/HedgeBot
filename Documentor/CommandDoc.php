@@ -16,6 +16,10 @@ class CommandDoc
     private $name;
     private $prototype;
 
+    /**
+     * CommandDoc constructor.
+     * @param ReflectionMethod $reflection
+     */
     public function __construct(ReflectionMethod $reflection)
     {
         $this->reflectionMethod = $reflection;

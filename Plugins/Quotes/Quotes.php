@@ -2,7 +2,6 @@
 
 namespace HedgeBot\Plugins\Quotes;
 
-use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\Events\CommandEvent;

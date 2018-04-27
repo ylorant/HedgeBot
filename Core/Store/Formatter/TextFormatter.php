@@ -8,7 +8,8 @@ use HedgeBot\Core\Store\Store;
 /**
  * Store text formatter.
  *
- * This class helps format text according to store data. It will replace tokens that are in the form of $path.to.var.in.store
+ * This class helps format text according to store data.
+ * It will replace tokens that are in the form of $path.to.var.in.store
  * by the subsequent value of the token. See doc for the format() method for more info.
  */
 class TextFormatter implements FormatterInterface
@@ -37,8 +38,10 @@ class TextFormatter implements FormatterInterface
     }
 
     /**
-     * Formats a text with available store data. To insert a token (variable) that will be replaced by store data, prefix its path in the
-     * store by the dollar "$" character. To traverse arrays, just use the dot "." character. To escape a text that could be
+     * Formats a text with available store data.
+     * To insert a token (variable) that will be replaced by store data, prefix its path in the
+     * store by the dollar "$" character. To traverse arrays, just use the dot "." character.
+     * To escape a text that could be
      * interpreted as a token, just prefix it with a backslash "\".
      *
      * Some token examples:
@@ -47,12 +50,15 @@ class TextFormatter implements FormatterInterface
      * - Escaped text: \$notParsed
      *
      * @param string $text The text to format.
-     * @param string $channel The channel to which restrict/specialize the dataset. This will probably affect wether the tokens will be able
+     * @param string $channel The channel to which restrict/specialize the dataset.
+     *                        This will probably affect wether the tokens will be able
      *                        to be replaced or not.
-     * @param string $root Set a root for token path walking. Useful to restrict tokens to a specific item, or to allow having shorter tokens
+     * @param string $root Set a root for token path walking.
+     *                     Useful to restrict tokens to a specific item, or to allow having shorter tokens
      *                     without redundant path parts.
      *
-     * @return string The formatted text. Tokens that haven't been found (or strictly equal to null) in the store will not be replaced.
+     * @return string The formatted text.
+     *                Tokens that haven't been found (or strictly equal to null) in the store will not be replaced.
      */
     public function format($text, $channel = null, $root = "")
     {

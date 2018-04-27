@@ -6,9 +6,12 @@ use HedgeBot\Plugins\TestManager\TestCase;
 use HedgeBot\Core\Traits\PropertyConfigMapping;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Server;
-use HedgeBot\Core\HedgeBot;
 use stdClass;
 
+/**
+ * Class CurrencyTest
+ * @package HedgeBot\Plugins\Currency
+ */
 class CurrencyTest
 {
     use PropertyConfigMapping;
@@ -17,6 +20,9 @@ class CurrencyTest
     private $channelConfig;
     private $testManager;
 
+    /**
+     * CurrencyTest constructor.
+     */
     public function __construct()
     {
         $this->testManager = Plugin::getManager()->getPlugin('TestManager');
@@ -26,6 +32,9 @@ class CurrencyTest
         $this->channelConfig = $this->getChannelConfig();
     }
 
+    /**
+     * @param TestCase $test
+     */
     public function testCurrencyGive(TestCase $test)
     {
         $testData = new stdClass();
@@ -58,6 +67,9 @@ class CurrencyTest
         );
     }
 
+    /**
+     * @param TestCase $test
+     */
     public function testCurrencyTake(TestCase $test)
     {
         $testData = new stdClass();
@@ -88,6 +100,9 @@ class CurrencyTest
             );
     }
 
+    /**
+     * @return stdClass
+     */
     private function getChannelConfig()
     {
         $currentChannel = $this->testManager->getChannel();
@@ -96,8 +111,8 @@ class CurrencyTest
         // Getting settings from the configuration
         $config->statusCommand = '!' . $this->getParameterFromData($this->pluginConfig, $currentChannel,
                 'statusCommand', Currency::DEFAULT_STATUS_COMMAND);
-        $config->currencyName = $this->getParameterFromData($this->pluginConfig, $currentChannel, 'currencyName',
-            Currency::DEFAULT_CURRENCY_NAME);
+        $config->currencyName = $this->getParameterFromData($this->pluginConfig, $currentChannel,
+            'currencyName', Currency::DEFAULT_CURRENCY_NAME);
         $config->currencyNamePlural = $this->getParameterFromData($this->pluginConfig, $currentChannel,
             'currencyNamePlural', Currency::DEFAULT_CURRENCY_NAME_PLURAL);
         $msgRegexp = $this->getParameterFromData($this->pluginConfig, $currentChannel, 'statusMessage',

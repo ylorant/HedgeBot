@@ -2,13 +2,20 @@
 
 namespace HedgeBot\Plugins\CustomCommands;
 
+/**
+ * Class CustomCommandsEndpoint
+ * @package HedgeBot\Plugins\CustomCommands
+ */
 class CustomCommandsEndpoint
 {
     /** The plugin reference */
     protected $plugin;
 
     /**
-     * Constructor. Initializes the endpoint with the plugin to use as data source.
+     * CustomCommandsEndpoint constructor.
+     * Initializes the endpoint with the plugin to use as data source.
+     *
+     * @param CustomCommands $plugin
      */
     public function __construct(CustomCommands $plugin)
     {
@@ -27,8 +34,10 @@ class CustomCommandsEndpoint
 
     /**
      * Gets a command by its name.
-     *
      * @see CustomCommands::getCommand()
+     *
+     * @param $commandName
+     * @return array|null
      */
     public function getCommand($commandName)
     {
@@ -37,8 +46,10 @@ class CustomCommandsEndpoint
 
     /**
      * Removes a custom command.
-     *
      * @see CustomCommands::removeCommand()
+     *
+     * @param $commandName
+     * @return bool
      */
     public function removeCommand($commandName)
     {
@@ -46,9 +57,13 @@ class CustomCommandsEndpoint
     }
 
     /**
-     * Updates a command. Using this method, the command can change its name, but subsequent calls will have to use the new name.
-     *
+     * Updates a command.
+     * Using this method, the command can change its name, but subsequent calls will have to use the new name.
      * @see CustomCommands::updateCommand()
+     *
+     * @param $commandName
+     * @param $commandData
+     * @return bool
      */
     public function saveCommand($commandName, $commandData)
     {

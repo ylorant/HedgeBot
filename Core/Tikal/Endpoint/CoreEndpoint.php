@@ -4,6 +4,10 @@ namespace HedgeBot\Core\Tikal\Endpoint;
 
 use HedgeBot\Core\API\ServerList;
 
+/**
+ * Class CoreEndpoint
+ * @package HedgeBot\Core\Tikal\Endpoint
+ */
 class CoreEndpoint
 {
     /**

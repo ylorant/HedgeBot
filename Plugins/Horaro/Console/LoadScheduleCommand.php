@@ -10,10 +10,17 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Exception\RuntimeException;
 
+/**
+ * Class LoadScheduleCommand
+ * @package HedgeBot\Plugins\Horaro\Console
+ */
 class LoadScheduleCommand extends StorageAwareCommand
 {
     use PluginAwareTrait;
 
+    /**
+     *
+     */
     public function configure()
     {
         $this->setName('horaro:load-schedule')
@@ -23,6 +30,11 @@ class LoadScheduleCommand extends StorageAwareCommand
             ->addArgument('schedule', InputArgument::REQUIRED, 'The schedule slug or URL.');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $eventId = $input->getOption('event');

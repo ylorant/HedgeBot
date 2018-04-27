@@ -5,6 +5,10 @@ namespace HedgeBot\Plugins\CustomCommands;
 use HedgeBot\Plugins\TestManager\TestCase;
 use stdClass;
 
+/**
+ * Class CustomCommandsTest
+ * @package HedgeBot\Plugins\CustomCommands
+ */
 class CustomCommandsTest
 {
     private $testData;
@@ -12,6 +16,9 @@ class CustomCommandsTest
     const COMMAND_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
     const MESSAGE_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789 -_*$%,;:!/.?&\"'()[]{}=~#|";
 
+    /**
+     * CustomCommandsTest constructor.
+     */
     public function __construct()
     {
         $this->testData = new stdClass();
@@ -32,6 +39,9 @@ class CustomCommandsTest
         $this->testData->randomMessage = $randomMessage;
     }
 
+    /**
+     * @param TestCase $test
+     */
     public function testCreateCommand(TestCase $test)
     {
         $test->send('!addcommand ' . $this->testData->randomCommand . ' ' . $this->testData->randomMessage)
@@ -42,7 +52,12 @@ class CustomCommandsTest
             ->match('#' . preg_quote($this->testData->randomMessage, "#") . '#');
     }
 
-    // Will always succeed, check visually
+    /**
+     *
+     * NB : Will always succeed, check visually
+     *
+     * @param TestCase $test
+     */
     public function testRemoveCommand(TestCase $test)
     {
         $test->send('!rmcommand ' . $this->testData->randomCommand)

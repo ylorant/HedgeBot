@@ -2,14 +2,16 @@
 
 namespace HedgeBot\Plugins\BlackJack;
 
-use HedgeBot\Core\HedgeBot;
 use stdClass;
 
+/**
+ * Class Game
+ * @package HedgeBot\Plugins\BlackJack
+ */
 class Game
 {
     private $channel; // Channel on which the game is occuring
     private $players; // Players objects list
-    private $lastActionTime; // Last action time, used for timeouts
     private $plugin; // Reference to the main object ot read config and things.
     private $deck; // Deck of cards that haven't been drawn.
     private $discard; // Discard stack
@@ -35,10 +37,11 @@ class Game
     const PLAYER_BLACKJACK = 3;
 
     /**
-     * Constructor. Initializes a game.
+     * Game constructor.
+     * Initializes a game.
      *
-     * \param $channel The channel the game is on.
-     * \param $plugin Reference to the main Blackjack plugin object.
+     * @param $channel The channel the game is on.
+     * @param $plugin Reference to the main Blackjack plugin object.
      */
     public function __construct($channel, $plugin)
     {
@@ -47,6 +50,9 @@ class Game
         $this->state = self::STATE_IDLE;
     }
 
+    /**
+     * @return string
+     */
     public function __toString()
     {
         $string = "Game state: " . $this->channel . " (" . $this->state . ")\n";
@@ -102,9 +108,9 @@ class Game
     /**
      * Makes a player join the game.
      *
-     * \param $playerName The name of the player who is joining.
-     * \param $bet The amount of the bet.
-     * \return True if the player has successfully joined, false otherwise (if the player has already joined).
+     * @param string $playerName The name of the player who is joining.
+     * @param int $bet The amount of the bet.
+     * @return bool True if the player has successfully joined, false otherwise (if the player has already joined).
      */
     public function joinGame($playerName, $bet)
     {
@@ -125,8 +131,8 @@ class Game
     /**
      * Starts the game. At least one player has to be entered to play.
      *
-     * \return If there is an error it will return False. If it has been correctly started, it will return an array containing
-     *           the players.
+     * @return bool If there is an error it will return False.
+     *              If it has been correctly started, it will return an array containing the players.
      */
     public function startGame()
     {
@@ -147,15 +153,14 @@ class Game
     /**
      * Draws cards for a player.
      *
-     * \param $player The player to draw cards to.
-     * \param $count How many cards to draw. Defaults to only 1 card.
-     *
-     * \return True in case of success, or false otherwise (the player isn't playing anymore).
+     * @param string  $player The player to draw cards to.
+     * @param int $count How many cards to draw. Defaults to only 1 card.
+     * @return bool True in case of success, or false otherwise (the player isn't playing anymore).
      */
     public function draw($player, $count = 1)
     {
-        if (empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) // Is the player still in the game ?
-        {
+        // Is the player still in the game ?
+        if (empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) {
             return false;
         }
 
@@ -185,6 +190,10 @@ class Game
         return true;
     }
 
+    /**
+     * @param $player
+     * @return bool
+     */
     public function stay($player)
     {
         if (empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) // Is the player still in the game ?
@@ -198,8 +207,9 @@ class Game
 
     /**
      * Draws cards for the house's hand.
-     * \param $count The number of cards to draw. Defaults to one card.
-     * \return True.
+     *
+     * @param int $count The number of cards to draw. Defaults to one card.
+     * @return bool
      */
     public function drawHouse($count = 1)
     {
@@ -282,6 +292,9 @@ class Game
 
     /**
      * Just the code computing the hand value.
+     *
+     * @param $cardList
+     * @return int|mixed
      */
     private function computeHandValue($cardList)
     {
@@ -313,6 +326,9 @@ class Game
 
     /**
      * Reorder cards from lowest value to highest value.
+     *
+     * @param $cardList
+     * @return mixed
      */
     private function reorderCards($cardList)
     {
@@ -353,8 +369,8 @@ class Game
     /**
      * Returns the list of players entered into the game.
      *
-     * \param $active filters out inactive players. Defaults to false.
-     * \return The list of players as an array.
+     * @param bool $active filters out inactive players. Defaults to false.
+     * @return array The list of players
      */
     public function getPlayers($active = false)
     {
@@ -368,8 +384,8 @@ class Game
     /**
      * Returns if a player is playing or not.
      *
-     * \param $player The player's name.
-     * \return True if the player can still play (i.e. draw cards), false otherwise.
+     * @param string $player The player's name.
+     * @return bool True if the player can still play (i.e. draw cards), false otherwise.
      */
     public function isPlaying($player)
     {
@@ -378,8 +394,10 @@ class Game
 
     /**
      * Gets info from a player.
-     * \param $player The player's name.
-     * \return The player data as an stdClass object if found, otherwise it returns false.
+     *
+     * @param string $player The player's name.
+     * @param bool $getHandValue
+     * @return stdClass|bool The player data as an stdClass object if found, otherwise it returns false.
      */
     public function getPlayer($player, $getHandValue = false)
     {
@@ -398,7 +416,8 @@ class Game
     /**
      * Gets the house's object.
      *
-     * \return The house's object as a stdClass object.
+     * @param bool $getHandValue
+     * @return stdClass The house's object as a stdClass object.
      */
     public function getHouse($getHandValue = false)
     {

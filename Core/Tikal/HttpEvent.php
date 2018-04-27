@@ -4,8 +4,17 @@ namespace HedgeBot\Core\Tikal;
 
 use HedgeBot\Core\Events\Event;
 
+/**
+ * Class HttpEvent
+ * @package HedgeBot\Core\Tikal
+ */
 class HttpEvent extends Event
 {
+    /**
+     * HttpEvent constructor.
+     * @param $eventName
+     * @param $data
+     */
     public function __construct($eventName, $data)
     {
         parent::__construct($eventName);
@@ -15,6 +24,9 @@ class HttpEvent extends Event
         }
     }
 
+    /**
+     * @return string
+     */
     public static function getType()
     {
         return 'http';

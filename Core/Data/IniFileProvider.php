@@ -3,8 +3,6 @@
 namespace HedgeBot\Core\Data;
 
 use HedgeBot\Core\HedgeBot;
-use HedgeBot\Core\API\Plugin;
-use HedgeBot\Core\Data\ObjectAccess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -19,14 +17,17 @@ class IniFileProvider extends Provider
 
     const STORAGE_NAME = "ini";
 
-    /** Loads data from INI formatted files into a directory, recursively.
-     * This function loads data from all .ini files in the given folder. It also loads the data found in all its sub-directories.
-     * The files are proceeded as .ini files, but adds a useful feature to them : multi-level sections. Using the '.', users will be able to
-     * define more than one level of data (useful for ordering). It does not parses the UNIX hidden directories.
+    /**
+     * Loads data from INI formatted files into a directory, recursively.
+     * This function loads data from all .ini files in the given folder.
+     * It also loads the data found in all its sub-directories.
+     * The files are proceeded as .ini files, but adds a useful feature to them : multi-level sections.
+     * Using the '.', users will be able to define more than one level of data (useful for ordering).
+     * It does not parses the UNIX hidden directories.
      *
-     * \param $dir The directory to analyze.
-     * \param $reset Wether to reset internal data structure before loading or not. Defaults to true.
-     * \return TRUE if the data loaded successfully, FALSE otherwise.
+     * @param $dir The directory to analyze.
+     * @param bool $reset Wether to reset internal data structure before loading or not. Defaults to true.
+     * @return bool TRUE if the data loaded successfully, FALSE otherwise.
      */
     public function loadData($dir, $reset = true)
     {
@@ -63,11 +64,11 @@ class IniFileProvider extends Provider
         return true;
     }
 
-    /** Loads a file data and returns it.
+    /**
+     * Loads a file data and returns it.
      *
-     * \param $file The file to load data from.
-     *
-     * \return The data that was loaded from the file, or NULL if any couldn't be found.
+     * @param $file The file to load data from.
+     * @return array|bool The data that was loaded from the file, or FALSE if any couldn't be found.
      */
     public function loadFile($file)
     {
@@ -87,14 +88,14 @@ class IniFileProvider extends Provider
         }
     }
 
-    /** Parses an INI-formatted string recursively.
+    /**
+     * Parses an INI-formatted string recursively.
      * This method parses the given string as an INI format, and returns the resulting structured data.
      * It uses sections names to translate the recursivity ability: the path where the section should be is
      * defined using points as a separator.
      *
-     * \param $str The string to parse.
-     *
-     * \return The resulting data array.
+     * @param string $str The string to parse.
+     * @return array The resulting data array.
      */
     public function parseINIStringRecursive($str)
     {
@@ -123,13 +124,15 @@ class IniFileProvider extends Provider
         return $config;
     }
 
-    /** Generates INI config string for recursive data.
-     * This function takes configuration array passed in parameter and generates an INI configuration string with recursive sections.
+    /**
+     * Generates INI config string for recursive data.
+     * This function takes configuration array passed in parameter
+     * and generates an INI configuration string with recursive sections.
      *
-     * \param $data The data to be transformed.
-     * \param $root The root section. Normally, this parameter is used by the function to recursively parse data by calling itself.
-     *
-     * \return The INI config data.
+     * @param array $data The data to be transformed.
+     * @param string $root The root section.
+     *                     Normally, this parameter is used by the function to recursively parse data by calling itself.
+     * @return string The INI config data.
      */
     public function generateINIStringRecursive($data = null, $root = "")
     {
@@ -191,12 +194,12 @@ class IniFileProvider extends Provider
         return trim($out);
     }
 
-    /** Gets a variable from the data storage.
+    /**
+     * Gets a variable from the data storage.
      * This method gets a variable, scalar or complex, from the storage.
      *
-     * \param $key The key corresponding to the data to get.
-     *
-     * \return The requested data or NULL on failure.
+     * @param string $key The key corresponding to the data to get.
+     * @return bool|A|mixed|null The requested data or NULL on failure.
      */
     public function get($key)
     {
@@ -216,14 +219,14 @@ class IniFileProvider extends Provider
         return $currentPath;
     }
 
-    /** Sets a variable in the data storage.
+    /**
+     * Sets a variable in the data storage.
      * Sets a var in the data storage, and saves instantly all the data.
      * TODO: Save only the relevant part ?
      *
-     * \param $key The key under which to save the data.
-     * \param $data The value to save. Could be a complex structure like an array.
-     *
-     * \return TRUE if the data has been saved, FALSE otherwise.
+     * @param string $key The key under which to save the data.
+     * @param $data The value to save. Could be a complex structure like an array.
+     * @return bool TRUE if the data has been saved, FALSE otherwise.
      */
     public function set($key, $data)
     {
@@ -249,7 +252,11 @@ class IniFileProvider extends Provider
         return true;
     }
 
-    /** Checks if there is an update to the data files, and does it if necessary.
+    /**
+     * Checks if there is an update to the data files, and does it if necessary.
+     *
+     * @param $dir
+     * @return bool|void
      */
     public function checkUpdate($dir = null)
     {
@@ -267,7 +274,8 @@ class IniFileProvider extends Provider
             if (is_file($dir . '/' . $file) && pathinfo($file, PATHINFO_EXTENSION) == 'ini') {
                 $fileLastModification = filemtime($dir . '/' . $file);
 
-                if (!isset($this->fileLastModification[$dir . '/' . $file]) || $this->fileLastModification[$dir . '/' . $file] < $fileLastModification) {
+                if (!isset($this->fileLastModification[$dir . '/' . $file])
+                    || $this->fileLastModification[$dir . '/' . $file] < $fileLastModification) {
                     $updated = true;
                     $data = $this->loadFile($dir . '/' . $file);
                     $this->data = array_replace_recursive($this->data, $data);
@@ -281,17 +289,19 @@ class IniFileProvider extends Provider
         return $updated;
     }
 
-    /** Writes the stored data to the disk.
+    /**
+     * Writes the stored data to the disk.
      * Writes the stored data to the disk. It will create multiple directories/files depending on the first
      * 2 sections of the path to the data if it contains more than 2 levels of nesting. Else, just the first level
-     * of nesting will be used as filename. parameters without a section will be put in a main.ini file on the conf root.
+     * of nesting will be used as filename.
+     * Parameters without a section will be put in a main.ini file on the conf root.
      *
-     * \return true if the writing of the data succeeded, false otherwise.
+     * @return bool true if the writing of the data succeeded, false otherwise.
      */
     public function writeData()
     {
         if ($this->readonly) {
-            return;
+            return false;
         }
 
         $iniData = $this->generateINIStringRecursive($this->data);
@@ -362,8 +372,11 @@ class IniFileProvider extends Provider
         }
     }
 
-    /** Loads data from the file store in the specified directory.
+    /**
+     * Loads data from the file store in the specified directory.
      *
+     * @param $parameters
+     * @return bool
      */
     public function connect($parameters)
     {
@@ -410,11 +423,12 @@ class IniFileProvider extends Provider
         $this->backups = $backups;
     }
 
-    /** Backs up the data directory.
+    /**
+     * Backs up the data directory.
      * Backs up the data directory to a backup directory. This is a recursive function,
      * which will take the current subdir to perform recursive copy.
-     * @param  string $currentDir [description]
-     * @return [type]             [description]
+     *
+     * @param string $currentDir
      */
     private function backupData($currentDir = "")
     {
@@ -462,9 +476,13 @@ class IniFileProvider extends Provider
         }
     }
 
-    /** Checks if an array has no scalar value in it, recursively.
+    /**
+     * Checks if an array has no scalar value in it, recursively.
      * This method checks recursively the content of an array, searching if it has any scalar value saved in it.
      * If it hasn't, it returns TRUE (behaves like empty()).
+     *
+     * @param array $data
+     * @return bool
      */
     private function emptyRecursive($data)
     {

@@ -2,6 +2,10 @@
 
 namespace HedgeBot\Core\Tikal;
 
+/**
+ * Class HttpResponse
+ * @package HedgeBot\Core\Tikal
+ */
 class HttpResponse
 {
     public $request;
@@ -28,6 +32,10 @@ class HttpResponse
         500 => "Internal Server Error"
     ];
 
+    /**
+     * HttpResponse constructor.
+     * @param HttpRequest $request
+     */
     public function __construct(HttpRequest $request)
     {
         $this->request = $request;

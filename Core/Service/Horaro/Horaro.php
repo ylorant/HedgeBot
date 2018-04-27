@@ -3,8 +3,11 @@
 namespace HedgeBot\Core\Service\Horaro;
 
 use HedgeBot\Core\HedgeBot;
-use Closure;
 
+/**
+ * Class Horaro
+ * @package HedgeBot\Core\Service\Horaro
+ */
 class Horaro
 {
     /** @var string Horaro host URL */
@@ -30,14 +33,17 @@ class Horaro
         $this->multiCurl = curl_multi_init();
     }
 
-    /** Sets the error handler for the async requests.
+    /**
+     * Sets the error handler for the async requests.
      * This method will set the error handling callback that the async listener will call upon
      * failure of a request.
      * When called, the error handler will be given the following parameters:
-     * - The reply code from cURL
-     * - The cURL handler
-     * - The parameters that would've been given to the initial callback.
-     * - The reply data
+     *   - The reply code from cURL
+     *   - The cURL handler
+     *   - The parameters that would've been given to the initial callback.
+     *   - The reply data
+     *
+     * @param $errorHandler
      */
     public function setErrorHandler($errorHandler)
     {
@@ -76,9 +82,12 @@ class Horaro
         }
     }
 
-    /** Listens for cURL asynchronous replies.
+    /**
+     * Listens for cURL asynchronous replies.
      * This method listens for replies on the pending queries. Upon completion of one of them, it'll
      * execute the associated callback and remove it from the pending queries.
+     *
+     * @return bool return false only if no curl info returned
      */
     public function asyncListen()
     {
@@ -94,7 +103,7 @@ class Horaro
 
         // If no curl info has been returned, that means that no request has finished, hence we return
         if (empty($curlInfo)) {
-            return;
+            return false;
         }
 
         // Cycle through the current handles to get the one that has completed
@@ -113,16 +122,22 @@ class Horaro
                 $data = json_decode($reply);
 
 
-                // If there's a status replied and it's not 200 (HTTP OK), then it's an error and we trigger the error handler
+                // If there's a status replied and it's not 200 (HTTP OK),
+                //then it's an error and we trigger the error handler
                 if (!empty($data->status) && $data->status != 200) {
                     $this->callErrorHandler($curlInfo['result'], $curlInfo['handle'], $request['cbParams'], $data);
                     break;
                 }
 
-                // If no data has been returned but there's still links, we chain another async query for the referred URL
+                // If no data has been returned but there's still links,
+                //we chain another async query for the referred URL
                 if (!isset($data->data) && !empty($data->links)) {
-                    $this->queryAsync(self::HORARO_HOST . $data->links[0]->uri, [], $request['cb'],
-                        $request['cbParams']);
+                    $this->queryAsync(
+                        self::HORARO_HOST . $data->links[0]->uri,
+                        [],
+                        $request['cb'],
+                        $request['cbParams']
+                    );
                     break;
                 }
 
@@ -137,24 +152,30 @@ class Horaro
             }
         }
 
-        // Finally, if the index has been found and handled, we need to remove the request from the pending request list to avoid buildup.
+        // Finally, if the index has been found and handled,
+        //we need to remove the request from the pending request list to avoid buildup.
         if (!is_null($foundIndex)) {
             unset($this->asyncRequests[$foundIndex]);
         } else {
-            HedgeBot::message("A request was completed but it looks like it doesn't belong to any pending query.", [],
-                E_DEBUG);
+            HedgeBot::message(
+                "A request was completed but it looks like it doesn't belong to any pending query.",
+                [],
+                E_DEBUG
+            );
         }
     }
 
-    /** Executes an asynchronous query on the Horaro API.
-     * This method starts the execution of a delayed query on the Horaro API. It's not usually meant to be used from the outside,
+    /**
+     * Executes an asynchronous query on the Horaro API.
+     * This method starts the execution of a delayed query on the Horaro API.
+     * It's not usually meant to be used from the outside,
      * since the other methods provide calls so specific API methods.
      * This method will return directly and call the callback when the replay has been given by the server.
      *
      * @param string $url The endpoint to query. Auto-magically builds the correct path.
      * @param array $parameters The parameters to give to the query, as a key-value array. Optionnal.
      * @param callable $callback The callback to call when the request completes.
-     *
+     * @param array $cbParameters
      */
     public function queryAsync($url, array $parameters, $callback, $cbParameters = [])
     {
@@ -168,15 +189,16 @@ class Horaro
         curl_multi_add_handle($this->multiCurl, $curl);
     }
 
-    /** Executes a synchronous query on the Horaro API.
-     * This method executes a direct synchronous query on the horaro API. It's not usually meant to be used from the outside,
+    /**
+     * Executes a synchronous query on the Horaro API.
+     * This method executes a direct synchronous query on the horaro API.
+     * It's not usually meant to be used from the outside,
      * since the other methods provide calls to specific API methods.
      * This method will block until the server has replied something.
      *
      * @param string $url The endpoint to query. Auto-magically builds the correct path.
      * @param array $parameters The parameters to give to the query, as a key-value array. Optionnal.
-     *
-     * @return object            The API response, as an object translated from the JSON.
+     * @return object|bool The API response, as an object translated from the JSON.
      */
     public function query($url, array $parameters = [])
     {
@@ -227,7 +249,9 @@ class Horaro
         $curl = curl_init($url);
 
         // Set base common options
-        curl_setopt_array($curl, [
+        curl_setopt_array(
+            $curl,
+            [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_CUSTOMREQUEST => "GET",
                 CURLOPT_HTTPHEADER => [
@@ -294,11 +318,10 @@ class Horaro
      *
      * @param string $scheduleId The schedule ID.
      * @param string $eventId The event ID. Using it or not will change the called method.
-     * @param string $hiddenKey Key to get the hidden columns.
      *
      * @return object The schedule.
      */
-    public function getSchedule($scheduleId, $eventId = null, $hiddenKey = null)
+    public function getSchedule($scheduleId, $eventId = null)
     {
         if (!empty($eventId)) {
             return $this->query("/events/" . $eventId . "/schedules/" . $scheduleId);

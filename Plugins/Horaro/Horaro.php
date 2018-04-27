@@ -6,9 +6,7 @@ use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\Events\CommandEvent;
 use HedgeBot\Core\Service\Horaro\Horaro as HoraroAPI;
-use HedgeBot\Core\API\Config;
 use HedgeBot\Plugins\Horaro\Entity\Schedule;
-use HedgeBot\Core\API\Data;
 use DateTime;
 use DateInterval;
 use HedgeBot\Core\API\Plugin;
@@ -342,7 +340,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
     // Chat commands
 
     /**
-     * Pauses the given schedule, or the current schedule if none is given (2 schedules running at the same time would be strange though)
+     * Pauses the given schedule
+     * or the current schedule if none is given (2 schedules running at the same time would be strange though)
+     *
+     * @param CommandEvent $event
+     * @return mixed
      */
     public function CommandPause(CommandEvent $event)
     {
@@ -350,8 +352,10 @@ class Horaro extends PluginBase implements StoreSourceInterface
         if (empty($event->arguments[0])) {
             $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
             if (count($currentSchedules) > 1) {
-                return IRC::reply($event,
-                    "Couldn't automatically determine which schedule to pause, please specify an ident slug.");
+                return IRC::reply(
+                    $event,
+                    "Couldn't automatically determine which schedule to pause, please specify an ident slug."
+                );
             } elseif (count($currentSchedules) == 0) {
                 return IRC::reply($event, "No schedule is currently running.");
             }
@@ -378,6 +382,10 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
     /**
      * Resumes the given schedule, or the current schedule if none is given.
+     *
+     * @param CommandEvent $event
+     * @return mixed
+     * @throws \Exception
      */
     public function CommandResume(CommandEvent $event)
     {
@@ -385,8 +393,10 @@ class Horaro extends PluginBase implements StoreSourceInterface
         if (empty($event->arguments[0])) {
             $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
             if (count($currentSchedules) > 1) {
-                return IRC::reply($event,
-                    "Couldn't automatically determine which schedule to pause, please specify an ident slug.");
+                return IRC::reply(
+                    $event,
+                    "Couldn't automatically determine which schedule to pause, please specify an ident slug."
+                );
             } elseif (count($currentSchedules) == 0) {
                 return IRC::reply($event, "No schedule is currently running.");
             }
@@ -414,6 +424,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
     /**
      * Skips the current item on the given schedule or the one given as argument, and goes straight to the next one.
+     *
+     * @param CommandEvent $event
+     * @return mixed
      */
     public function CommandNext(CommandEvent $event)
     {
@@ -421,8 +434,10 @@ class Horaro extends PluginBase implements StoreSourceInterface
         if (empty($event->arguments[0])) {
             $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
             if (count($currentSchedules) > 1) {
-                return IRC::reply($event,
-                    "Couldn't automatically determine which schedule to pause, please specify an ident slug.");
+                return IRC::reply(
+                    $event,
+                    "Couldn't automatically determine which schedule to pause, please specify an ident slug."
+                );
             } elseif (count($currentSchedules) == 0) {
                 return IRC::reply($event, "No schedule is currently running.");
             }

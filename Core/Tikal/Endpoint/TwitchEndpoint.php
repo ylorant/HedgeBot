@@ -4,7 +4,10 @@ namespace HedgeBot\Core\Tikal\Endpoint;
 
 use HedgeBot\Core\API\Twitch\Auth;
 
-
+/**
+ * Class TwitchEndpoint
+ * @package HedgeBot\Core\Tikal\Endpoint
+ */
 class TwitchEndpoint
 {
     /**
@@ -73,7 +76,8 @@ class TwitchEndpoint
     /**
      * Removes an access token by its channel.
      *
-     * @param string $channel The channel to remove the token from.
+     * @param $channel The channel to remove the token from.
+     * @return mixed
      */
     public function removeAccessToken($channel)
     {

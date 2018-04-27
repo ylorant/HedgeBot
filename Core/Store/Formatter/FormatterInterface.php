@@ -2,6 +2,10 @@
 
 namespace HedgeBot\Core\Store\Formatter;
 
+/**
+ * Interface FormatterInterface
+ * @package HedgeBot\Core\Store\Formatter
+ */
 interface FormatterInterface
 {
     /**

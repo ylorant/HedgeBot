@@ -6,7 +6,6 @@ use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\Traits\PropertyConfigMapping;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Plugin;
-use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\Events\CommandEvent;
 
 /**
@@ -155,7 +154,11 @@ class BlackJack extends PluginBase
     }
 
     /**
-     * Joins a game. The player has to specify a bet for him to play.
+     * Joins a game.
+     * The player has to specify a bet for him to play.
+     *
+     * @param CommandEvent $ev
+     * @return mixed
      */
     public function CommandJoin(CommandEvent $ev)
     {
@@ -198,7 +201,11 @@ class BlackJack extends PluginBase
     }
 
     /**
-     * Starts the game. There has to be at least one player in the game to start it.
+     * Starts the game.
+     * There has to be at least one player in the game to start it.
+     *
+     * @param CommandEvent $ev
+     * @return mixed
      */
     public function CommandStart(CommandEvent $ev)
     {
@@ -251,7 +258,10 @@ class BlackJack extends PluginBase
     }
 
     /**
-     * Draws a card.
+     * Draws a card
+     *
+     * @param CommandEvent $ev
+     * @return mixed
      */
     public function CommandDraw(CommandEvent $ev)
     {
@@ -275,7 +285,10 @@ class BlackJack extends PluginBase
     }
 
     /**
-     * Ends a player's turn.
+     * Ends a player's turn
+     *
+     * @param CommandEvent $ev
+     * @return mixed
      */
     public function CommandStay(CommandEvent $ev)
     {
@@ -344,7 +357,9 @@ class BlackJack extends PluginBase
     /**
      * Shows only the house hand.
      *
+     * @param $channel
      * @param bool $hidden Hides the second card or not. Defaults to true
+     * @param string $messageName
      */
     private function showHouseHand($channel, $hidden = true, $messageName = 'messages.hand')
     {
@@ -510,6 +525,10 @@ class BlackJack extends PluginBase
         $this->mapConfig($this->config, $parameters);
     }
 
+    /**
+     * @param $player
+     * @return mixed
+     */
     private static function getPlayerName($player)
     {
         return $player->name;

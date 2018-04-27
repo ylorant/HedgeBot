@@ -37,9 +37,9 @@ class Kraken
     ]; // Indicates which methods sends their data in the request body
 
     /**
-     * Constructor.
+     * Kraken constructor.
      *
-     * @param string $clientID The client ID that this client will use to connect to the Twitch API.
+     * @param AuthManager $authManager
      */
     public function __construct(AuthManager $authManager)
     {
@@ -71,17 +71,18 @@ class Kraken
         }
     }
 
-    /** Executes a query on the Twitch API.
-     * This method allows to execute directly a query on Twitch's Kraken API. It takes into account whether it was called from
+    /**
+     * Executes a query on the Twitch API.
+     * This method allows to execute directly a query on Twitch's Kraken API.
+     * It takes into account whether it was called from
      * a defined service or directly from the root Kraken class, to build the correct path.
      *
      * @param $type The query type. You can use Kraken::QUERY_TYPE_* enum values for easier understanding.
      * @param $url The endpoint to query. Auto-magically builds the correct path.
-     * @param $parameters The parameters to give to the query, as a key-value array. Optional.
+     * @param array $parameters The parameters to give to the query, as a key-value array. Optional.
      * @param $accessChannel If the used query needs to have an access token linked to it,
      *                       specifies the channel from which to take the token. Optional.
-     *
-     * @return The API response, as an object translated from the JSON.
+     * @return mixed The API response, as an object translated from the JSON.
      */
     public function query($type, $url, array $parameters = [], $accessChannel = null)
     {

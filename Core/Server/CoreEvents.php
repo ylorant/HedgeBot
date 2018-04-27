@@ -102,18 +102,27 @@ class CoreEvents
         }
     }
 
+    /**
+     * @param CoreEvent $ev
+     */
     public function CoreEventServerMessage(CoreEvent $ev)
     {
         $serverName = Server::getName();
         $this->lastMessages[$serverName] = time();
     }
 
+    /**
+     * @param CoreEvent $ev
+     */
     public function CoreEventDataUpdate(CoreEvent $ev)
     {
         HedgeBot::message("Reloading access control lists...");
         Security::refreshFromStorage();
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerConnected(ServerEvent $ev)
     {
         $config = Server::getConfig();
@@ -129,6 +138,9 @@ class CoreEvents
         HedgeBot::getInstance()->initialized = true;
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerKick(ServerEvent $ev)
     {
         if ($ev->additionnal[0] == Server::getNick()) {
@@ -136,11 +148,17 @@ class CoreEvents
         }
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerPing(ServerEvent $ev)
     {
         IRC::send('PONG :' . $ev->additionnal);
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerJoin(ServerEvent $ev)
     {
         if (strtolower($ev->nick) != strtolower(Server::getNick())) {
@@ -151,11 +169,17 @@ class CoreEvents
         }
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerPart(ServerEvent $ev)
     {
         IRC::userPart($ev->channel, $ev->nick);
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerMode(ServerEvent $ev)
     {
         if (preg_match('/(\+|-).*(v|o)/', $ev->additionnal[0], $matches) && isset($ev->additionnal[1])) {
@@ -167,6 +191,9 @@ class CoreEvents
         }
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerNamesReply(ServerEvent $ev)
     {
         $channel = substr($ev->additionnal[1], 1);
@@ -177,6 +204,9 @@ class CoreEvents
         $this->names[$channel] = array_merge($this->names[$channel], explode(' ', $ev->message));
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerEndOfNames(ServerEvent $ev)
     {
         $channel = substr($ev->additionnal[0], 1);
@@ -184,6 +214,9 @@ class CoreEvents
         unset($this->names[$channel]);
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerUserstate(ServerEvent $ev)
     {
         if (!$ev->moderator) {
@@ -192,6 +225,9 @@ class CoreEvents
         }
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerMessage(ServerEvent $ev)
     {
         // Parsing the message in search for a command

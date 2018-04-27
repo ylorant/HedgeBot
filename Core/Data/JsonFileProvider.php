@@ -3,10 +3,6 @@
 namespace HedgeBot\Core\Data;
 
 use HedgeBot\Core\HedgeBot;
-use HedgeBot\Core\API\Plugin;
-use HedgeBot\Core\Data\ObjectAccess;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 /**
  * JSON File provider. Provides a way to store data in an unique JSON file.
@@ -52,8 +48,11 @@ class JsonFileProvider extends Provider
         $this->lastModification = filemtime($this->dataFile);
     }
 
-    /** Loads data from the file store in the specified file.
+    /**
+     * Loads data from the file store in the specified file.
      *
+     * @param $parameters
+     * @return bool|True
      */
     public function connect($parameters)
     {

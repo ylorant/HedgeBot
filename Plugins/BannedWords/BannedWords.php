@@ -34,7 +34,6 @@ class BannedWords extends PluginBase
 
     // Plugin configuration variables, per channel
     private $bannedWords = [];
-    private $timeoutDuration = [];
 
     // Plugin configuration variables, global fallback
     private $globalBannedWords;
@@ -48,7 +47,11 @@ class BannedWords extends PluginBase
         $this->reloadConfig();
     }
 
-    /** System event: configuration change handling */
+    /**
+     * System event: configuration change handling
+     *
+     * @param CoreEvent $ev
+     */
     public function SystemEventConfigUpdate(CoreEvent $ev)
     {
         $this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
@@ -58,6 +61,8 @@ class BannedWords extends PluginBase
     /**
      * Handles chat messages, checks that any of the banned words for the channel or in the global word banlist
      * isn't in the message, and timeouts the user as a consequence.
+     *
+     * @param ServerEvent $ev
      */
     public function ServerPrivmsg(ServerEvent $ev)
     {
@@ -124,8 +129,9 @@ class BannedWords extends PluginBase
      * Normalizes text input by notably removing accents in it.
      * Taken from http://www.weirdog.com/blog/php/supprimer-les-accents-des-caracteres-accentues.html
      *
-     * \param string $str     The string to normalize.
-     * \param string $charset The charset to use. Defaults to UTF-8.
+     * @param string $str     The string to normalize.
+     * @param string $charset The charset to use. Defaults to UTF-8.
+     * @return null|string|string[]
      */
     public function normalize($str, $charset = 'utf-8')
     {

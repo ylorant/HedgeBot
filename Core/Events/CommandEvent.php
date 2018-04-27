@@ -2,6 +2,10 @@
 
 namespace HedgeBot\Core\Events;
 
+/**
+ * Class CommandEvent
+ * @package HedgeBot\Core\Events
+ */
 class CommandEvent extends ServerEvent
 {
     protected $arguments;
@@ -22,6 +26,9 @@ class CommandEvent extends ServerEvent
         $this->arguments = $args;
     }
 
+    /**
+     * @return string
+     */
     public static function getType()
     {
         return 'command';

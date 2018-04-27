@@ -10,11 +10,14 @@ use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Server;
 use HedgeBot\Core\Data\FileProvider;
-use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\Events\CommandEvent;
 
+/**
+ * Class TestManager
+ * @package HedgeBot\Plugins\TestManager
+ */
 class TestManager extends PluginBase
 {
     private $testedPlugins;
@@ -29,6 +32,9 @@ class TestManager extends PluginBase
     private $testStats;
     private $testedBotConfig;
 
+    /**
+     * @return bool
+     */
     public function init()
     {
         $this->testedPlugins = [];
@@ -50,8 +56,10 @@ class TestManager extends PluginBase
 
         // Loading tested bot config
         if (!empty($this->config['botConfig'])) {
-            $this->botConfig = HedgeBot::getInstance()->loadStorage($this->testedBotConfig,
-                (object)$this->config['botConfig']);
+            $this->botConfig = HedgeBot::getInstance()->loadStorage(
+                $this->testedBotConfig,
+                (object)$this->config['botConfig']
+            );
             if ($this->botConfig === false) {
                 HedgeBot::message("Cannot load tested bot configuration.", null, E_ERROR);
                 return false;
@@ -61,6 +69,9 @@ class TestManager extends PluginBase
         Plugin::getManager()->addRoutine($this, 'RoutineProcessQueue');
     }
 
+    /**
+     * @return mixed
+     */
     public function getChannel()
     {
         return $this->testChannel;
@@ -76,6 +87,9 @@ class TestManager extends PluginBase
         }
     }
 
+    /**
+     * @param ServerEvent $ev
+     */
     public function ServerPrivmsg(ServerEvent $ev)
     {
         if ($ev->channel == $this->testChannel && $ev->nick == $this->botName && !empty($this->currentTest)) {
@@ -83,6 +97,10 @@ class TestManager extends PluginBase
         }
     }
 
+    /**
+     * @param ServerEvent $ev
+     * @throws \ReflectionException
+     */
     public function ServerJoin(ServerEvent $ev)
     {
         // Autostart when first joining the channel if the config option is set
@@ -93,6 +111,10 @@ class TestManager extends PluginBase
         }
     }
 
+    /**
+     * @param CommandEvent $ev
+     * @throws \ReflectionException
+     */
     public function CommandExecTests(CommandEvent $ev)
     {
         $this->testChannel = $ev->channel;
@@ -101,16 +123,25 @@ class TestManager extends PluginBase
         $this->execTests();
     }
 
+    /**
+     *
+     */
     public function TimeoutTestProcess()
     {
         $this->processTestQueue();
     }
 
+    /**
+     * @return mixed
+     */
     public function getTestedBotConfig()
     {
         return $this->testedBotConfig;
     }
 
+    /**
+     * @throws \ReflectionException
+     */
     protected function buildTests()
     {
         $this->testQueue = [];
@@ -125,7 +156,8 @@ class TestManager extends PluginBase
             $config = $this->manager->getPluginDefinition($pluginName);
 
             if (!empty($config->pluginDefinition->testClass)) {
-                $testClassName = PluginManager::PLUGINS_NAMESPACE . $pluginName . "\\" . $config->pluginDefinition->testClass;
+                $testClassName = PluginManager::PLUGINS_NAMESPACE . $pluginName . "\\"
+                    . $config->pluginDefinition->testClass;
                 $this->currentTestObject = new $testClassName();
 
                 $reflectionClass = new ReflectionClass($this->currentTestObject);
@@ -143,6 +175,9 @@ class TestManager extends PluginBase
         }
     }
 
+    /**
+     *
+     */
     protected function execTests()
     {
         $this->startTime = microtime(true);
@@ -156,6 +191,9 @@ class TestManager extends PluginBase
         $this->processTestQueue();
     }
 
+    /**
+     *
+     */
     protected function processTestQueue()
     {
         if (empty($this->currentTest) && !empty($this->testQueue)) {
@@ -190,6 +228,9 @@ class TestManager extends PluginBase
         }
     }
 
+    /**
+     *
+     */
     protected function finishTests()
     {
         $successRate = 0;
@@ -201,7 +242,7 @@ class TestManager extends PluginBase
 
         $this->log('');
         $this->log('Tests completed.') .
-        $this->log('Successes: ' . $this->testStats['successes'] . '. Failures: ' . $this->testStats['failures'] . '.');
+        $this->log('Successes: ' . $this->testStats['successes']. '. Failures: ' . $this->testStats['failures'] . '.');
         $this->log('Success rate: ' . $successRate . '%');
         $this->log('Total test time: ' . round(microtime(true) - $this->startTime, 4) . 's');
 
@@ -210,6 +251,10 @@ class TestManager extends PluginBase
         }
     }
 
+    /**
+     * @param $message
+     * @param bool $crlf
+     */
     protected function log($message, $crlf = true)
     {
         if (!empty($this->logfile)) {

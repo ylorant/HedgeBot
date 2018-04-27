@@ -9,6 +9,10 @@ use HedgeBot\Plugins\Horaro\Event\HoraroEvent;
 use HedgeBot\Plugins\Horaro\Entity\Schedule;
 use DateInterval;
 
+/**
+ * Class HoraroTextFile
+ * @package HedgeBot\Plugins\HoraroTextFile
+ */
 class HoraroTextFile extends PluginBase
 {
     /** @var Horaro The Horaro plugin reference, where the schedule info will be fetched */
@@ -16,12 +20,14 @@ class HoraroTextFile extends PluginBase
     /** @var array The schedule ident slug -> file path mapping array */
     protected $fileMapping;
 
+    /**
+     * @return bool|void
+     */
     public function init()
     {
         $this->horaroPlugin = Plugin::getManager()->getPlugin('Horaro'); // Get the Horaro plugin object, it should be loaded since it's a dependency
         $this->loadData();
     }
-
 
     /**
      * Data has been updated externally, maybe that means the mapping has been changed by a console command ?
@@ -37,6 +43,7 @@ class HoraroTextFile extends PluginBase
      * We match the file to the new item.
      *
      * @param HoraroEvent $event The event.
+     * @throws \Exception
      */
     public function HoraroScheduleUpdated(HoraroEvent $event)
     {

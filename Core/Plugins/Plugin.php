@@ -7,11 +7,20 @@ use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Config;
 use ReflectionClass;
 
+/**
+ * Class Plugin
+ * @package HedgeBot\Core\Plugins
+ */
 class Plugin
 {
     protected $config; ///< Plugin configuration, as an array, thus being read only
     protected $data; ///< Plugin data, confined to a namespace, r/w
 
+    /**
+     * Plugin constructor.
+     * @param $defaultConfig
+     * @throws \ReflectionException
+     */
     public function __construct($defaultConfig)
     {
         HedgeBot::message("Initializing plugin...", [], E_DEBUG);
@@ -41,10 +50,12 @@ class Plugin
         $this->data = $dataStorage->plugin->{$pluginName};
     }
 
-    /** Default plugin init function.
-     * This function is empty. Its unique purpose is to avoid using method_exists() on PluginManager::initPlugin(). Returns TRUE.
+    /**
+     * Default plugin init function.
+     * This function is empty. Its unique purpose is to avoid using method_exists() on PluginManager::initPlugin().
+     * Returns TRUE.
      *
-     * \return TRUE.
+     * @return bool
      */
     public function init()
     {
@@ -52,9 +63,10 @@ class Plugin
     }
 
     /** Default plugin destroy function.
-     * This function is empty. Its unique purpose is to avoid using method_exists() on PluginManager::unloadPlugin(). Returns TRUE.
+     * This function is empty. Its unique purpose is to avoid using method_exists() on PluginManager::unloadPlugin().
+     * Returns TRUE.
      *
-     * \return TRUE.
+     * @return bool
      */
     public function destroy()
     {
