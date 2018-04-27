@@ -156,6 +156,8 @@ class Server
     {
         $rpcQuery = $request->data;
 
+        HedgeBot::message("Tikal: RPC call.", [], E_DEBUG);
+
         // Raise an error if the required JSON-RPC fields aren't present
         if (!isset($rpcQuery->jsonrpc) || !isset($rpcQuery->method) || !isset($rpcQuery->params)) {
             return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
@@ -163,6 +165,8 @@ class Server
 
         $endpointClass = $this->getEndpoint($request->requestURI);
         $reflectionClass = new ReflectionClass($endpointClass);
+
+        HedgeBot::message("Tikal: Called method: $0:$1", [$reflectionClass->getShortName(), $rpcQuery->method], E_DEBUG);
 
         // Check that the method exists and it isn't a magic method
         if (!$reflectionClass->hasMethod($rpcQuery->method) || strpos($rpcQuery->method, "__") === 0) {
@@ -194,8 +198,10 @@ class Server
         // Send result only if this is not a notification, i.e. an ID is given
         if (!empty($rpcQuery->id)) {
             $response->headers['Content-Type'] = 'application/json';
-            $response->data = array("jsonrpc" => "2.0", "result" => $funcResult, "id" => $rpcQuery->id);
+            $response->data = ["jsonrpc" => "2.0", "result" => $funcResult, "id" => $rpcQuery->id];
         }
+
+        HedgeBot::message("Tikal: Success. Reply: $0.", [!empty($response->data["result"]) ? gettype($response->data["result"]) : "null"], E_DEBUG);
 
         return true;
     }
@@ -208,6 +214,7 @@ class Server
      */
     private function sendErrorResponse(HttpResponse $response, $code)
     {
+        HedgeBot::message("Tikal: Error reply: $0.", [$code], E_DEBUG);
         $response->statusCode = $code;
         $response->data = HttpResponse::STATUS_MESSAGES[$response->statusCode];
         $this->httpServer->send($response);

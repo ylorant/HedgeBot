@@ -77,17 +77,18 @@ class BannedWords extends PluginBase
         // Check against global banned words
         foreach ($this->globalBannedWords as $bannedWord) {
             // Match against a banned word, we timeout
-            if (strpos($message, $bannedWord) !== false) {
-                IRC::message($ev->channel, ".timeout " . $ev->nick . " 1");
-            }
+            if(strpos($message, $bannedWord) !== FALSE)
+                IRC::message($ev->channel, ".timeout ". $ev->nick. " ". $timeoutDuration);
         }
 
         // Check against channel banned words
-        if (!empty($this->bannedWords[$ev->channel])) {
-            foreach ($this->bannedWords[$ev->channel] as $bannedWord) {
-                if (strpos($message, $bannedWord) !== false) {
-                    IRC::message($ev->channel, ".timeout " . $ev->nick . " 1");
-                }
+        if(!empty($this->bannedWords[$ev->channel]))
+        {
+            foreach($this->bannedWords[$ev->channel] as $bannedWord)
+            {
+                // Match against a banned word, we timeout (duh)
+                if(strpos($message, $bannedWord) !== FALSE)
+                    IRC::message($ev->channel, ".timeout ". $ev->nick. " ". $timeoutDuration);
             }
         }
     }
