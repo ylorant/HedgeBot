@@ -47,11 +47,13 @@ class CustomCommands extends Plugin
 		if(count($args) < 2)
 			return IRC::message($ev->channel, "Insufficient parameters.");
 
+		$newCommandData = [];
 		$newCommand = array_shift($args);
-		$newCommand = $newCommand[0] == '!' ? substr($newCommand, 1) : $newCommand;
-		$message = join(' ', $args);
-
-		$commandAdded = $this->addCommand($newCommand, $message, [$ev->channel]);
+		$newCommandData['name'] = $newCommand[0] == '!' ? substr($newCommand, 1) : $newCommand;
+		$newCommandData['text'] = join(' ', $args);
+		$newCommandData['channels'] = [$ev->channel];
+		
+		$commandAdded = $this->saveCommand($newCommand, $newCommandData);
 
 		if(!$commandAdded)
 			return IRC::message($ev->channel, "A command with this name already exists. Try again.");
