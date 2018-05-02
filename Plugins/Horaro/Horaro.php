@@ -43,7 +43,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $this->horaro->setErrorHandler([$this, 'onHoraroError']);
 
         Plugin::getManager()->addRoutine($this, "RoutineProcessSchedules", 60);
-        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", $this->config['refreshInterval'] ?? 300);
+        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", (int)($this->config['refreshInterval'] ?? 300));
         Plugin::getManager()->addRoutine($this, "RoutineCheckAsyncRequests", 1);
         Plugin::getManager()->addEventListener(HoraroEvent::getType(), 'Horaro');
     

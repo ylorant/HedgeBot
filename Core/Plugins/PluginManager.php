@@ -380,8 +380,9 @@ class PluginManager extends EventManager
 		return TRUE;
 	}
 
-	/** This function allow the plugin to changes the time interval of one of his routines. It is useful when using automatic revent detection, because it does not
-	 * handles custom timers for routines (they are set to 1 second).
+	/** This function allows the plugin to change the time interval of one of its routines. 
+	 * It is useful when using automatic revent detection, because it does not
+	 * handle custom timers for routines (they are set to 1 second).
 	 *
 	 * \param $plugin A reference to the plugin's class where the method is.
 	 * \param $method The name of the method to be updated.
@@ -396,18 +397,24 @@ class PluginManager extends EventManager
 		if(!isset($this->_routines[get_class($plugin)]))
 		{
 			HedgeBot::message('Plugin $0 does not exists in routine list.', array(get_class($plugin)), E_DEBUG);
-			return FALSE;
+			return false;
 		}
 
 		if(!isset($this->_routines[get_class($plugin)][$method]))
 		{
 			HedgeBot::message('Routine does not exists.', array(), E_DEBUG);
-			return FALSE;
+			return false;
 		}
 
-		$this->_routines[get_class($plugin)][$method][1] = $time;
+		if(!is_numeric($time))
+		{
+			HedgeBot::message('Given interval is not a number: "$0"', [$time], E_DEBUG);
+			return false;
+		}
 
-		return TRUE;
+		$this->_routines[get_class($plugin)][$method][1] = (int) $time;
+
+		return true;
 	}
 
 	/** Executes all the routines for all plugins.
