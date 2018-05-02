@@ -2,6 +2,7 @@
 
 namespace HedgeBot\Plugins\BlackJack;
 
+use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\Traits\PropertyConfigMapping;
 use HedgeBot\Core\API\IRC;
@@ -89,7 +90,7 @@ class BlackJack extends PluginBase
         $this->reloadConfig();
 
         $pluginManager = Plugin::getManager();
-        $pluginManager->addRoutine($this, 'routineJoinTimeout');
+        $pluginManager->addRoutine($this, 'RoutineJoinTimeout');
     }
 
     /**
