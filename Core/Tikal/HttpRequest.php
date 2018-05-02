@@ -81,6 +81,7 @@ class HttpRequest
             switch ($row[0]) {
                 case 'POST':
                     $this->rawData = $this->data = $query[1];
+                    // no break
                 case 'GET': //It's a GET request (main parameter)
                     $this->method = $row[0];
                     $uri = explode(' ', $row[1]);
