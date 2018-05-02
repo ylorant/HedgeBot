@@ -305,6 +305,8 @@ class PluginManager extends EventManager
 	/** Returns the definition of a plugin.
 	 * This method returns the definition for a plugin. Note that the plugin doesn't have to be loaded,
 	 * but a cache is kept to prevent parsing the definition of an already loaded plugin.
+	 * 
+     * FIXME: Trim the plugin default settings ? Trim all the INI strings ?
 	 *
 	 * \param $name The name of the plugin to load definition from.
 	 *
