@@ -365,8 +365,8 @@ class IniFileProvider extends Provider
         }
     }
 
-    /** Loads data from the file store in the specified directory.
-     *
+    /** 
+     * Loads data from the file store in the specified directory.
      */
     public function connect($parameters)
     {

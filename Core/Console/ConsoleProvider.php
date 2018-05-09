@@ -19,6 +19,10 @@ use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Store as StoreAPI;
 use HedgeBot\Core\Store\Store;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
 
 /**
  * Console provider, provides the console application with all the commands it can
@@ -55,7 +59,7 @@ class ConsoleProvider
     public function populateApplication(Application $application)
     {
         // Load the storages
-        $this->init();
+        $this->init($application);
         $this->loadStorages();
 
         // Populate the different parts
@@ -66,10 +70,20 @@ class ConsoleProvider
     /**
      * Initializes the common parts of the bot that may be used by the plugins.
      */
-    public function init()
+    public function init(Application $application)
     {
         $this->store = new Store();
-		StoreAPI::setObject($this->store);
+        StoreAPI::setObject($this->store);
+        
+        // Set global options
+        $application->getDefinition()->addOptions([
+            new InputOption('--log-verbosity', null, InputOption::VALUE_REQUIRED, 'The bot log verbosity')
+        ]);
+        
+        // Get the log verbosity option using low level input reading
+        $input = new ArgvInput();
+        $verbosityLevel = $input->getParameterOption('--log-verbosity');
+        HedgeBot::$verbose = $verbosityLevel ?? 0; // Default to a completely silent output
     }
 
     /**
@@ -176,10 +190,5 @@ class ConsoleProvider
                 }
             }
         }
-    }
-
-    protected function loadPlugin()
-    {
-
     }
 }

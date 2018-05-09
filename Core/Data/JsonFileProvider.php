@@ -48,12 +48,15 @@ class JsonFileProvider extends Provider
         $json = json_encode($cleanData, JSON_PRETTY_PRINT);
         file_put_contents($this->dataFile, $json);
 
-        // Updating the last modification time to avoid instant reload
+        // Updating the last modification time to avoid instant reload, and forcing stat cache reload to avoid getting bad times
+        clearstatcache(true, $this->dataFile);
         $this->lastModification = filemtime($this->dataFile);
+
+        HedgeBot::message("Saved data to file.", [], E_DEBUG);
     }
 
-    /** Loads data from the file store in the specified file.
-     *
+    /**
+     * Loads data from the file store in the specified file.
      */
     public function connect($parameters)
     {
@@ -146,10 +149,12 @@ class JsonFileProvider extends Provider
                 return FALSE;
         }
 
+        $pathWasEmpty = empty($currentPath[$varName]);
         $currentPath[$varName] = $data;
     
-        // Write the data
-        $this->writeData();
+        // Write the data only if the data write would result in an actual write
+        if(!($pathWasEmpty && is_array($data) && empty($data)))
+            $this->writeData();
         
         return TRUE;
     }

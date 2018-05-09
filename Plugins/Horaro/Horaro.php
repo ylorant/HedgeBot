@@ -328,6 +328,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function CoreEventDataUpdate()
     {
         $this->loadData();
+
+        // Do a direct schedule processing to ensure everything is still sync'd
+        $this->RoutineProcessSchedules();
     }
 
     /**
@@ -338,6 +341,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
         // TODO: Find a way to avoid to re-find the configuration manually
 		$this->config = HedgeBot::getInstance()->config->get('plugin.Horaro');
         Plugin::getManager()->changeRoutineTimeInterval($this, "RoutineRefreshSchedules", $this->config['refreshInterval']);
+
+        // Do a direct schedule processing to ensure everything is still sync'd
+        $this->RoutineProcessSchedules();
     }
 
     // Chat commands
