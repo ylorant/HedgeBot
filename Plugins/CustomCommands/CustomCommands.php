@@ -23,6 +23,14 @@ class CustomCommands extends Plugin
 			Tikal::addEndpoint('/plugin/custom-commands', new CustomCommandsEndpoint($this));
 	}
 
+	/**
+	 * Event called when the data source has been updated.
+	 */
+	public function CoreEventDataUpdate()
+	{
+		$this->loadData();
+	}
+
 	public function ServerPrivmsg(ServerEvent $ev)
 	{
 		$message = $ev->message;
@@ -70,7 +78,7 @@ class CustomCommands extends Plugin
 		$commandToDelete = array_shift($args);
 		$commandToDelete = $commandToDelete[0] == '!' ? substr($commandToDelete, 1) : $commandToDelete;
 
-		$commandDeleted = $this->removeCommand($commandToDelete);
+		$commandDeleted = $this->deleteCommand($commandToDelete);
 
 		if(!$commandDeleted)
 			return IRC::message($ev->channel, "This command does not exist. Try again.");
@@ -108,22 +116,31 @@ class CustomCommands extends Plugin
 	}
 
 	/**
-	 * Removes a command from the list of commands.
+	 * Deletes a command from the list of commands.
 	 * 
 	 * @param string $commandName The command name, without the exclamation mark.
 	 * 
-	 * @return bool True if the command has been removed, false if not (that means the command doesn't exist).
+	 * @return bool True if the command has been deleted, false if not (that means the command doesn't exist).
 	 */
-	public function removeCommand($commandName)
-	{	
+	public function deleteCommand($commandName)
+	{
+		$commandDeleted = false;
+
 		foreach($this->commands as $i => $command)
 		{
 			if($command['name'] == $commandName)
 			{
 				unset($this->commands[$i]);
-				$this->saveData();
-				return true;
+				$commandDeleted = true;
+				break;
 			}
+		}
+
+		if($commandDeleted)
+		{
+			$this->commands = array_values($this->commands);
+			$this->saveData();
+			return true;
 		}
 
 		return false;
