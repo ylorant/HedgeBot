@@ -1,11 +1,8 @@
 <?php
+
 namespace HedgeBot\Core\Data;
 
 use HedgeBot\Core\HedgeBot;
-use HedgeBot\Core\API\Plugin;
-use HedgeBot\Core\Data\ObjectAccess;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 /**
  * JSON File provider. Provides a way to store data in an unique JSON file.
@@ -38,8 +35,7 @@ class JsonFileProvider extends Provider
     public function writeData()
     {
         // Filter function to remove empty arrays/objects from the generated JSON
-        $filterFunction = function($element)
-        {
+        $filterFunction = function ($element) {
             return !(is_array($element) && empty($element));
         };
 
@@ -57,6 +53,9 @@ class JsonFileProvider extends Provider
 
     /**
      * Loads data from the file store in the specified file.
+     *
+     * @param $parameters
+     * @return bool|True
      */
     public function connect($parameters)
     {
@@ -67,31 +66,31 @@ class JsonFileProvider extends Provider
 
         // If we're given an object configuration (from the boostrapping storage), load the location from it
         $location = null;
-        if(is_object($parameters))
-        {
+        if (is_object($parameters)) {
             $location = $parameters->path;
 
-            if(isset($parameters->backups) && HedgeBot::parseBool($parameters->backups))
+            if (isset($parameters->backups) && HedgeBot::parseBool($parameters->backups)) {
                 $this->backups = true;
-        }
-        else
+            }
+        } else {
             $location = $parameters;
+        }
 
         HedgeBot::message('Connecting to JSON file storage at file "$0"', array($location), E_DEBUG);
 
-        if(is_dir($location))
+        if (is_dir($location)) {
             return HedgeBot::message("The specified data path is a directory. A file is needed.", null, E_WARNING);
+        }
 
         $this->dataFile = $location;
 
         // Check if file exists before loading data
-        if(!file_exists($location))
-        {
+        if (!file_exists($location)) {
             HedgeBot::message("There is no file at the specified data path. It will be created.", null, E_NOTICE);
             file_put_contents($this->dataFile, json_encode([], JSON_FORCE_OBJECT));
-        }
-        else
+        } else {
             $this->loadData();
+        }
 
         return true;
     }
@@ -109,14 +108,14 @@ class JsonFileProvider extends Provider
         $keyComponents = explode('.', $key);
 
         $currentPath = &$this->data;
-        foreach($keyComponents as $component)
-        {
-            if(!isset($currentPath[$component]))
-                return NULL;
-            elseif(is_array($currentPath))
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
+                return null;
+            } elseif (is_array($currentPath)) {
                 $currentPath = &$currentPath[$component];
-            else
-                return FALSE;
+            } else {
+                return false;
+            }
         }
 
         return $currentPath;
@@ -138,15 +137,16 @@ class JsonFileProvider extends Provider
         $varName = array_pop($keyComponents);
 
         $currentPath = &$this->data;
-        foreach($keyComponents as $component)
-        {
-            if(!isset($currentPath[$component]))
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
                 $currentPath[$component] = array();
+            }
 
-            if(is_array($currentPath[$component]))
+            if (is_array($currentPath[$component])) {
                 $currentPath = &$currentPath[$component];
-            else
-                return FALSE;
+            } else {
+                return false;
+            }
         }
 
         $pathWasEmpty = empty($currentPath[$varName]);
@@ -156,7 +156,7 @@ class JsonFileProvider extends Provider
         if(!($pathWasEmpty && is_array($data) && empty($data)))
             $this->writeData();
         
-        return TRUE;
+        return true;
     }
 
     /**
@@ -174,7 +174,7 @@ class JsonFileProvider extends Provider
      */
     private function backupData()
     {
-        $backupFile = $this->dataFile. '.backup';
+        $backupFile = $this->dataFile . '.backup';
         $fileContent = file_get_contents($this->dataFile);
         file_put_contents($backupFile, $fileContent);
     }
@@ -185,8 +185,7 @@ class JsonFileProvider extends Provider
     public function checkUpdate()
     {
         $lastModification = filemtime($this->dataFile);
-        if($lastModification > $this->lastModification)
-        {
+        if ($lastModification > $this->lastModification) {
             $this->loadData();
             return true;
         }
@@ -197,7 +196,7 @@ class JsonFileProvider extends Provider
     /**
      * Recursively filter an array
      *
-     * @param array    $array
+     * @param array $array
      * @param callable $callback
      *
      * @return array
@@ -205,10 +204,10 @@ class JsonFileProvider extends Provider
     public function arrayFilterRecursive(array $array, $callback = null)
     {
         $array = is_callable($callback) ? array_filter($array, $callback) : array_filter($array);
-        foreach ( $array as &$value )
-        {
-            if(is_array($value))
-                $value = call_user_func([$this,'arrayFilterRecursive'], $value, $callback);
+        foreach ($array as &$value) {
+            if (is_array($value)) {
+                $value = call_user_func([$this, 'arrayFilterRecursive'], $value, $callback);
+            }
         }
 
         return $array;

@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\HoraroTextFile;
 
 use Hedgebot\Plugins\Horaro\Horaro;
@@ -8,6 +9,10 @@ use HedgeBot\Plugins\Horaro\Event\HoraroEvent;
 use HedgeBot\Plugins\Horaro\Entity\Schedule;
 use DateInterval;
 
+/**
+ * Class HoraroTextFile
+ * @package HedgeBot\Plugins\HoraroTextFile
+ */
 class HoraroTextFile extends PluginBase
 {
     /** @var Horaro The Horaro plugin reference, where the schedule info will be fetched */
@@ -15,12 +20,14 @@ class HoraroTextFile extends PluginBase
     /** @var array The schedule ident slug -> file path mapping array */
     protected $fileMapping;
 
+    /**
+     * @return bool|void
+     */
     public function init()
     {
         $this->horaroPlugin = Plugin::getManager()->getPlugin('Horaro'); // Get the Horaro plugin object, it should be loaded since it's a dependency
         $this->loadData();
     }
-
 
     /**
      * Data has been updated externally, maybe that means the mapping has been changed by a console command ?
@@ -34,8 +41,9 @@ class HoraroTextFile extends PluginBase
     /**
      * Event: Schedule has been updated by the Horaro plugin.
      * We match the file to the new item.
-     * 
+     *
      * @param HoraroEvent $event The event.
+     * @throws \Exception
      */
     public function HoraroScheduleUpdated(HoraroEvent $event)
     {
@@ -44,8 +52,7 @@ class HoraroTextFile extends PluginBase
         $identSlug = $schedule->getIdentSlug();
 
         // Check if we have a file mapping for this schedule slug
-        if(!empty($this->fileMapping[$identSlug]))
-        {
+        if (!empty($this->fileMapping[$identSlug])) {
             $item = $schedule->getCurrentItem();
             $itemFileContent = join("\n", $item->data);
 
@@ -54,15 +61,15 @@ class HoraroTextFile extends PluginBase
 
             // Add estimate, see to replace with provider stuff
             $dateInterval = new DateInterval($item->length);
-            $itemFileContent .= "\n". $dateInterval->format("%H:%I:%S");
-            
+            $itemFileContent .= "\n" . $dateInterval->format("%H:%I:%S");
+
             file_put_contents($this->fileMapping[$identSlug], $itemFileContent);
         }
     }
 
     /**
      * Sets the file path for a schedule slug in the file mapping.
-     * 
+     *
      * @param string $identSlug The ident slug to set the path of.
      * @param string $path The path to put the file into.
      */
@@ -78,7 +85,7 @@ class HoraroTextFile extends PluginBase
     {
         $this->fileMapping = $this->data->fileMapping->toArray();
     }
-    
+
     /**
      * Saves the mapping to the data storage.
      */

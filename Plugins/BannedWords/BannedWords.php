@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\BannedWords;
 
 use HedgeBot\Core\HedgeBot;
@@ -33,7 +34,6 @@ class BannedWords extends PluginBase
 
     // Plugin configuration variables, per channel
     private $bannedWords = [];
-    private $timeoutDuration = [];
 
     // Plugin configuration variables, global fallback
     private $globalBannedWords;
@@ -47,7 +47,11 @@ class BannedWords extends PluginBase
         $this->reloadConfig();
     }
 
-    /** System event: configuration change handling */
+    /**
+     * System event: configuration change handling
+     *
+     * @param CoreEvent $ev
+     */
     public function SystemEventConfigUpdate(CoreEvent $ev)
     {
         $this->config = HedgeBot::getInstance()->config->get('plugin.Currency');
@@ -57,23 +61,26 @@ class BannedWords extends PluginBase
     /**
      * Handles chat messages, checks that any of the banned words for the channel or in the global word banlist
      * isn't in the message, and timeouts the user as a consequence.
+     *
+     * @param ServerEvent $ev
      */
     public function ServerPrivmsg(ServerEvent $ev)
     {
         // Moderators are exempted from being timeout'd
-        if($ev->moderator)
+        if ($ev->moderator) {
             return;
+        }
 
         $message = $this->normalize($ev->message);
         $timeoutDuration = $this->getConfigParameter($ev->channel, 'timeoutDuration');
 
         // Simple purge is a timeout of 1 second
-        if($timeoutDuration == 0)
+        if ($timeoutDuration == 0) {
             $timeoutDuration = 1;
+        }
 
         // Check against global banned words
-        foreach($this->globalBannedWords as $bannedWord)
-        {
+        foreach ($this->globalBannedWords as $bannedWord) {
             // Match against a banned word, we timeout
             if(strpos($message, $bannedWord) !== FALSE)
                 IRC::message($ev->channel, ".timeout ". $ev->nick. " ". $timeoutDuration);
@@ -91,36 +98,42 @@ class BannedWords extends PluginBase
         }
     }
 
-    /** Reloads the config using property mapping */
+    /**
+     * Reloads the config using property mapping
+     */
     public function reloadConfig()
     {
-        $parameters = ['bannedWords',
-                       'timeoutDuration'];
+        $parameters = [
+            'bannedWords',
+            'timeoutDuration'
+        ];
 
         $this->globalBannedWords = [];
-    	$this->globalTimeoutDuration = self::DEFAULT_TIMEOUT_DURATION;
+        $this->globalTimeoutDuration = self::DEFAULT_TIMEOUT_DURATION;
 
-    	$this->mapConfig($this->config, $parameters);
+        $this->mapConfig($this->config, $parameters);
 
-    	// Normalize all loaded words
-    	foreach($this->globalBannedWords as &$word)
-    	    $word = $this->normalize($word);
+        // Normalize all loaded words
+        foreach ($this->globalBannedWords as &$word) {
+            $word = $this->normalize($word);
+        }
 
-    	foreach($this->bannedWords as &$channel)
-    	{
-    	    foreach($channel as &$word)
-    	        $word = $this->normalize($word);
-    	}
+        foreach ($this->bannedWords as &$channel) {
+            foreach ($channel as &$word) {
+                $word = $this->normalize($word);
+            }
+        }
     }
 
     /**
      * Normalizes text input by notably removing accents in it.
      * Taken from http://www.weirdog.com/blog/php/supprimer-les-accents-des-caracteres-accentues.html
      *
-     * \param string $str     The string to normalize.
-     * \param string $charset The charset to use. Defaults to UTF-8.
+     * @param string $str     The string to normalize.
+     * @param string $charset The charset to use. Defaults to UTF-8.
+     * @return null|string|string[]
      */
-    function normalize($str, $charset='utf-8')
+    public function normalize($str, $charset = 'utf-8')
     {
         $str = htmlentities($str, ENT_NOQUOTES, $charset);
 

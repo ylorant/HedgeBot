@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Service\Twitch;
 
 use HedgeBot\Core\Data\Provider as DataProvider;
@@ -13,11 +14,19 @@ class AuthManager
     protected $clientID;
     /** @var string The client App Secret that'll be used on authentication on Twitch. */
     protected $clientSecret;
-    /** @var array The list of user access tokens that can be used to interact with channels. Every access token is tied to a channel. */
+    /** @var array The list of user access tokens that can be used to interact with channels.
+     * Every access token is tied to a channel.
+     */
     protected $accessTokens;
     /** @var DataProvider The data provider where the data will be saved */
     protected $dataProvider;
 
+    /**
+     * AuthManager constructor.
+     * @param $clientID
+     * @param $clientSecret
+     * @param DataProvider $dataProvider
+     */
     public function __construct($clientID, $clientSecret, DataProvider $dataProvider)
     {
         $this->clientID = $clientID;
@@ -30,7 +39,7 @@ class AuthManager
 
     /**
      * Gets the app client ID.
-     * 
+     *
      * @return string The app's client ID.
      */
     public function getClientID()
@@ -40,7 +49,7 @@ class AuthManager
 
     /**
      * Gets the client secret.
-     * 
+     *
      * @return string The client secret.
      */
     public function getClientSecret()
@@ -50,7 +59,7 @@ class AuthManager
 
     /**
      * Gets the access token list.
-     * 
+     *
      * @return array The access token list.
      */
     public function getAccessTokens()
@@ -58,6 +67,10 @@ class AuthManager
         return $this->accessTokens;
     }
 
+    /**
+     * @param $channel
+     * @return bool
+     */
     public function hasAccessToken($channel)
     {
         $channel = strtolower($channel);
@@ -66,23 +79,24 @@ class AuthManager
 
     /**
      * Gets an access token from the channel name.
-     * 
+     *
      * @param string $channel The channel to get the access token of.
-     * 
+     *
      * @return string|nulll The access token if found, or null if not.
      */
     public function getAccessToken($channel)
     {
         $channel = strtolower($channel);
-        if(!empty($this->accessTokens[$channel]))
+        if (!empty($this->accessTokens[$channel])) {
             return $this->accessTokens[$channel];
-        
+        }
+
         return null;
     }
 
     /**
      * Sets the access tokens.
-     * 
+     *
      * @param array $accessTokens The access token list to set.
      */
     public function setAccessTokens(array $accessTokens)
@@ -93,7 +107,7 @@ class AuthManager
 
     /**
      * Sets an access token to the token list.
-     * 
+     *
      * @param string $channel The channel for which the access token will be used.
      * @param string $accessToken The access token.
      */
@@ -106,14 +120,15 @@ class AuthManager
 
     /**
      * Removes the access token corresponding to one channel.
-     * 
+     *
      * @param string $channel The channel from which to remove the access token.
      */
     public function removeAccessToken($channel)
     {
         $channel = strtolower($channel);
-        if(isset($this->accessTokens[$channel]))
+        if (isset($this->accessTokens[$channel])) {
             unset($this->accessTokens[$channel]);
+        }
     }
 
     /**

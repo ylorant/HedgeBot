@@ -1,8 +1,13 @@
 <?php
+
 namespace HedgeBot\Core\Events;
 
 use HedgeBot\Core\Traits\Hydrator;
 
+/**
+ * Class ServerEvent
+ * @package HedgeBot\Core\Events
+ */
 class ServerEvent extends Event
 {
     protected $membership;
@@ -29,6 +34,9 @@ class ServerEvent extends Event
         $this->hydrate($command);
     }
 
+    /**
+     * @return string
+     */
     public static function getType()
     {
         return 'serverEvent';

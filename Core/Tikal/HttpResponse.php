@@ -1,6 +1,11 @@
 <?php
+
 namespace HedgeBot\Core\Tikal;
 
+/**
+ * Class HttpResponse
+ * @package HedgeBot\Core\Tikal
+ */
 class HttpResponse
 {
     public $request;
@@ -27,6 +32,10 @@ class HttpResponse
         500 => "Internal Server Error"
     ];
 
+    /**
+     * HttpResponse constructor.
+     * @param HttpRequest $request
+     */
     public function __construct(HttpRequest $request)
     {
         $this->request = $request;
@@ -41,37 +50,40 @@ class HttpResponse
         $response = "";
         $data = $this->data;
 
-        if(!is_string($this->data) && (!empty($this->headers['Content-Type']) || !empty($this->request->headers['Accept'])))
-        {
+        if (!is_string($this->data) && (!empty($this->headers['Content-Type']) || !empty($this->request->headers['Accept']))) {
             $contentType = !empty($this->headers['Content-Type']) ? $this->headers['Content-Type'] : $this->request->headers['Accept'];
             $this->headers['Content-Type'] = $contentType;
 
-            switch($contentType)
-            {
+            switch ($contentType) {
                 case 'application/json':
                     $data = json_encode($this->data);
                     break;
             }
         }
 
-        if(empty($this->headers['Content-Type']))
+        if (empty($this->headers['Content-Type'])) {
             $this->contentType = "text/plain";
+        }
 
-        if(empty($this->statusCode))
+        if (empty($this->statusCode)) {
             $this->statusCode = 200;
+        }
 
-        if(!empty($data))
+        if (!empty($data)) {
             $this->headers['Content-Length'] = strlen($data);
-        else
+        } else {
             $this->headers['Content-Length'] = 0;
+        }
 
-        $response .= "HTTP/1.1 ". $this->statusCode. " ". self::STATUS_MESSAGES[$this->statusCode]. "\r\n";
+        $response .= "HTTP/1.1 " . $this->statusCode . " " . self::STATUS_MESSAGES[$this->statusCode] . "\r\n";
 
-        foreach($this->headers as $name => $value)
-            $response .= $name. ": ". $value. "\r\n";
+        foreach ($this->headers as $name => $value) {
+            $response .= $name . ": " . $value . "\r\n";
+        }
 
-        if(!empty($data))
-            $response .= "\r\n". $data;
+        if (!empty($data)) {
+            $response .= "\r\n" . $data;
+        }
 
         return $response;
     }

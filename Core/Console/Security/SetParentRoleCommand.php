@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Console\Security;
 
 use Symfony\Component\Console\Input\InputInterface;
@@ -6,10 +7,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Security\AccessControlManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use HedgeBot\Core\Console\StorageAwareCommand;
 
+/**
+ * Class SetParentRoleCommand
+ * @package HedgeBot\Core\Console\Security
+ */
 class SetParentRoleCommand extends StorageAwareCommand
 {
     public function configure()
@@ -21,6 +25,11 @@ class SetParentRoleCommand extends StorageAwareCommand
             ->addOption('delete', 'd', InputOption::VALUE_NONE);
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $roleId = $input->getArgument('roleId');
@@ -31,21 +40,22 @@ class SetParentRoleCommand extends StorageAwareCommand
         $role = $accessControlManager->getRole($roleId);
         $parentRole = null;
 
-        if(empty($role))
-            throw new InvalidArgumentException("Unable to load role '". $roleId. "': role does not exist.");
-        
-        if(!$deleteParent)
-        {
-            $parentRole = $accessControlManager->getRole($parentRoleId);
-            if(empty($parentRole))
-                throw new InvalidArgumentException("Unable to load role '". $parentRoleId. "': role does not exist.");
-            
-            if($accessControlManager->rolesHaveRelation($role, $parentRole))
-                throw new InvalidArgumentException("Unable to set parent of '". $roleId. "' to '". $parentRoleId."': Roles already have a parent/child relation.");
+        if (empty($role)) {
+            throw new InvalidArgumentException("Unable to load role '" . $roleId . "': role does not exist.");
         }
 
-        
-        
+        if (!$deleteParent) {
+            $parentRole = $accessControlManager->getRole($parentRoleId);
+            if (empty($parentRole)) {
+                throw new InvalidArgumentException("Unable to load role '" . $parentRoleId . "': role does not exist.");
+            }
+
+            if ($accessControlManager->rolesHaveRelation($role, $parentRole)) {
+                throw new InvalidArgumentException("Unable to set parent of '" . $roleId . "' to '"
+                    . $parentRoleId . "': Roles already have a parent/child relation.");
+            }
+        }
+
         $role->setParent($parentRole);
         $accessControlManager->saveToStorage();
     }

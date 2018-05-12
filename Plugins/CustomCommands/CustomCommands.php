@@ -1,7 +1,7 @@
 <?php
+
 namespace HedgeBot\Plugins\CustomCommands;
 
-use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\Events\ServerEvent;
@@ -10,6 +10,10 @@ use HedgeBot\Core\API\Store;
 use HedgeBot\Core\Store\Formatter\TextFormatter;
 use HedgeBot\Core\API\Tikal;
 
+/**
+ * Class CustomCommands
+ * @package HedgeBot\Plugins\CustomCommands
+ */
 class CustomCommands extends Plugin
 {
 	protected $commands = [];

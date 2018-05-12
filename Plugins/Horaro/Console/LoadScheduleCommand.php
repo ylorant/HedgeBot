@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\Horaro\Console;
 
 use HedgeBot\Core\Console\StorageAwareCommand;
@@ -9,19 +10,31 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Exception\RuntimeException;
 
+/**
+ * Class LoadScheduleCommand
+ * @package HedgeBot\Plugins\Horaro\Console
+ */
 class LoadScheduleCommand extends StorageAwareCommand
 {
     use PluginAwareTrait;
 
+    /**
+     *
+     */
     public function configure()
     {
         $this->setName('horaro:load-schedule')
-             ->setDescription('Loads a schedule into the bot.')
-             ->addOption('event', 'e', InputOption::VALUE_REQUIRED)
-             ->addOption('channel', 'C', InputOption::VALUE_REQUIRED)
-             ->addArgument('schedule', InputArgument::REQUIRED, 'The schedule slug or URL.');
+            ->setDescription('Loads a schedule into the bot.')
+            ->addOption('event', 'e', InputOption::VALUE_REQUIRED)
+            ->addOption('channel', 'C', InputOption::VALUE_REQUIRED)
+            ->addArgument('schedule', InputArgument::REQUIRED, 'The schedule slug or URL.');
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $eventId = $input->getOption('event');
@@ -31,25 +44,26 @@ class LoadScheduleCommand extends StorageAwareCommand
         $plugin = $this->getPlugin();
 
         $scheduleExists = $plugin->scheduleExists($scheduleId, $eventId);
-        if(!$scheduleExists)
+        if (!$scheduleExists) {
             throw new RuntimeException("Cannot load schedule, it has not been found on Horaro.");
+        }
 
         $scheduleIdentSlug = $plugin->loadSchedule($scheduleId, $eventId);
 
-        if(!$scheduleIdentSlug)
+        if (!$scheduleIdentSlug) {
             throw new RuntimeException("Cannot load schedule, it has been already loaded.");
-        
-        if(!empty($channel))
-        {
+        }
+
+        if (!empty($channel)) {
             /** @var Schedule $schedule */
             $schedule = $plugin->getScheduleByIdentSlug($scheduleIdentSlug);
             $schedule->setChannel($channel);
         }
 
         $plugin->saveData();
-        
+
         $output->writeln([
-            "Schedule ident slug: ". $scheduleIdentSlug,
+            "Schedule ident slug: " . $scheduleIdentSlug,
             "",
             "Use this ident slug to reference this schedule in all future console calls that need it."
         ]);

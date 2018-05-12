@@ -1,6 +1,11 @@
 <?php
+
 namespace HedgeBot\Core\Events;
 
+/**
+ * Class CommandEvent
+ * @package HedgeBot\Core\Events
+ */
 class CommandEvent extends ServerEvent
 {
     protected $arguments;
@@ -10,8 +15,8 @@ class CommandEvent extends ServerEvent
      *
      * @constructor
      * @param       string $commandName The command name.
-     * @param       array  $args        The arguments given to the command.
-     * @param       array  $command     The server message data array, using IRCConnection::parseMsg() keys.
+     * @param       array $args The arguments given to the command.
+     * @param       array $command The server message data array, using IRCConnection::parseMsg() keys.
      */
     public function __construct($commandName, array $args, array $command)
     {
@@ -21,6 +26,9 @@ class CommandEvent extends ServerEvent
         $this->arguments = $args;
     }
 
+    /**
+     * @return string
+     */
     public static function getType()
     {
         return 'command';

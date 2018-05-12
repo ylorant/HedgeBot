@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Core\Service\Twitch\Kraken\Services;
 
 use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
@@ -12,6 +13,10 @@ class Channels extends Service
 {
     const SERVICE_NAME = "channels";
 
+    /**
+     * Channels constructor.
+     * @param Kraken $kraken
+     */
     public function __construct(Kraken $kraken)
     {
         parent::__construct($kraken);
@@ -19,7 +24,8 @@ class Channels extends Service
     }
 
     /**
-     * Fetch informations for a given channel. Basically executes the API call to get channel data from Twitch and returns it.
+     * Fetch informations for a given channel.
+     * Basically executes the API call to get channel data from Twitch and returns it.
      *
      * @param $channel The channel name.
      * @return Available information as stdClass.
@@ -33,18 +39,24 @@ class Channels extends Service
     }
 
     /**
-     * Fetch the list of followers for a channel. Since Twitch's API doesn't allow to get the whole list of followers in one go,
+     * Fetch the list of followers for a channel.
+     * Since Twitch's API doesn't allow to get the whole list of followers in one go,
      * the limitation is present there too. Also, since Twitch supports cursor-based pagination instead of regular one,
      * you'll have to get each page one by one (the cursor for the next page is given in each result).
      *
      * @param $channel The channel name.
-     * @param $parameters The parameters for the list to retrieve. No parameter is mandatory. Available parameters:
-     *                    - limit: The limit for the element count in the list. Follows Twitch's limit of maximum 100 followers.
-     *                    - start; Where to start from. Expects a cursor, refer to the Twitch API for more info.
-     *                    - order: The order in which the results will be presented, desc or asc. Order will be by follow time.
-     *                    - detailed info: boolean indicating whether to get extended info for each user or only the nickname.
-     * @return object An object containing the resulting list, along with other useful data (count, cursor). If detailed info is requested,
-     *         then each user is listed in an object. If not, only the nickname as a string will be returned in the list.
+     * @param array $parameters The parameters for the list to retrieve. No parameter is mandatory.
+     *                          Available parameters:
+     *                            - limit: The limit for the element count in the list.
+     *                                     Follows Twitch's limit of maximum 100 followers.
+     *                            - start; Where to start from. Expects a cursor, refer to the Twitch API for more info.
+     *                            - order: The order in which the results will be presented, desc or asc.
+     *                                     Order will be by follow time.
+     *                            - detailed info: boolean indicating whether to get extended info
+     *                                             for each user or only the nickname.
+     * @return object An object containing the resulting list, along with other useful data (count, cursor).
+     *                If detailed info is requested, then each user is listed in an object.
+     *                If not, only the nickname as a string will be returned in the list.
      *
      * @see https://github.com/justintv/Twitch-API/blob/master/v3_resources/follows.md#get-channelschannelfollows
      */
@@ -67,11 +79,9 @@ class Channels extends Service
         $return->list = array();
 
         // Handling the return format
-        foreach($userList->follows as $user)
-        {
+        foreach ($userList->follows as $user) {
             // If needed, fetch a lot of info
-            if(!empty($parameters['detailed_info']))
-            {
+            if (!empty($parameters['detailed_info'])) {
                 $userObject = new stdClass();
                 $userObject->name = $user->user->name;
                 $userObject->followDate = new DateTime($user->created_at);
@@ -81,9 +91,10 @@ class Channels extends Service
                 $userObject->logo = $user->user->logo;
                 $userObject->bio = $user->user->bio;
                 $userObject->hasNotifications = $user->notifications;
-            }
-            else // Return only the nickname by default
+            } else // Return only the nickname by default
+            {
                 $return->list[] = $user->user->name;
+            }
         }
 
         return $return;
@@ -91,13 +102,16 @@ class Channels extends Service
 
     /**
      * Updates a channel's data. This method requires to have a valid access token, that can update a channel of course.
-     * 
-     * @param $channel The channel to update.
-     * @param $parameters The parameters to update. Available parameters:
+     *
+     * @param $channel channel to update.
+     * @param array $parameters The parameters to update. Available parameters:
      *                    - title: The channel title
      *                    - game: The channel game
-     *                    - delay: The channel delay, in seconds. It requires the access token to be one from the channel owner.
-     *                    - channel_feed-enabled: Set to true to enable the channel feed. Requires an access token from the channel owner.
+     *                    - delay: The channel delay, in seconds.
+     *                             It requires the access token to be one from the channel owner.
+     *                    - channel_feed-enabled: Set to true to enable the channel feed.
+     *                                            Requires an access token from the channel owner.
+     * @return \HedgeBot\Core\Service\Twitch\Kraken\
      */
     public function update($channel, array $parameters = [])
     {
@@ -111,7 +125,7 @@ class Channels extends Service
         ];
 
         $queryParameters["channel"] = array_filter($queryParameters["channel"]);
-        
+
         $channelId = $this->kraken->getService('users')->getUserId($channel);
         $response = $this->query(Kraken::QUERY_TYPE_PUT, "/$channelId", $queryParameters, $channel);
 
