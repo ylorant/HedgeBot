@@ -46,14 +46,14 @@ class CustomCommandsEndpoint
 
     /**
      * Removes a custom command.
-     * @see CustomCommands::removeCommand()
+     * @see CustomCommands::deleteCommand()
      *
      * @param $commandName
      * @return bool
      */
-    public function removeCommand($commandName)
+    public function deleteCommand($commandName)
     {
-        return $this->plugin->removeCommand($commandName);
+        return $this->plugin->deleteCommand($commandName);
     }
 
     /**

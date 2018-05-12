@@ -46,7 +46,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $this->horaro->setErrorHandler([$this, 'onHoraroError']);
 
         Plugin::getManager()->addRoutine($this, "RoutineProcessSchedules", 60);
-        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", $this->config['refreshInterval'] ?? 300);
+        Plugin::getManager()->addRoutine($this, "RoutineRefreshSchedules", (int)($this->config['refreshInterval'] ?? 300));
         Plugin::getManager()->addRoutine($this, "RoutineCheckAsyncRequests", 1);
         Plugin::getManager()->addEventListener(HoraroEvent::getType(), 'Horaro');
 
@@ -69,7 +69,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
     {
         $storeData = [];
 
-        $runningSchedules = $this->getCurrentlyRunningSchedules($channel);
+        $runningSchedules = $this->getCurrentlyRunningSchedules($channel, true);
 
         /** @var Schedule $schedule */
         foreach ($runningSchedules as &$schedule) {
@@ -324,6 +324,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function CoreEventDataUpdate()
     {
         $this->loadData();
+
+        // Do a direct schedule processing to ensure everything is still sync'd
+        $this->RoutineProcessSchedules();
     }
 
     /**
@@ -332,9 +335,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function CoreEventConfigUpdate()
     {
         // TODO: Find a way to avoid to re-find the configuration manually
-        $this->config = HedgeBot::getInstance()->config->get('plugin.Horaro');
-        Plugin::getManager()->changeRoutineTimeInterval($this, "RoutineRefreshSchedules",
-            $this->config['refreshInterval']);
+	$this->config = HedgeBot::getInstance()->config->get('plugin.Horaro');
+        Plugin::getManager()->changeRoutineTimeInterval($this, "RoutineRefreshSchedules", $this->config['refreshInterval']);
+
+        // Do a direct schedule processing to ensure everything is still sync'd
+        $this->RoutineProcessSchedules();
     }
 
     // Chat commands
@@ -586,12 +591,14 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
     /**
      * Gets the currently running schedules, i.e. Those who are enabled and currently in process, time-wise.
-     *
-     * @param string $channel Filter the schedules by channel.
-     *
+     * 
+     * @param string $channel    Filter the schedules by channel.
+     * @param bool   $lookaround Set to true to loosen the search by looking for schedules that are around current time
+     *                           by the lookaroundThreshold setting value (default: 1 hour).
+     * 
      * @return array The list of schedules that are currently running. If none are found, an empty array is returned.
      */
-    public function getCurrentlyRunningSchedules($channel = null)
+    public function getCurrentlyRunningSchedules($channel = null, $lookaround = false)
     {
         $runningSchedules = [];
         $currentTime = new DateTime($this->config['simulatedTime'] ?? null);
@@ -599,6 +606,16 @@ class Horaro extends PluginBase implements StoreSourceInterface
         foreach ($this->schedules as $identSlug => $schedule) {
             $startTime = $schedule->getStartTime();
             $endTime = $schedule->getEndTime();
+            $addSchedule = false;
+
+            // Account for lookaround by broadening the schedule times if the option is enabled
+            if($lookaround)
+            {
+                $lookaroundThreshold = (int) ($this->config['lookaroundTheshold'] ?? 3600);
+                $thresholdInterval = new DateInterval("PT". $lookaroundThreshold. "S");
+                $startTime->sub($thresholdInterval);
+                $endTime->add($thresholdInterval);
+            }
 
             if ($currentTime > $startTime && $currentTime < $endTime && (empty($channel) || $schedule->getChannel() == $channel)) {
                 $runningSchedules[$identSlug] = $schedule;
