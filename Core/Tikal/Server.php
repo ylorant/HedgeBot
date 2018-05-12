@@ -95,8 +95,8 @@ class Server
 
         HedgeBot::message("Tikal endpoint call: $0", [$url], E_DEBUG);
         if(!$this->hasEndpoint($url)) // Endpoint not found, return a 404
-	{        
-	    return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
+        {        
+            return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
         }
 
         if ($request->method == "POST") // Only handle POST requests as JSON-RPC requests
