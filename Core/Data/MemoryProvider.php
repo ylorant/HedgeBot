@@ -94,6 +94,5 @@ class MemoryProvider extends Provider
      */
     public function checkUpdate()
     {
-
     }
 }

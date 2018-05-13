@@ -44,8 +44,11 @@ class Server
         $this->tokenlessMode = isset($config->tokenless) ? $config->tokenless : false;
 
         if ($this->tokenlessMode) {
-            HedgeBot::message("Token-less mode is insecure! We advise you to use a token unless you know what you're doing !",
-                null, E_WARNING);
+            HedgeBot::message(
+                "Token-less mode is insecure! We advise you to use a token unless you know what you're doing !",
+                null,
+                E_WARNING
+            );
         }
 
         $this->httpServer = new HttpServer($address, $port);
@@ -94,13 +97,11 @@ class Server
         }
 
         HedgeBot::message("Tikal endpoint call: $0", [$url], E_DEBUG);
-        if(!$this->hasEndpoint($url)) // Endpoint not found, return a 404
-        {        
+        if (!$this->hasEndpoint($url)) { // Endpoint not found, return a 404
             return $this->sendErrorResponse($response, HttpResponse::NOT_FOUND);
         }
 
-        if ($request->method == "POST") // Only handle POST requests as JSON-RPC requests
-        {
+        if ($request->method == "POST") { // Only handle POST requests as JSON-RPC requests
             // Checking that we have JSON.
             if ($request->contentType != "application/json") {
                 return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
@@ -112,14 +113,12 @@ class Server
             if ($result) {
                 $this->httpServer->send($response);
             }
-        } elseif ($request->method == "GET") // GET queries return the list of available methods for said endpoint
-        {
+        } elseif ($request->method == "GET") { // GET queries return the list of available methods for said endpoint
             $response->statusCode = HttpResponse::OK;
             $response->headers['Content-Type'] = 'application/json';
             $response->data = $this->getMethodList($url);
             $this->httpServer->send($response);
         }
-
     }
 
     /**
@@ -178,8 +177,11 @@ class Server
         $endpointClass = $this->getEndpoint($request->requestURI);
         $reflectionClass = new ReflectionClass($endpointClass);
 
-        HedgeBot::message("Tikal: Called method: $0:$1", [$reflectionClass->getShortName(), $rpcQuery->method],
-            E_DEBUG);
+        HedgeBot::message(
+            "Tikal: Called method: $0:$1",
+            [$reflectionClass->getShortName(), $rpcQuery->method],
+            E_DEBUG
+        );
 
         // Check that the method exists and it isn't a magic method
         if (!$reflectionClass->hasMethod($rpcQuery->method) || strpos($rpcQuery->method, "__") === 0) {
@@ -204,8 +206,11 @@ class Server
             $rpcQuery->params = $orderedParams;
         }
 
-        HedgeBot::message("Tikal: Calling RPC method: $0::$1",
-            [$reflectionClass->getShortName(), $reflectionMethod->getName()], E_DEBUG);
+        HedgeBot::message(
+            "Tikal: Calling RPC method: $0::$1",
+            [$reflectionClass->getShortName(), $reflectionMethod->getName()],
+            E_DEBUG
+        );
         $funcResult = $reflectionMethod->invokeArgs($endpointClass, $rpcQuery->params);
 
         // Send result only if this is not a notification, i.e. an ID is given
@@ -214,8 +219,11 @@ class Server
             $response->data = ["jsonrpc" => "2.0", "result" => $funcResult, "id" => $rpcQuery->id];
         }
 
-        HedgeBot::message("Tikal: Success. Reply: $0.",
-            [!empty($response->data["result"]) ? gettype($response->data["result"]) : "null"], E_DEBUG);
+        HedgeBot::message(
+            "Tikal: Success. Reply: $0.",
+            [!empty($response->data["result"]) ? gettype($response->data["result"]) : "null"],
+            E_DEBUG
+        );
 
         return true;
     }

@@ -109,19 +109,37 @@ class CurrencyTest
         $config = new stdClass();
 
         // Getting settings from the configuration
-        $config->statusCommand = '!' . $this->getParameterFromData($this->pluginConfig, $currentChannel,
-                'statusCommand', Currency::DEFAULT_STATUS_COMMAND);
-        $config->currencyName = $this->getParameterFromData($this->pluginConfig, $currentChannel,
-            'currencyName', Currency::DEFAULT_CURRENCY_NAME);
-        $config->currencyNamePlural = $this->getParameterFromData($this->pluginConfig, $currentChannel,
-            'currencyNamePlural', Currency::DEFAULT_CURRENCY_NAME_PLURAL);
-        $msgRegexp = $this->getParameterFromData($this->pluginConfig, $currentChannel, 'statusMessage',
-            Currency::DEFAULT_STATUS_MESSAGE);
+        $config->statusCommand = '!' . $this->getParameterFromData(
+            $this->pluginConfig,
+            $currentChannel,
+                'statusCommand',
+            Currency::DEFAULT_STATUS_COMMAND
+        );
+        $config->currencyName = $this->getParameterFromData(
+            $this->pluginConfig,
+            $currentChannel,
+            'currencyName',
+            Currency::DEFAULT_CURRENCY_NAME
+        );
+        $config->currencyNamePlural = $this->getParameterFromData(
+            $this->pluginConfig,
+            $currentChannel,
+            'currencyNamePlural',
+            Currency::DEFAULT_CURRENCY_NAME_PLURAL
+        );
+        $msgRegexp = $this->getParameterFromData(
+            $this->pluginConfig,
+            $currentChannel,
+            'statusMessage',
+            Currency::DEFAULT_STATUS_MESSAGE
+        );
 
         // Setting status message regexp
-        $msgRegexp = str_replace(array('@name', '@total', '@currency'),
+        $msgRegexp = str_replace(
+            array('@name', '@total', '@currency'),
             array(Server::getNick(), '([0-9]+)', join('|', [$config->currencyName, $config->currencyNamePlural])),
-            preg_quote($msgRegexp, '#'));
+            preg_quote($msgRegexp, '#')
+        );
 
         $config->statusRegexp = $msgRegexp;
         $config->currencyName = $currency[0];

@@ -146,8 +146,7 @@ class IRCConnection
         // Whisper
         if ($ev->command == "WHISPER") {
             $this->whisper($ev->nick, $message);
-        } else // Channel message
-        {
+        } else { // Channel message
             $this->message($ev->channel, $message);
         }
     }

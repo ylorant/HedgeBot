@@ -166,8 +166,11 @@ class HedgeBot
 
         $pluginList = $this->config->general->plugins;
         if (empty($pluginList)) {
-            return HedgeBot::message('No plugin to load. This bot is pretty much useless without plugins.', null,
-                E_ERROR);
+            return HedgeBot::message(
+                'No plugin to load. This bot is pretty much useless without plugins.',
+                null,
+                E_ERROR
+            );
         }
 
         $pluginList = explode(',', $pluginList);
@@ -234,8 +237,7 @@ class HedgeBot
         // Remove the vendor namespace if necessary
         if ($components[0] == self::VENDOR_NAMESPACE) {
             array_shift($components);
-        } else // It's not from the vendor namespace, it should be an external lib then.
-        {
+        } else { // It's not from the vendor namespace, it should be an external lib then.
             $currentDir .= "lib/";
         }
 
@@ -345,8 +347,7 @@ class HedgeBot
             case E_WARNING:
             case E_USER_WARNING:
                 $prefix = 'Warning';
-                if ($hasColors) // If we are on Linux, we use colors
-                {
+                if ($hasColors) { // If we are on Linux, we use colors
                     echo "\033[0;33m";
                 }
                 break;
@@ -354,16 +355,14 @@ class HedgeBot
             case E_USER_ERROR:
                 $prefix = 'Error';
                 $verbosity = 0;
-                if ($hasColors) // If we are on Linux, we use colors (yes, I comment twice)
-                {
+                if ($hasColors) { // If we are on Linux, we use colors (yes, I comment twice)
                     echo "\033[0;31m";
                 }
                 break;
             case E_DEBUG:
                 $prefix = 'Debug';
                 $verbosity = 2;
-                if ($hasColors) // If we are on Linux, we use colors
-                {
+                if ($hasColors) { // If we are on Linux, we use colors
                     echo "\033[38;5;245m";
                 }
                 break;

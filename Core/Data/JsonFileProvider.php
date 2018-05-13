@@ -153,8 +153,9 @@ class JsonFileProvider extends Provider
         $currentPath[$varName] = $data;
     
         // Write the data only if the data write would result in an actual write
-        if(!($pathWasEmpty && is_array($data) && empty($data)))
+        if (!($pathWasEmpty && is_array($data) && empty($data))) {
             $this->writeData();
+        }
         
         return true;
     }

@@ -321,7 +321,8 @@ class Currency extends PluginBase
             $currencyNamePlural = $this->globalCurrencyNamePlural;
         }
 
-        $message = str_replace(array(
+        $message = str_replace(
+            array(
             '@name',
             '@total',
             '@currency'
@@ -333,7 +334,8 @@ class Currency extends PluginBase
                     $currencyNamePlural
                     : $currencyName
             ),
-            $message);
+            $message
+        );
 
         return $message;
     }

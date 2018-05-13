@@ -360,8 +360,12 @@ class Horaro
     public function getScheduleAsync($scheduleId, $eventId = null, $hiddenKey = null, $callback = null)
     {
         if (!empty($eventId)) {
-            $this->queryAsync("/events/" . $eventId . "/schedules/" . $scheduleId, [], $callback,
-                [$scheduleId, $eventId]);
+            $this->queryAsync(
+                "/events/" . $eventId . "/schedules/" . $scheduleId,
+                [],
+                $callback,
+                [$scheduleId, $eventId]
+            );
         } else {
             $this->queryAsync("/schedules/" . $scheduleId, [], $callback, [$scheduleId, $eventId]);
         }

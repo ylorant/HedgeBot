@@ -26,8 +26,9 @@ class UnloadScheduleCommand extends StorageAwareCommand
         /** @var Horaro $plugin */
         $plugin = $this->getPlugin();
 
-        if(!$plugin->unloadSchedule($identSlug))
+        if (!$plugin->unloadSchedule($identSlug)) {
             throw new RuntimeException("Schedule ident slug not found.");
+        }
 
         $plugin->saveData();
     }

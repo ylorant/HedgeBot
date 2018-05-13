@@ -13,7 +13,7 @@ abstract class Event
     protected $propagation;
     protected $name;
 
-    public abstract static function getType();
+    abstract public static function getType();
 
     /**
      * Builds an event.

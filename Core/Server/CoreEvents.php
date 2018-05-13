@@ -220,8 +220,11 @@ class CoreEvents
     public function ServerUserstate(ServerEvent $ev)
     {
         if (!$ev->moderator) {
-            HedgeBot::message("HedgeBot isn't currently a moderator. Moderator rights may be needed to perform some operations.",
-                null, E_WARNING);
+            HedgeBot::message(
+                "HedgeBot isn't currently a moderator. Moderator rights may be needed to perform some operations.",
+                null,
+                E_WARNING
+            );
         }
     }
 
@@ -244,8 +247,11 @@ class CoreEvents
 
                 // If the user doesn't have the right to the command, then we stop the propagation of it.
                 if (!Security::hasRight($ev->nick, $rightName)) {
-                    HedgeBot::message("Access denied to right 'command/$0' for user '$1'",
-                        [strtolower($cmdName), $ev->nick], E_DEBUG);
+                    HedgeBot::message(
+                        "Access denied to right 'command/$0' for user '$1'",
+                        [strtolower($cmdName), $ev->nick],
+                        E_DEBUG
+                    );
                     $ev->stopPropagation();
                 }
             }

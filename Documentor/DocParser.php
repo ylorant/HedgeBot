@@ -71,8 +71,7 @@ class DocParser
                 }
 
                 $parsedTokens[$command[0]][] = $commandContent;
-            } else // If it's not recognized as a command, add it as a description token
-            {
+            } else { // If it's not recognized as a command, add it as a description token
                 $currentDescToken .= $line . " ";
             }
         }

@@ -196,8 +196,7 @@ class Game
      */
     public function stay($player)
     {
-        if (empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) // Is the player still in the game ?
-        {
+        if (empty($this->players[$player]) || $this->players[$player]->status != self::PLAYER_INGAME) { // Is the player still in the game ?
             return false;
         }
 
@@ -309,7 +308,7 @@ class Game
                 case 'K':
                     $handTotal += 10;
                     break;
-                case 'A';
+                case 'A':
                     if ($handTotal > 10) {
                         $handTotal += 1;
                     } else {

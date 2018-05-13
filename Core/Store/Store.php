@@ -5,7 +5,6 @@ namespace HedgeBot\Core\Store;
 use HedgeBot\Core\Store\Formatter\FormatterInterface;
 use HedgeBot\Core\Store\Formatter\TextFormatter;
 
-
 /**
  * Class Store
  * The Store is a way to share internal live data between plugins and more generally different parts of the bot.

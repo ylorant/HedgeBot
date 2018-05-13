@@ -174,8 +174,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
                             break;
                         }
                     }
-                } elseif ($now > $scheduleEndTime) // The schedule is outdated, we disable it to save some processing time
-                {
+                } elseif ($now > $scheduleEndTime) { // The schedule is outdated, we disable it to save some processing time
                     $schedule->setEnabled(false);
                     $this->saveData();
                 }
@@ -239,8 +238,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
             } elseif (!empty($nextItemAnnounceThresholdTime) && $now >= $nextItemAnnounceThresholdTime && !$schedule->isNextItemAnnounced()) {
                 // Announce the next item and mark it as announced
                 $textFormatter = Store::getFormatter(TextFormatter::getName());
-                $announceMessage = $textFormatter->format($schedule->getAnnounceTemplate(), $schedule->getChannel(),
-                    self::NEXT_DATA_SOURCE_PATH);
+                $announceMessage = $textFormatter->format(
+                    $schedule->getAnnounceTemplate(),
+                    $schedule->getChannel(),
+                    self::NEXT_DATA_SOURCE_PATH
+                );
 
                 IRC::message($schedule->getChannel(), $announceMessage);
                 $schedule->setNextItemAnnounced(true);
@@ -268,8 +270,12 @@ class Horaro extends PluginBase implements StoreSourceInterface
             $schedule = $enabledSchedules[$scheduleKeys[$this->refreshScheduleIndex]];
 
             // Finally, fetch the new schedule data
-            $newScheduleData = $this->horaro->getScheduleAsync($schedule->getScheduleId(), $schedule->getEventId(),
-                null, [$this, 'onScheduleReceived']);
+            $newScheduleData = $this->horaro->getScheduleAsync(
+                $schedule->getScheduleId(),
+                $schedule->getEventId(),
+                null,
+                [$this, 'onScheduleReceived']
+            );
 
             if (!empty($newScheduleData)) {
                 $schedule->setData($newScheduleData);
@@ -308,8 +314,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
         if ($curlError == CURLE_OK && !empty($data) && $data->status == 404) {
             // Getting the schedules by the parameters that should've been passed to the success callback
             $schedule = $this->getScheduleById($parameters[0], $parameters[1]);
-            HedgeBot::message("Failed getting schedule data for schedule $0, disabling it.",
-                [$schedule->getIdentSlug()], E_WARNING);
+            HedgeBot::message(
+                "Failed getting schedule data for schedule $0, disabling it.",
+                [$schedule->getIdentSlug()],
+                E_WARNING
+            );
             $schedule->setEnabled(false);
             $this->saveData();
         }
@@ -335,7 +344,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function CoreEventConfigUpdate()
     {
         // TODO: Find a way to avoid to re-find the configuration manually
-	$this->config = HedgeBot::getInstance()->config->get('plugin.Horaro');
+        $this->config = HedgeBot::getInstance()->config->get('plugin.Horaro');
         Plugin::getManager()->changeRoutineTimeInterval($this, "RoutineRefreshSchedules", $this->config['refreshInterval']);
 
         // Do a direct schedule processing to ensure everything is still sync'd
@@ -367,8 +376,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
             $currentSchedule = reset($currentSchedules);
             $identSlug = $currentSchedule->getIdentSlug();
-        } else // Ident slug is given, we check that it exists
-        {
+        } else { // Ident slug is given, we check that it exists
             $identSlug = $event->arguments[0];
             if (!$this->hasScheduleIdentSlug($identSlug)) {
                 return IRC::reply($event, "Schedule not found.");
@@ -408,8 +416,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
             $currentSchedule = reset($currentSchedules);
             $identSlug = $currentSchedule->getIdentSlug();
-        } else // Ident slug is given, we check that it exists
-        {
+        } else { // Ident slug is given, we check that it exists
             $identSlug = $event->arguments[0];
             if (!$this->hasScheduleIdentSlug($identSlug)) {
                 return IRC::reply($event, "Schedule not found.");
@@ -449,8 +456,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
             $currentSchedule = reset($currentSchedules);
             $identSlug = $currentSchedule->getIdentSlug();
-        } else // Ident slug is given, we check that it exists
-        {
+        } else { // Ident slug is given, we check that it exists
             $identSlug = $event->arguments[0];
             if (!$this->hasScheduleIdentSlug($identSlug)) {
                 return IRC::reply($event, "Schedule not found.");
@@ -591,11 +597,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
     /**
      * Gets the currently running schedules, i.e. Those who are enabled and currently in process, time-wise.
-     * 
+     *
      * @param string $channel    Filter the schedules by channel.
      * @param bool   $lookaround Set to true to loosen the search by looking for schedules that are around current time
      *                           by the lookaroundThreshold setting value (default: 1 hour).
-     * 
+     *
      * @return array The list of schedules that are currently running. If none are found, an empty array is returned.
      */
     public function getCurrentlyRunningSchedules($channel = null, $lookaround = false)
@@ -609,8 +615,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
             $addSchedule = false;
 
             // Account for lookaround by broadening the schedule times if the option is enabled
-            if($lookaround)
-            {
+            if ($lookaround) {
                 $lookaroundThreshold = (int) ($this->config['lookaroundTheshold'] ?? 3600);
                 $thresholdInterval = new DateInterval("PT". $lookaroundThreshold. "S");
                 $startTime->sub($thresholdInterval);
@@ -673,7 +678,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         HedgeBot::message("Updating title from Horaro for channel $0", [$channel], E_DEBUG);
 
-        // Format the title and the game with the text formatter, providing a root namespace to avoid 
+        // Format the title and the game with the text formatter, providing a root namespace to avoid
         $textFormatter = Store::getFormatter(TextFormatter::getName());
         $channelTitle = $textFormatter->format($titleTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
         $channelGame = $textFormatter->format($gameTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
@@ -744,10 +749,12 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
                 if ($scheduleData) {
                     $scheduleObj->setData($scheduleData);
-                } else // We skip loading the schedule if getting the schedule data fails.
-                {
-                    HedgeBot::message("Failed getting schedule data for schedule $0, disabling it.", [$identSlug],
-                        E_WARNING);
+                } else { // We skip loading the schedule if getting the schedule data fails.
+                    HedgeBot::message(
+                        "Failed getting schedule data for schedule $0, disabling it.",
+                        [$identSlug],
+                        E_WARNING
+                    );
                     $scheduleObj->setEnabled(false);
                     $saveData = true; // Since we disabled a schedule, we mark the data to be saved after loading
                 }

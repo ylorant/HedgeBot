@@ -58,7 +58,6 @@ class IniFileProvider extends Provider
             if (!empty($fileData) && is_array($fileData)) {
                 $this->data = array_merge_recursive($this->data, $fileData);
             }
-
         }
 
         return true;
@@ -462,8 +461,10 @@ class IniFileProvider extends Provider
         }
 
         $iterator = new RecursiveDirectoryIterator($wipeDir, RecursiveDirectoryIterator::SKIP_DOTS);
-        $files = new RecursiveIteratorIterator($iterator,
-            RecursiveIteratorIterator::CHILD_FIRST | RecursiveIteratorIterator::LEAVES_ONLY);
+        $files = new RecursiveIteratorIterator(
+            $iterator,
+            RecursiveIteratorIterator::CHILD_FIRST | RecursiveIteratorIterator::LEAVES_ONLY
+        );
 
         foreach ($files as $file) {
             if (strpos($file->getPathname(), '.backup') === false) {

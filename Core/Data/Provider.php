@@ -104,5 +104,4 @@ abstract class Provider
  */
 class ProviderResolverProxy
 {
-
 }

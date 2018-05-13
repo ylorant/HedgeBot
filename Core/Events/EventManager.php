@@ -231,8 +231,11 @@ class EventManager
             foreach ($this->autoMethods as $listener => $prefix) {
                 if (preg_match('#^' . $prefix . '#', $methodName)) {
                     $event = Event::normalize(preg_replace('#' . $prefix . '(.+)#', '$1', $methodName));
-                    HedgeBot::message('Binding method $0::$1 on event $2/$3',
-                        [$reflectionClass->getShortName(), $methodName, $listener, $event], E_DEBUG);
+                    HedgeBot::message(
+                        'Binding method $0::$1 on event $2/$3',
+                        [$reflectionClass->getShortName(), $methodName, $listener, $event],
+                        E_DEBUG
+                    );
                     $this->addEvent($listener, $reflectionClass->getName(), $event, [$object, $methodName]);
                     $addedEvents[] = [
                         'listener' => $listener,

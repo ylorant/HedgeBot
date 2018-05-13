@@ -10,6 +10,5 @@ class AutoMessageTest
 {
     public function __construct()
     {
-
     }
 }

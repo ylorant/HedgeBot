@@ -279,8 +279,10 @@ class BlackJack extends PluginBase
 
         $this->showHand($ev->channel, $ev->nick);
         if ($this->games[$ev->channel]->getPlayer($ev->nick)->status == Game::PLAYER_LOST) {
-            IRC::reply($ev,
-                str_replace('@player', $ev->nick, $this->getConfigParameter($ev->channel, 'messages.playerLost')));
+            IRC::reply(
+                $ev,
+                str_replace('@player', $ev->nick, $this->getConfigParameter($ev->channel, 'messages.playerLost'))
+            );
             $this->finishGameIfNecessary($ev->channel);
         }
     }
@@ -419,8 +421,7 @@ class BlackJack extends PluginBase
                         $winners[] = $player;
                     } elseif ($house->status == Game::PLAYER_BLACKJACK) {
                         $losers[] = $player;
-                    } else // House is on stay
-                    {
+                    } else { // House is on stay
                         if ($house->handValue > $player->handValue) {
                             $losers[] = $player;
                         } elseif ($house->handValue < $player->handValue) {
@@ -463,8 +464,11 @@ class BlackJack extends PluginBase
             $message = $this->getConfigParameter($channel, 'messages.winnersList');
             $winMultiplicator = $this->getConfigParameter($channel, 'winMultiplicator');
 
-            $message = str_replace('@players', join(', ', array_map(__CLASS__ . '::getPlayerName', $winners)),
-                $message);
+            $message = str_replace(
+                '@players',
+                join(', ', array_map(__CLASS__ . '::getPlayerName', $winners)),
+                $message
+            );
             IRC::message($channel, $message);
 
             foreach ($winners as $player) {
@@ -477,8 +481,11 @@ class BlackJack extends PluginBase
             $message = $this->getConfigParameter($channel, 'messages.blackjackList');
             $blackjackMultiplicator = $this->getConfigParameter($channel, 'blackjackMultiplicator');
 
-            $messages = str_replace('@players', join(', ', array_map(__CLASS__ . '::getPlayerName', $blackjacks)),
-                $message);
+            $messages = str_replace(
+                '@players',
+                join(', ', array_map(__CLASS__ . '::getPlayerName', $blackjacks)),
+                $message
+            );
             IRC::message($channel, $message);
 
             foreach ($blackjacks as $player) {

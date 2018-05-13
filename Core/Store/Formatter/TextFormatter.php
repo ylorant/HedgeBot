@@ -4,7 +4,6 @@ namespace HedgeBot\Core\Store\Formatter;
 
 use HedgeBot\Core\Store\Store;
 
-
 /**
  * Store text formatter.
  *
@@ -64,8 +63,11 @@ class TextFormatter implements FormatterInterface
     {
         // Getting the list of tokens in the text, and checking that there is some, check class doc to see why this regexp is here
         $matches = null;
-        $hasMatches = preg_match_all("#(?<!\\\\)\\$((?:(?:[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)|\\.)+)#", $text,
-            $matches);
+        $hasMatches = preg_match_all(
+            "#(?<!\\\\)\\$((?:(?:[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)|\\.)+)#",
+            $text,
+            $matches
+        );
 
         // No match, we return the verbatim text
         if (!$hasMatches) {

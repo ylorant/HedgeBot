@@ -22,10 +22,18 @@ class CreateRoleCommand extends StorageAwareCommand
     {
         $this->setName('security:role-create')
             ->setDescription('Creates a security role.')
-            ->addOption('role-id', null, InputOption::VALUE_REQUIRED,
-                'Specify manually the role ID (lowercase alphanumeric plus underscore only).')
-            ->addOption('parent', null, InputOption::VALUE_REQUIRED,
-                'Specifies a parent for the role. The parent must already exist.')
+            ->addOption(
+                'role-id',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Specify manually the role ID (lowercase alphanumeric plus underscore only).'
+            )
+            ->addOption(
+                'parent',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Specifies a parent for the role. The parent must already exist.'
+            )
             ->addArgument('roleName', InputArgument::REQUIRED, 'The name of the role');
     }
 

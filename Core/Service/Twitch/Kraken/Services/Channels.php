@@ -91,8 +91,7 @@ class Channels extends Service
                 $userObject->logo = $user->user->logo;
                 $userObject->bio = $user->user->bio;
                 $userObject->hasNotifications = $user->notifications;
-            } else // Return only the nickname by default
-            {
+            } else { // Return only the nickname by default
                 $return->list[] = $user->user->name;
             }
         }
