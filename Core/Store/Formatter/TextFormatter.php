@@ -110,11 +110,15 @@ class TextFormatter implements FormatterInterface
         $pathParts = explode(self::PATH_SEPARATOR, $path);
         $currentData = $data;
 
-        // Iterating over the path parts to walk down the initial data to the requested bit
+        // Iterating over the path parts to walk down the initial data to the requested element
         foreach ($pathParts as $part) {
-            // Before trying to check as an array, we try to see if it's a markdown link to get to its part
-            if (is_string($currentData) && preg_match("#\[(.+)\]\((.+)\)#", $currentData, $matches)) {
-                $currentData = ["title" => $matches[1], "link" => $matches[2]];
+            // Before trying to check as an array, we try to see if it's a string readable as markdown, to generate a Markdown
+            // parser from it.
+            if (is_string($currentData)) {
+                $markdownExpression = MarkdownExpression::readMarkdown($currentData);
+                if($markdownExpression) {
+                    $currentData = $markdownExpression;
+                }
             }
 
             // If the part isn't present in the data, we stop walking and return the default value
