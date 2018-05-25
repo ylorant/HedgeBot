@@ -26,6 +26,7 @@ use HedgeBot\Core\Tikal\Endpoint\PluginEndpoint as TikalPluginEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\SecurityEndpoint as TikalSecurityEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\ServerEndpoint as TikalServerEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\TwitchEndpoint as TikalTwitchEndpoint;
+use HedgeBot\Core\Tikal\Endpoint\StoreEndpoint as TikalStoreEndpoint;
 use HedgeBot\Core\API\Twitch\Helix as HelixAPI;
 use HedgeBot\Core\API\Twitch\Kraken as KrakenAPI;
 use HedgeBot\Core\API\Twitch\Auth as TwitchAuth;
@@ -159,6 +160,7 @@ class HedgeBot
             Tikal::addEndpoint('/security', new TikalSecurityEndpoint());
             Tikal::addEndpoint('/server', new TikalServerEndpoint());
             Tikal::addEndpoint('/twitch', new TikalTwitchEndpoint());
+            Tikal::addEndpoint('/store', new TikalStoreEndpoint());
         }
 
         // Loading plugins
