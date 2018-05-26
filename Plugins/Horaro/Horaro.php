@@ -163,6 +163,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
                         $itemStartTime = new DateTime($item->scheduled);
                         $itemEndTime = clone $itemStartTime;
                         $itemEndTime->add(new DateInterval($item->length));
+                        $itemEndTime->add(new DateInterval($schedule->getData()->setup)); // Taking the setup time after the run in the run time
 
                         // If the item is the one currently running
                         if ($now >= $itemStartTime && $now < $itemEndTime) {
