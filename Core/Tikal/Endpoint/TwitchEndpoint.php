@@ -2,7 +2,7 @@
 
 namespace HedgeBot\Core\Tikal\Endpoint;
 
-use HedgeBot\Core\API\Twitch\Auth;
+use HedgeBot\Core\API\Twitch;
 
 /**
  * Class TwitchEndpoint
@@ -17,7 +17,7 @@ class TwitchEndpoint
      */
     public function getClientID()
     {
-        return Auth::getClientID();
+        return Twitch::getClientID();
     }
 
     /**
@@ -27,7 +27,7 @@ class TwitchEndpoint
      */
     public function getClientSecret()
     {
-        return Auth::getClientSecret();
+        return Twitch::getClientSecret();
     }
 
     /**
@@ -37,7 +37,7 @@ class TwitchEndpoint
      */
     public function getAccessTokens()
     {
-        return Auth::getAccessTokens();
+        return Twitch::getAllTokens();
     }
 
     /**
@@ -49,7 +49,14 @@ class TwitchEndpoint
      */
     public function getAccessToken($channel)
     {
-        return Auth::getAccessToken($channel);
+        if (empty(Twitch::getAccessToken($channel))) {
+            return null;
+        }
+
+        return [
+            'token' => Twitch::getAccessToken($channel),
+            'refresh' => Twitch::getRefreshToken($channel)
+        ];
     }
 
     /**
@@ -57,19 +64,21 @@ class TwitchEndpoint
      *
      * @param string $channel The channel that this token will be bound to.
      * @param string $token The access token.
+     * @param string $refresh The refresh token, used when the main token is expired.
      *
      * @return bool True if the token has been added successfully, false if not (mainly, it means that there is already
      *              a matching channel registered).
      */
-    public function addAccessToken($channel, $token)
+    public function addAccessToken($channel, $token, $refresh)
     {
-        $accessTokens = Auth::getAccessTokens();
+        $channel = strtolower($channel);
 
-        if (isset($accessTokens[strtolower($channel)])) {
+        if (!empty(Twitch::getAccessToken($channel))) {
             return false;
         }
 
-        Auth::setAccessToken($channel, $token);
+        Twitch::setAccessToken($channel, $token);
+        Twitch::setRefreshToken($channel, $refresh);
         return true;
     }
 
@@ -81,6 +90,6 @@ class TwitchEndpoint
      */
     public function removeAccessToken($channel)
     {
-        return Auth::removeAccessToken($channel);
+        return Twitch::removeAccessToken($channel);
     }
 }

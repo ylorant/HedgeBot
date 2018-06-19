@@ -1,7 +1,10 @@
 {
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "php": ">=7.0",
         "symfony/console": "^3.3",
-        "symfony/event-dispatcher": "^4.0"
+        "symfony/event-dispatcher": "^4.0",
+        "ylorant/twitch-php-client": "dev-master"
     }
 }

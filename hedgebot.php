@@ -3,6 +3,7 @@
 
 use HedgeBot\Core\HedgeBot;
 
+include('vendor/autoload.php');
 include('Core/HedgeBot.php');
 
 spl_autoload_register("HedgeBot\Core\HedgeBot::autoload");

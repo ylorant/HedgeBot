@@ -10,6 +10,7 @@ use HedgeBot\Core\API\Config;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Security;
 use HedgeBot\Core\API\Tikal;
+use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\Server\ServerInstance;
 use HedgeBot\Core\Server\CoreEvents;
@@ -17,9 +18,6 @@ use HedgeBot\Core\Data\IniFileProvider;
 use HedgeBot\Core\Data\Provider;
 use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Security\AccessControlManager;
-use HedgeBot\Core\Service\Twitch\AuthManager as TwitchAuthManager;
-use HedgeBot\Core\Service\Twitch\Kraken\Kraken;
-use HedgeBot\Core\Service\Twitch\Helix\Helix;
 use HedgeBot\Core\Tikal\Server as TikalServer;
 use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\PluginEndpoint as TikalPluginEndpoint;
@@ -27,11 +25,9 @@ use HedgeBot\Core\Tikal\Endpoint\SecurityEndpoint as TikalSecurityEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\ServerEndpoint as TikalServerEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\TwitchEndpoint as TikalTwitchEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\StoreEndpoint as TikalStoreEndpoint;
-use HedgeBot\Core\API\Twitch\Helix as HelixAPI;
-use HedgeBot\Core\API\Twitch\Kraken as KrakenAPI;
-use HedgeBot\Core\API\Twitch\Auth as TwitchAuth;
 use HedgeBot\Core\Store\Store;
 use HedgeBot\Core\API\Store as StoreAPI;
+use HedgeBot\Core\Service\Twitch\TwitchService;
 
 define('E_DEBUG', 32768);
 
@@ -140,13 +136,8 @@ class HedgeBot
         $clientID = $this->config->get('twitch.auth.clientId');
         $clientSecret = $this->config->get('twitch.auth.clientSecret');
 
-        $authManager = new TwitchAuthManager($clientID, $clientSecret, $this->data->getProvider());
-        $kraken = new Kraken($authManager);
-        $helix = new Helix($authManager);
-        $kraken->discoverServices();
-        KrakenAPI::setObject($kraken);
-        HelixAPI::setObject($helix);
-        TwitchAuth::setObject($authManager);
+        $twitchService = new TwitchService($clientID, $clientSecret, $this->data->getProvider());
+        Twitch::setObject($twitchService);
 
         // Initializing "Tikal" API server
         if (!empty($this->config->tikal) && $this->config->tikal->enabled == true) {

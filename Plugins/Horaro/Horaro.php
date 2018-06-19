@@ -11,11 +11,11 @@ use DateTime;
 use DateInterval;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
-use HedgeBot\Core\API\Twitch\Kraken;
 use HedgeBot\Plugins\Horaro\Event\HoraroEvent;
 use HedgeBot\Core\Store\StoreSourceInterface;
 use HedgeBot\Core\API\Store;
 use HedgeBot\Core\Store\Formatter\TextFormatter;
+use HedgeBot\Core\API\Twitch;
 
 /**
  * Class Horaro
@@ -687,7 +687,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         HedgeBot::message("New title: $0", [$channelTitle], E_DEBUG);
         HedgeBot::message("New game: $0", [$channelGame], E_DEBUG);
 
-        Kraken::get('channels')->update($channel, ['title' => $channelTitle, 'game' => $channelGame]);
+        Twitch::getClient()->channels->update($channel, ['status' => $channelTitle, 'game' => $channelGame]);
     }
 
     /**
