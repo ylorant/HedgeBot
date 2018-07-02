@@ -16,6 +16,7 @@ use HedgeBot\Core\Store\StoreSourceInterface;
 use HedgeBot\Core\API\Store;
 use HedgeBot\Core\Store\Formatter\TextFormatter;
 use HedgeBot\Core\API\Twitch;
+use HedgeBot\Core\API\Tikal;
 
 /**
  * Class Horaro
@@ -52,6 +53,10 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         Store::registerSource($this);
 
+        // Don't load the API endpoint if we're not on the main environment
+        if (ENV == "main") {
+            Tikal::addEndpoint('/plugin/horaro', new HoraroEndpoint($this));
+        }
 
         $this->loadData();
     }
@@ -258,7 +263,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
      */
     public function RoutineRefreshSchedules()
     {
-        $enabledSchedules = $this->getEnabledSchedules();
+        $enabledSchedules = $this->getSchedules(true);
         if (!empty($enabledSchedules)) {
             // Increment the currently refreshed schedule index, and make sure it's pointing to a current schedule
             $this->refreshScheduleIndex++;
@@ -384,14 +389,13 @@ class Horaro extends PluginBase implements StoreSourceInterface
             }
         }
 
-        $schedule = $this->getScheduleByIdentSlug($identSlug);
-        $schedule->setPaused(true);
-        $schedule->setStarted(false); // Set started status as false, that way when we'll resume, it'll fast forward to whatever item it is.
+        $paused = $this->pauseSchedule($identSlug);
 
-        // Save the schedule
-        $this->saveData();
-
-        IRC::reply($event, "Schedule paused.");
+        if ($paused) {
+            IRC::reply($event, "Schedule paused.");
+        } else {
+            IRC::reply($event, "Could not pause schedule.");
+        }
     }
 
     /**
@@ -424,15 +428,13 @@ class Horaro extends PluginBase implements StoreSourceInterface
             }
         }
 
-        $schedule = $this->getScheduleByIdentSlug($identSlug);
-        $schedule->setPaused(false);
+        $resumed = $this->resumeSchedule($identSlug);
 
-        // Save the schedule
-        $this->saveData();
-
-        $this->RoutineProcessSchedules($identSlug);
-
-        IRC::reply($event, "Schedule resumed.");
+        if ($resumed) {
+            IRC::reply($event, "Schedule resumed.");
+        } else {
+            IRC::reply($event, "Schedule can't be resumed.");
+        }
     }
 
     /**
@@ -464,19 +466,41 @@ class Horaro extends PluginBase implements StoreSourceInterface
             }
         }
 
-        $schedule = $this->getScheduleByIdentSlug($identSlug);
-        $schedule->setCurrentIndex($schedule->getCurrentIndex() + 1);
+        $skipped = $this->nextItem($identSlug);
 
-        // Update title & game
-        $this->setChannelTitleFromSchedule($schedule);
-
-        // Save the schedule
-        $this->saveData();
-
-        IRC::reply($event, "Item has been skipped.");
+        if ($skipped) {
+            IRC::reply($event, "Item has been skipped.");
+        } else {
+            IRC::reply($event, "Item could not be skipped.");
+        }
     }
 
     // Schedule management methods, called by console commands and API //
+
+    /**
+     * Loads a schedule by its public URL.
+     * 
+     * @param string $url The schedule public URL.
+     * 
+     * @return string|bool The schedule ident slug if the schedule was loaded correctly, false if not.
+     *                     Mainly that means that the schedule was not found or that it has already been loaded.
+     */
+    public function loadScheduleFromURL($url)
+    {
+        // Check that the URL is a well-formed URL
+        if (!filter_var($url, FILTER_VALIDATE_URL) || strpos($url, HoraroAPI::HORARO_HOST) !== 0) {
+            return false;
+        }
+
+        // Get the URL parts to get event & schedule IDs
+        $parts = explode('/', $url);
+
+        $scheduleId = array_pop($parts);
+        $eventId = array_pop($parts);
+
+        // Try to load the schedule
+        return $this->loadSchedule($scheduleId, $eventId);
+    }
 
     /**
      * Loads a schedule into the bot.
@@ -506,6 +530,8 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         $scheduleIdentSlug = $schedule->getIdentSlug();
         $this->schedules[$scheduleIdentSlug] = $schedule;
+
+        $this->saveData();
 
         return $scheduleIdentSlug;
     }
@@ -632,15 +658,17 @@ class Horaro extends PluginBase implements StoreSourceInterface
     }
 
     /**
-     * Gets the enabled schedules.
+     * Gets the registered schedules.
+     * 
+     * @param bool $enabled Set this parameter to true to get only enabled schedules.
      *
      * @return array The schedules that are enabled.
      */
-    public function getEnabledSchedules()
+    public function getSchedules($enabled = false)
     {
         $enabledSchedules = [];
         foreach ($this->schedules as $identSlug => $schedule) {
-            if ($schedule->isEnabled()) {
+            if (!$enabled || $schedule->isEnabled()) {
                 $enabledSchedules[$identSlug] = $schedule;
             }
         }
@@ -688,6 +716,148 @@ class Horaro extends PluginBase implements StoreSourceInterface
         HedgeBot::message("New game: $0", [$channelGame], E_DEBUG);
 
         Twitch::getClient()->channels->update($channel, ['status' => $channelTitle, 'game' => $channelGame]);
+    }
+
+    /**
+     * Skips the current item of the given schedule and goes directly to the next one.
+     * 
+     * @param string $identSlug The ident slug of the schedule to skip the item of.
+     * 
+     * @return bool True if the item has been skipped, false if not.
+     */
+    public function nextItem($identSlug)
+    {
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+
+        // We don't skip item if the schedule isn't found or if we're on the last item
+        if (empty($schedule) || empty($schedule->getNextItem())) {
+            return false;
+        }
+
+        // Set the index
+        $schedule->setCurrentIndex($schedule->getCurrentIndex() + 1);
+
+        // Update title & game
+        $this->setChannelTitleFromSchedule($schedule);
+
+        // Save the schedule
+        $this->saveData();
+        return true;
+
+    }
+
+    /**
+     * Goes back to the previous item on the given schedule.
+     * 
+     * @param string $identSlug The schedule to rollback.
+     * 
+     * @return bool True if the schedule has been rolled back successfully, false if not.
+     */
+    public function previousItem($identSlug)
+    {
+        
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+
+        // We don't skip item if the schedule isn't found or if we're on the first item
+        if (empty($schedule) || $schedule->getCurrentIndex() == 0) {
+            return false;
+        }
+
+        // Set the index
+        $schedule->setCurrentIndex($schedule->getCurrentIndex() - 1);
+
+        // Update title & game
+        $this->setChannelTitleFromSchedule($schedule);
+
+        // Save the schedule
+        $this->saveData();
+        return true;
+    }
+
+    /**
+     * Pauses a schedule.
+     * 
+     * @param string $identSlug The ident slug of the schedule to pause.
+     * 
+     * @return bool True if the schedule has been paused successfully, false if not.
+     */
+    public function pauseSchedule($identSlug)
+    {
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+
+        // Return false if the schedule doesn't exist or if it is already paused
+        if (empty($schedule) || $schedule->isPaused()) {
+            return false;
+        }
+
+        $schedule->setPaused(true);
+        $schedule->setStarted(false); // Set started status as false, that way when we'll resume, 
+                                      // it'll fast forward to whatever item it is.
+
+        // Save the schedule
+        $this->saveData();
+        return true;
+    }
+
+    /**
+     * Resumes a schedule.
+     * 
+     * @param string $identSlug The ident slug of the schedule to resume.
+     * 
+     * @return bool True if the schedule has been successfully resumed, false if not.
+     */
+    public function resumeSchedule($identSlug)
+    {
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+
+        // Return false if the schedule doesn't exist or if it is already paused
+        if (empty($schedule) || !$schedule->isPaused()) {
+            return false;
+        }
+
+        $schedule->setPaused(false);
+
+        // Save the schedule
+        $this->saveData();
+
+        // Reprocess schedules
+        $this->RoutineProcessSchedules($identSlug);
+
+        return true;
+    }
+
+    /**
+     * Updates a schedule identified by its ident slug with new data.
+     * 
+     * @param string $identSlug The ident slug of the schedule to update.
+     * @param array  $newData   The new data to put into the schedule.
+     */
+    public function updateSchedule($identSlug, array $newData)
+    {
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+
+        // Return false if the schedule doesn't exist
+        if (empty($schedule)) {
+            return false;
+        }
+
+        $schedule->updateFromArray($newData);
+        $this->saveData();
+
+        return true;
+    }
+
+    public function deleteSchedule($identSlug)
+    {
+        // Return false if the schedule doesn't exist
+        if (!$this->hasScheduleIdentSlug($identSlug)) {
+            return false;
+        }
+
+        unset($this->schedules[$identSlug]);
+        $this->saveData();
+
+        return true;
     }
 
     /**

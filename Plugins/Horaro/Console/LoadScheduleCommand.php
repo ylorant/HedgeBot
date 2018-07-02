@@ -60,8 +60,6 @@ class LoadScheduleCommand extends StorageAwareCommand
             $schedule->setChannel($channel);
         }
 
-        $plugin->saveData();
-
         $output->writeln([
             "Schedule ident slug: " . $scheduleIdentSlug,
             "",

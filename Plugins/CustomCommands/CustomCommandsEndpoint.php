@@ -8,7 +8,7 @@ namespace HedgeBot\Plugins\CustomCommands;
  */
 class CustomCommandsEndpoint
 {
-    /** The plugin reference */
+    /** @var CustomCommands The plugin reference */
     protected $plugin;
 
     /**

@@ -5,12 +5,13 @@ namespace HedgeBot\Plugins\Horaro\Entity;
 use HedgeBot\Core\Service\Horaro\Horaro;
 use DateTime;
 use DateInterval;
+use JsonSerializable;
 
 /**
  * Class Schedule
  * @package HedgeBot\Plugins\Horaro\Entity
  */
-class Schedule
+class Schedule implements JsonSerializable
 {
     /** @var string The event ID. Can be null. */
     protected $eventId;
@@ -67,7 +68,7 @@ class Schedule
     {
         $this->scheduleId = $scheduleId;
         $this->eventId = $eventId;
-        $this->enabled = true;
+        $this->enabled = false;
         $this->paused = false;
         $this->started = false;
         $this->currentIndex = 0;
@@ -461,6 +462,28 @@ class Schedule
     }
 
     /**
+     * Updates the schedule with the given data. This method will guess the setter names from the keys of
+     * the data array and call them with the new value. Check that the setters for the given variables do exist.
+     * 
+     * @param array $data The new data as an associative array.
+     * 
+     * @return Schedule self.
+     */
+    public function updateFromArray(array $data)
+    {
+        foreach ($data as $key => $value) {
+            // Generate the setter name from the key
+            $setterName = 'set'. ucfirst($key);
+            
+            if (method_exists($this, $setterName)) {
+                $this->$setterName($value);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Normalizes the current schedule into an array, for easier storage.
      *
      * @return array The schedule, represented as an array.
@@ -475,7 +498,17 @@ class Schedule
             }
         }
 
+        $out['identSlug'] = $this->getIdentSlug();
+
         return $out;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 
     // Other methods
