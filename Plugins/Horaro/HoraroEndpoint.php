@@ -136,4 +136,22 @@ class HoraroEndpoint
     {
         return $this->plugin->deleteSchedule($identSlug);
     }
+
+    /**
+     * Gets the data from a schedule that the plugin fetched from Horaro.
+     * 
+     * @param string $identSlug The ident slug of the schedule to get the data from.
+     * 
+     * @return object|null The schedule data if found or null if not.
+     */
+    public function getScheduleData($identSlug)
+    {
+        $schedule = $this->plugin->getScheduleByIdentSlug($identSlug);
+
+        if (empty($schedule)) {
+            return null;
+        }
+
+        return $schedule->getData();
+    }
 }
