@@ -153,7 +153,7 @@ class PluginManager extends EventManager
         $ret = $pluginObj->init();
 
         if ($ret === false) {
-            HedgeBot::message('Could not load plugin $0', array($plugin));
+            HedgeBot::message('Could not load plugin $0: initialization failed', array($plugin));
             $this->unloadPlugin($plugin);
             return false;
         }
