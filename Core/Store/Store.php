@@ -140,10 +140,15 @@ class Store
      * @param string $channel The channel the data is tied to.
      * @param string $sourceNamespaceRestraint Restraint data to a specific source namespace. That way, only the source
      *                                         corresponding to that namespace will be loaded.
-     *
+     * @param bool   $simulateData Set this to true to ask the sources to return data even if the source is not supposed
+     *                             to return data at the current state. Useful to allow users to configure displays and
+     *                             everything with sample data and have previews.
+     * @param array $simulateContext A context for simulation, to ask the store for a more specific dataset than using the 
+     *                               channel only as specification. 
+     * 
      * @return array The store as an array.
      */
-    public function getData($channel = null, $sourceNamespaceRestraint = null)
+    public function getData($channel = null, $sourceNamespaceRestraint = null, $simulateData = false, $simulateContext = null)
     {
         $store = [];
 
@@ -155,7 +160,7 @@ class Store
                 continue;
             }
 
-            $store[$sourceNamespace] = $source->provideStoreData($channel);
+            $store[$sourceNamespace] = $source->provideStoreData($channel, $simulateData, $simulateContext);
         }
 
         return $store;

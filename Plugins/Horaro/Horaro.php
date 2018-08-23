@@ -67,17 +67,28 @@ class Horaro extends PluginBase implements StoreSourceInterface
      * Provides the store with schedule data.
      *
      * @param string $channel The channel from which the data will be restricted.
+     * @param bool   $simulateData Set this parameter to true to ask the provider to give data even if it is not supposed
+     *                             to give data at its current state. It is useful to provide data for configuration
+     *                             purposes.
+     * @param array  $simulateContext The context for the simulated data, if there needs to be more info provided in this
+     *                                case than only the channel.
      *
      * @return array The schedule data for the store.
      */
-    public function provideStoreData($channel = null)
+    public function provideStoreData($channel = null, $simulateData = false, $simulateContext = null)
     {
         $storeData = [];
+        $schedules = [];
 
-        $runningSchedules = $this->getCurrentlyRunningSchedules($channel, true);
+        // Choose which data to get depending on wether we're simulating or not.
+        if($simulateData) {
+            $schedules = $this->getSampleSchedules($channel, $simulateContext['identSlug'] ?? null);
+        } else {
+            $schedules = $this->getCurrentlyRunningSchedules($channel, true);
+        }
 
         /** @var Schedule $schedule */
-        foreach ($runningSchedules as &$schedule) {
+        foreach ($schedules as &$schedule) {
             $columns = $schedule->getColumns(true);
             $currentItem = $schedule->getCurrentItem();
             $nextItem = $schedule->getNextItem();
@@ -97,9 +108,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         // If a specific channel is asked, we get only the first running schedule, anyway, there should be only one.
         if (!empty($channel)) {
-            $storeData['schedule'] = reset($runningSchedules);
+            $storeData['schedule'] = reset($schedules);
         } else {
-            $storeData['schedules'] = $runningSchedules;
+            $storeData['schedules'] = $schedules;
         }
 
         return $storeData;
@@ -655,6 +666,62 @@ class Horaro extends PluginBase implements StoreSourceInterface
         }
 
         return $runningSchedules;
+    }
+
+    /**
+     * Gets a sample schedule, for simulated data store fetching. The schedule slug can be specified, to get directly
+     * the wanted schedule without any chance to miss.
+     * 
+     * @param string $channel Filter the schedules by channel.
+     * @param string $identSlug The ident slug to filter by if needed.
+     * 
+     * @return array The list of matching schedules.
+     */
+    public function getSampleSchedules($channel = null, $identSlug = null)
+    {
+        $schedules = [];
+        $now = new DateTime($this->config['simulatedTime'] ?? null);
+
+        // There is no schedule, no need to do anything, we literally can't return anything
+        if(empty($this->schedules)) {
+            return [];
+        }
+
+        // Skip any loop if a specific schedule is asked
+        if(!empty($identSlug) && !empty($this->schedules[$identSlug])) {
+            return [$this->schedules[$identSlug]];
+        }
+
+        // Getting schedules start times to order them, and filter them by channel
+        $scheduleStartTimes = [];
+        $scheduleEndTimes = [];
+
+        foreach($this->schedules as $identSlug => $schedule) {
+            if(empty($channel) || $schedule->getChannel() == $channel) {
+                $scheduleStartTimes[$identSlug] = $schedule->getStartTime();
+                $scheduleEndTimes[$identSlug] = $schedule->getEndTime();
+            }
+        }
+
+        // Order the schedules start times
+        uasort($scheduleStartTimes, function($a, $b) {
+            return $a > $b ? 1 : -1;
+        });
+
+        // Go through the schedules to see if we can get some future pr current ones
+        foreach($scheduleStartTimes as $identSlug => $startTime) {
+            if($startTime > $now || $scheduleEndTimes[$identSlug] > $now) {
+                $schedules[] = $this->schedules[$identSlug];
+            }
+        }
+
+        // If we have no schedule set, we take the most recent one by default
+        if(empty($schedules)) {
+            $slugs = array_keys($scheduleStartTimes);
+            $schedules[] = $this->schedules[end($slugs)];
+        }
+
+        return $schedules;
     }
 
     /**
