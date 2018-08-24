@@ -22,7 +22,7 @@ abstract class Provider
      *
      * @param $key The key to retrieve.
      *
-     * @return A mixed value containing the data.
+     * @return mixed A mixed value containing the data.
      */
     abstract public function get($key);
 
@@ -34,25 +34,25 @@ abstract class Provider
      * @param $key The key name to save the data as. String is preferred.
      * @param $data The data to save. Could be a scalar value like a complex value.
      *
-     * @return True if the save succeeded, False otherwise.
+     * @return bool True if the save succeeded, False otherwise.
      */
     abstract public function set($key, $data);
 
     /**
-     * Sets the location for the data to be located.
+     * Connects to the data source.
      * The method implementing this prototype will be used to connect to the data source.
      *
      * @param $location The data source location to connect to. Can vary between data providers.
-     * @return True if the connection to the source succeeded, False otherwise.
+     * @return bool True if the connection to the source succeeded, False otherwise.
      */
     abstract public function connect($location);
 
     /**
-     * Loads a plugin.
-     * This method loads a single plugin. It is called from
+     * Resolves a storage from its name and returns its class name.
      *
-     * @param $name
-     * @return bool|mixed|string
+     * @param $name The storage name.
+     * @return bool|string The storage class if found, false if not.
+     * 
      * @throws \ReflectionException
      */
     public static function resolveStorage($name)
@@ -63,7 +63,7 @@ abstract class Provider
         );
 
         // Getting the current namespace to be able to load classes correctly
-        $reflectionClass = new ReflectionClass(new ProviderResolverProxy());
+        $reflectionClass = new ReflectionClass(self::class);
         $currentNamespace = $reflectionClass->getNamespaceName();
 
         // Scanning the directory of this file, which contains the other classes.
@@ -94,14 +94,4 @@ abstract class Provider
     {
         return static::STORAGE_NAME;
     }
-}
-
-/** Provider resolver stub class.
- * This class is just a stub to allow Provider to resolve using ReflectionClass by
- * giving it a way to guess the current namespace dynamically.
- *
- * FIXME : Delete it of put it in a specific file ?
- */
-class ProviderResolverProxy
-{
 }
