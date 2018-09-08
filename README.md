@@ -22,7 +22,7 @@ Core functions :
 
 Plugins :
 
-- AutoMessage : Automatically say things on your chat every once in a while
+- Announcements : Automatically say things on your chat every once in a while
 - CustomCommands : Make custom commands that prints messages
 - Quotes : Handles a quote manager
 - Currency : Handles a currency/money system on the chat
