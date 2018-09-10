@@ -6,6 +6,7 @@ use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Events\CoreEvent;
 
 /**
