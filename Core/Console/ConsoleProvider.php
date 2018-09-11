@@ -85,7 +85,8 @@ class ConsoleProvider
         
         // Set global options
         $application->getDefinition()->addOptions([
-            new InputOption('--log-verbosity', null, InputOption::VALUE_REQUIRED, 'The bot log verbosity')
+            new InputOption('--log-verbosity', null, InputOption::VALUE_REQUIRED, 'The bot log verbosity'),
+            new InputOption('--config', null, InputOption::VALUE_REQUIRED, 'The bot configuration to use')
         ]);
         
         // Get the log verbosity option using low level input reading
@@ -101,7 +102,7 @@ class ConsoleProvider
     public function loadStorages()
     {
         $input = new ArgvInput();
-        $configOption = $input->getParameterOption(['--config', '-c']);
+        $configOption = $input->getParameterOption(['--config']);
         $configDir = $configOption ? $configOption : HedgeBot::DEFAULT_CONFIG_DIR; // Not using null coalescing because if not found, $configOption equals false, not null.
 
         $fileProvider = new IniFileProvider();
@@ -179,7 +180,8 @@ class ConsoleProvider
 
         $loadedPlugins = explode(',', $this->config->general->plugins);
         foreach ($loadedPlugins as $pluginName) {
-            $config = $pluginManager->getPluginDefinition(trim($pluginName));
+            $pluginName = trim($pluginName);
+            $config = $pluginManager->getPluginDefinition($pluginName);
 
             // Instanciate the plugin through the plugin manager, check if that worked, and get the object
             $pluginInstanciated = $pluginManager->loadPlugin($pluginName);
