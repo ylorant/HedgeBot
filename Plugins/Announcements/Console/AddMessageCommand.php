@@ -7,6 +7,7 @@ use HedgeBot\Plugins\Announcements\Announcements;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use HedgeBot\Core\Console\PluginAwareTrait;
 
 /**
  * Class AddMessageCommand
@@ -14,6 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class AddMessageCommand extends StorageAwareCommand
 {
+    use PluginAwareTrait;
     /**
      *
      */
@@ -42,7 +44,7 @@ class AddMessageCommand extends StorageAwareCommand
     {
 
         $message = $input->getArgument('message');
-        $channels = explode(" ", $input->getArgument('channels'));
+        $channels = $input->getArgument('channels');
 
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
