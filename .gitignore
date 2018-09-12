@@ -4,8 +4,6 @@ conf/*/*.ini
 conf.*/*.ini
 conf.*/*/*.ini
 data/
-data/*.ini
-data/*/*.ini
 doc/*
 *.log
 vendor
