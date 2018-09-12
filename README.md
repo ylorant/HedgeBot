@@ -15,7 +15,7 @@ Core functions :
 - Connects to multiple channels
 - It has a flexible plugin management system, based on an event system
 - Handles disconnections
-- Basic Twitch API v3 handling
+- Basic Twitch API v5 handling
 - JSON-RPC based API for remote querying (web-based admin ?)
 - Internal API for quick and easy access to bot functions from plugins
 - Documentation generator for plugin commands (outputs Markdown).
@@ -23,25 +23,27 @@ Core functions :
 Plugins :
 
 - Announcements : Automatically say things on your chat every once in a while
-- CustomCommands : Make custom commands that prints messages
+- **CustomCommands** : Make custom commands that prints messages
 - Quotes : Handles a quote manager
 - Currency : Handles a currency/money system on the chat
 - BlackJack : Handles a blackjack game manager
+- Horaro : ???
+- HoraroTextFile : ???
 - TestManager : development-oriented plugin that allows to test how other plugins are supposed to work.
+
+(Plugins names in bold **style** means they have also a web-admin interface, see below)
 
 ## What is planned to do
 
-- [IN PROGRESS] Spam regulation plugin, timing out users for unwanted words in messages, links, walltexts and/or other things
+- [IN PROGRESS] Spam regulation plugin (BannedWords), timing out users for unwanted words in messages, links, walltexts and/or other things
 - Auto hosting, allowing your channel to automatically host streaming people based on a list, and for a set amount of time
 - Donation alerts, with StreamLabs API
-- Update Twitch API integration to v5
 - Cooldown feature, as a core feature (allowing cooldown per user type and per command).
 - Logger core feature, allowing logging actions from every plugin
 - Statistics plugin, gathering real time stats from chat
 - Discord API integration
-- Horaro API integration
 - Raffle plugin
-- [IN PROGRESS] Web admin
+- [IN PROGRESS] Web admin (see [Hedgebot Web Admin](https://github.com/ylorant/HedgeBot-Admin))
 - Update all plugins' comments to fit Documentor standards (like on the Currency plugin).
 
 ## I want it !
