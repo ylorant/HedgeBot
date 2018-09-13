@@ -37,8 +37,8 @@ class AnnouncementsEndpoint
      *
      * @return array The list of channels.
      */
-    public function getChannels()
+    public function getIntervals()
     {
-        return $this->plugin->getChannels();
+        return $this->plugin->getIntervals();
     }
 }

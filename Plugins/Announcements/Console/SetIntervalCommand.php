@@ -12,10 +12,10 @@ use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
 /**
- * Class AddIntervalCommand
+ * Class setIntervalCommand
  * @package HedgeBot\Plugins\Announcements\Console
  */
-class AddIntervalCommand extends StorageAwareCommand
+class SetIntervalCommand extends StorageAwareCommand
 {
     use PluginAwareTrait;
     /**
@@ -23,17 +23,17 @@ class AddIntervalCommand extends StorageAwareCommand
      */
     public function configure()
     {
-        $this->setName('announcements:add-interval')
-            ->setDescription('Add an interval to Announcements plugin channels list.')
-            ->addArgument(
-                'interval',
-                InputArgument::REQUIRED,
-                'The interval time (in seconds) between two messages display'
-            )
+        $this->setName('announcements:set-interval')
+            ->setDescription('Add/Edit an interval to Announcements plugin channels list.')
             ->addArgument(
                 'channel',
                 InputArgument::REQUIRED,
                 'One channel to apply this interval'
+            )
+            ->addArgument(
+                'interval',
+                InputArgument::REQUIRED,
+                'The interval time (in seconds) between two messages display'
             );
     }
 
@@ -54,22 +54,20 @@ class AddIntervalCommand extends StorageAwareCommand
         /** @var SymfonyQuestionHelper $questionHelper */
         $questionHelper = $this->getHelper('question');
 
-        $existingChannel = $plugin->getChannelByName($channelName);
-        if ($existingChannel) {
+        $existingInterval = $plugin->getIntervalByChannel($channelName);
+        if ($existingInterval) {
             $question = new ConfirmationQuestion(
                 'Interval already exists for this channel, set to '
-                . $existingChannel['interval'] . ' seconds. Do you want to edit it ?',
+                . $existingInterval['interval'] . ' seconds. Do you want to edit it ?',
                 true
             );
             if (!$questionHelper->ask($input, $output, $question)) {
                 $output->writeln(["'Add interval' action cancelled !"]);
                 return;
             }
-            $plugin->editInterval($interval, $existingChannel['id'], $channelName);
             $actionText = "Interval edited for channel '";
-        } else {
-            $plugin->addInterval($interval, $channelName);
         }
+        $plugin->setInterval($channelName, $interval);
 
         $output->writeln([
             $actionText . $channelName . "'!",
