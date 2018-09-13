@@ -90,22 +90,21 @@ class Announcements extends PluginBase
     {
         if (!empty($this->intervals)) {
             foreach ($this->intervals as &$interval) {
-                $channelName = $interval['channel'];
-                $interval = $interval['interval'];
                 $lastMessageIndex = $interval['lastMessageIndex'];
                 $messages = $this->getMessagesByChannel($interval['channel']);
 
-                if ($interval['lastSentTime'] + $interval < time()) {
-                    IRC::message($channelName, $messages[$lastMessageIndex]['message']);
+                // Check that the time interval between 2 sends has elapsed to send the file
+                if ($interval['lastSentTime'] + $interval['time'] < time()) {
+                    IRC::message($interval['channel'], $messages[$lastMessageIndex]['message']);
 
                     $lastMessageIndex++;
                     if ($lastMessageIndex >= count($messages)) {
                         $lastMessageIndex = 0;
                     }
-                    $channel['lastMessageIndex'] = $lastMessageIndex;
-                    $channel['lastSentTime'] = time();
+                    $interval['lastMessageIndex'] = $lastMessageIndex;
+                    $interval['lastSentTime'] = time();
 
-                    HedgeBot::message('Sent auto message "$0".', [$channelName], E_DEBUG);
+                    HedgeBot::message('Sent auto message "$0".', [$interval['channel']], E_DEBUG);
                 }
             }
         }
@@ -162,13 +161,13 @@ class Announcements extends PluginBase
         if (!isset($this->intervals[$channelName])) {
             $this->intervals[$channelName] = [
                 'channel' => $channelName,
-                'interval' => 0,
+                'time' => 0,
                 'lastSentTime' => 0,
                 'lastMessageIndex' => 0
             ];
         }
         
-        $this->intervals[$channelName]['interval'] = $interval;
+        $this->intervals[$channelName]['time'] = $interval;
         $this->data->intervals = $this->intervals;
     }
 
