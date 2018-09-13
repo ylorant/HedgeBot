@@ -45,7 +45,7 @@ class SetIntervalCommand extends StorageAwareCommand
     public function execute(InputInterface $input, OutputInterface $output)
     {
 
-        $interval = $input->getArgument('interval');
+        $time= $input->getArgument('interval');
         $channelName = $input->getArgument('channel');
         $actionText = "Interval added for channel '";
 
@@ -58,7 +58,7 @@ class SetIntervalCommand extends StorageAwareCommand
         if ($existingInterval) {
             $question = new ConfirmationQuestion(
                 'Interval already exists for this channel, set to '
-                . $existingInterval['interval'] . ' seconds. Do you want to edit it ?',
+                . $existingInterval['time'] . ' seconds. Do you want to edit it ?',
                 true
             );
             if (!$questionHelper->ask($input, $output, $question)) {
@@ -67,7 +67,7 @@ class SetIntervalCommand extends StorageAwareCommand
             }
             $actionText = "Interval edited for channel '";
         }
-        $plugin->setInterval($channelName, $interval);
+        $plugin->setInterval($channelName, $time);
 
         $output->writeln([
             $actionText . $channelName . "'!",

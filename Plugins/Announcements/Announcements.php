@@ -52,6 +52,20 @@ class Announcements extends PluginBase
     }
 
     /**
+     * Get message associated with its id
+     *
+     * @param string $messageId
+     * @return array
+     */
+    public function getMessageById($messageId)
+    {
+        $array = array_filter($this->messages, function ($message) use ($messageId) {
+            return $messageId == $message['id'];
+        });
+        return $array[0];
+    }
+
+    /**
      * Get a interval entry by channel name.
      * Useful for add/edit/delete interval
      *
@@ -151,10 +165,10 @@ class Announcements extends PluginBase
      * Add interval time (in seconds) on channel
      * to display, at each interval time, a message
      *
-     * @param int $interval time in seconds
+     * @param int $time time in seconds
      * @param string $channelName
      */
-    public function setInterval($channelName, int $interval)
+    public function setInterval($channelName, int $time)
     {
         HedgeBot::message("Saving interval to channel '" . $channelName . "' ...", [], E_DEBUG);
         
@@ -167,7 +181,7 @@ class Announcements extends PluginBase
             ];
         }
         
-        $this->intervals[$channelName]['time'] = $interval;
+        $this->intervals[$channelName]['time'] = $time;
         $this->data->intervals = $this->intervals;
     }
 

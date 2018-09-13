@@ -28,7 +28,7 @@ class EditMessageCommand extends StorageAwareCommand
             ->setDescription('Edit a message from Announcements plugin messages list.')
             ->addArgument(
                 'channel',
-                InputArgument::IS_ARRAY | InputArgument::REQUIRED,
+                InputArgument::REQUIRED,
                 'Channel to display all messages you can edit'
             );
     }
@@ -45,21 +45,37 @@ class EditMessageCommand extends StorageAwareCommand
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
         $messages = $plugin->getMessagesByChannel($channelName);
+        $messagesAnswer = [];
+
+        $output->writeln([
+            "You can edit those messages :",
+            ""
+        ]);
+        foreach ($messages as $message) {
+            $messagesAnswer[] = $message['id'];
+            $output->writeln([$message['id'] . " => " . $message['message']]);
+        }
+        $output->writeln([
+            ""
+        ]);
 
         /** @var SymfonyQuestionHelper $questionHelper */
         $helper = $this->getHelper('question');
 
         $choiceQuestion = new ChoiceQuestion(
             'Which message do you want to edit (type number associated with) ?',
-            $messages,
+            $messagesAnswer,
             null
         );
         $choiceQuestion->setErrorMessage('Message n° %s is invalid.');
         $messageId = $helper->ask($input, $output, $choiceQuestion);
 
-        $messageQuestion = new Question('Please type the edited message :', '');
-        $messageQuestion->setAutocompleterValues($messages[$messageId]);
+        $messageChosen = $plugin->getMessageById($messageId);
 
+        $messageQuestion = new Question(
+            'Please type the edited message. Old message was : "' . $messageChosen['message'] . '" ',
+            ''
+        );
         $newMessage = $helper->ask($input, $output, $messageQuestion);
 
         $plugin->editMessage($messageId, $newMessage, $channelName);
