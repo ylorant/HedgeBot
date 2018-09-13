@@ -16,7 +16,7 @@ use HedgeBot\Core\Events\CoreEvent;
 class Announcements extends PluginBase
 {
     private $messages = [];
-    private $channels = [];
+    private $interval = [];
 
     /**
      * Get messages saved
@@ -25,11 +25,7 @@ class Announcements extends PluginBase
      */
     public function getMessages(): array
     {
-        $messages = [];
-        foreach ($this->messages as $key => $message) {
-            $message['id'] = $key;
-        }
-        return $messages;
+        return $this->messages;
     }
 
     /**
@@ -37,13 +33,9 @@ class Announcements extends PluginBase
      *
      * @return array
      */
-    public function getChannels(): array
+    public function getIntervals(): array
     {
-        $channels = [];
-        foreach ($this->channels as $key => $channel) {
-            $channel['id'] = $key;
-        }
-        return $channels;
+        return $this->intervals;
     }
 
     /**
@@ -66,14 +58,12 @@ class Announcements extends PluginBase
      * @param $channelName
      * @return array|bool
      */
-    public function getChannelByName($channelName)
+    public function getIntervalByChannel($channelName)
     {
-        foreach ($this->channels as $key => $channel) {
-            if ($channel['name'] == $channelName) {
-                $channel['id'] = $key;
-                return $channel;
-            }
+        if(isset($this->intervals[$channelName])) {
+            return $this->intervals[$channelName];
         }
+
         return false;
     }
 
@@ -82,16 +72,7 @@ class Announcements extends PluginBase
      */
     public function init()
     {
-        if (!empty($this->data->messages)) {
-            $this->messages = $this->data->messages->toArray();
-        }
-        if (!empty($this->data->channels)) {
-            $this->channels = $this->data->channels->toArray();
-        }
-        foreach ($this->channels as &$channel) {
-            $channel['lastMessageId'] = $channel['lastMessageId'] ?? 0;
-            $channel['lastSentTime'] = $channel['lastSentTime'] ?? 0;
-        }
+        $this->loadData();
 
         $pluginManager = Plugin::getManager();
         $pluginManager->addRoutine($this, 'RoutineSendAnnouncements');
@@ -107,20 +88,20 @@ class Announcements extends PluginBase
      */
     public function RoutineSendAnnouncements()
     {
-        foreach ($this->channels as &$channel) {
-            $channelName = $channel['name'];
-            $interval = $channel['interval'];
-            $lastMessageId = $channel['lastMessageId'];
-            $messages = $this->getMessagesByChannel($channel['name']);
+        foreach ($this->intervals as &$interval) {
+            $channelName = $interval['channel'];
+            $interval = $interval['interval'];
+            $lastMessageIndex = $interval['lastMessageIndex'];
+            $messages = $this->getMessagesByChannel($interval['channel']);
 
             if ($channel['lastSentTime'] + $interval < time()) {
-                IRC::message($channelName, $messages[$lastMessageId]['message']);
+                IRC::message($channelName, $messages[$lastMessageIndex]['message']);
 
-                $lastMessageId++;
-                if ($lastMessageId >= count($messages)) {
-                    $lastMessageId = 0;
+                $lastMessageIndex++;
+                if ($lastMessageIndex >= count($messages)) {
+                    $lastMessageIndex = 0;
                 }
-                $channel['lastMessageId'] = $lastMessageId;
+                $channel['lastMessageIndex'] = $lastMessageIndex;
                 $channel['lastSentTime'] = time();
 
                 HedgeBot::message('Sent auto message "$0".', [$channelName], E_DEBUG);
@@ -151,7 +132,7 @@ class Announcements extends PluginBase
     public function addMessage($message, $channelNames)
     {
         HedgeBot::message("Saving message ...", [], E_DEBUG);
-        $this->messages[] = ['message' => $message, 'channels' => $channelNames];
+        $this->messages[] = ['id' => uniqid(true), 'message' => $message, 'channels' => $channelNames];
         $this->data->messages = $this->messages;
     }
 
@@ -172,28 +153,21 @@ class Announcements extends PluginBase
      * @param int $interval time in seconds
      * @param string $channelName
      */
-    public function addInterval(int $interval, $channelName)
+    public function setInterval($channelName, int $interval)
     {
         HedgeBot::message("Saving interval to channel '" . $channelName . "' ...", [], E_DEBUG);
-        $this->channels[] = [
-            'name' => $channelName,
-            'interval' => $interval,
-            'lastSentTime' => '0',
-            'lastMessageId' => '0'
-        ];
-        $this->data->channels = $this->channels;
-    }
-
-    /**
-     * @param int $interval
-     * @param int $channelId
-     * @param string $channelName useful only for console output
-     */
-    public function editInterval(int $interval, $channelId, $channelName)
-    {
-        HedgeBot::message("Editing interval to channel '" . $channelName . "' ...", [], E_DEBUG);
-        $this->channels[$channelId]['interval'] = $interval;
-        $this->data->channels = $this->channels;
+        
+        if(!isset($this->intervals[$channelName])) {
+            $this->intervals[$channelName] = [
+                'channel' => $channelName,
+                'interval' => 0,
+                'lastSentTime' => 0,
+                'lastMessageId' => 0
+            ];
+        }
+        
+        $this->intervals[$channelName]['interval'] = $interval;
+        $this->data->channels = $this->intervals;
     }
 
     /**
@@ -202,5 +176,27 @@ class Announcements extends PluginBase
     public function CoreEventConfigUpdate(CoreEvent $ev)
     {
         $this->config = HedgeBot::getInstance()->config->get('plugin.Announcements');
+    }
+
+    public function CoreEventDataUpdate(CoreEvent $ev)
+    {
+        $this->loadData();
+    }
+
+    /**
+     * Loads data from the storage.
+     */
+    protected function loadData()
+    {
+        if (!empty($this->data->messages)) {
+            $this->messages = $this->data->messages->toArray();
+        }
+        if (!empty($this->data->channels)) {
+            $this->intervals = $this->data->channels->toArray();
+        }
+        foreach ($this->intervals as &$interval) {
+            $interval['lastMessageIndex'] = $interval['lastMessageIndex'] ?? 0;
+            $interval['lastSentTime'] = $interval['lastSentTime'] ?? 0;
+        }
     }
 }
