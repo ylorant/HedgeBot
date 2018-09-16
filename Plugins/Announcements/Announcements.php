@@ -10,8 +10,13 @@ use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Events\CoreEvent;
 
 /**
- * Class Announcements
- * @package HedgeBot\Plugins\Announcements
+ * @plugin Announcements
+ *
+ * Manage a messages list. Each message can be linked to one or many channels.
+ * For each channel, an interval time is defined, in seconds.
+ * When this interval time is passed for this channel, first message assigned for this channel is displayed.
+ * You must wait another interval to see the second channel.
+ * It will loop on first message when all messages has been displayed
  */
 class Announcements extends PluginBase
 {
@@ -46,9 +51,11 @@ class Announcements extends PluginBase
      */
     public function getMessagesByChannel($channelName)
     {
-        return array_filter($this->messages, function ($message) use ($channelName) {
-            return in_array($channelName, $message['channels']);
-        });
+        foreach ($this->messages as $key => $message) {
+            return array_filter($this->messages, function ($message) use ($channelName) {
+                return in_array($channelName, $message['channels']);
+            });
+        }
     }
 
     /**
@@ -164,11 +171,24 @@ class Announcements extends PluginBase
     /**
      * @param string $messageId
      * @param string $newMessage
-     * @param array $channelNames
      */
-    public function editMessage($messageId, $newMessage, $channelNames)
+    public function editMessage($messageId, $newMessage)
     {
         HedgeBot::message("Editing message ...", [], E_DEBUG);
+
+        $this->messages[$messageId] = ['message' => $newMessage];
+        $this->data->messages = $this->messages;
+    }
+
+    /**
+     * @param string $messageId
+     */
+    public function deleteMessage($messageId)
+    {
+        HedgeBot::message("Deleting message ...", [], E_DEBUG);
+
+        unset($this->messages[$messageId]);
+        $this->data->messages = $this->messages;
     }
 
     /**

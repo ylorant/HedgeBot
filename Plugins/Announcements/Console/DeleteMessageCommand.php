@@ -8,15 +8,13 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
-use Symfony\Component\Console\Helper\SymfonyQuestionHelper;
-use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 
 /**
- * Class EditMessageCommand
+ * Class DeleteMessageCommand
  * @package HedgeBot\Plugins\Announcements\Console
  */
-class EditMessageCommand extends StorageAwareCommand
+class DeleteMessageCommand extends StorageAwareCommand
 {
     use PluginAwareTrait;
     /**
@@ -24,12 +22,12 @@ class EditMessageCommand extends StorageAwareCommand
      */
     public function configure()
     {
-        $this->setName('announcements:edit-message')
-            ->setDescription('Edit a message from Announcements plugin messages list.')
+        $this->setName('announcements:delete-message')
+            ->setDescription('Delete a message from Announcements plugin messages list.')
             ->addArgument(
                 'channel',
                 InputArgument::REQUIRED,
-                'Channel to display all messages you can edit'
+                'Channel to display all messages you can delete'
             );
     }
 
@@ -44,11 +42,13 @@ class EditMessageCommand extends StorageAwareCommand
 
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
+
+        $plugin = $this->getPlugin();
         $messages = $plugin->getMessagesByChannel($channelName);
         $messagesAnswer = [];
 
         $output->writeln([
-            "You can edit those messages :",
+            "You can delete those messages :",
             ""
         ]);
         foreach ($messages as $message) {
@@ -63,27 +63,17 @@ class EditMessageCommand extends StorageAwareCommand
         $helper = $this->getHelper('question');
 
         $choiceQuestion = new ChoiceQuestion(
-            'Which message do you want to edit (type number associated with) ?',
+            'Which message do you want to delete (type number associated with) ?',
             $messagesAnswer,
             null
         );
         $choiceQuestion->setErrorMessage('Message n° %s is invalid.');
         $messageId = $helper->ask($input, $output, $choiceQuestion);
 
-        $messageChosen = $plugin->getMessageById($messageId);
-
-        $messageQuestion = new Question(
-            'Please type the edited message. Old message was : "' . $messageChosen['message'] . '" ',
-            ''
-        );
-        $newMessage = $helper->ask($input, $output, $messageQuestion);
-
-        $plugin->editMessage($messageId, $newMessage);
+        $plugin->deleteMessage($messageId);
 
         $output->writeln([
-            "Message edited !",
-            "",
-            "You will see it on channel(s) soon (depends channel(s) displaying messages frequency)."
+            "Message deleted !",
         ]);
     }
 }
