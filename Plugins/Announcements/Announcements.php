@@ -59,10 +59,11 @@ class Announcements extends PluginBase
      */
     public function getMessageById($messageId)
     {
-        $array = array_filter($this->messages, function ($message) use ($messageId) {
-            return $messageId == $message['id'];
-        });
-        return $array[0];
+        if(isset($this->messages[$messageId])) {
+            return $this->messages[$messageId];
+        }
+
+        return null;
     }
 
     /**
@@ -102,28 +103,36 @@ class Announcements extends PluginBase
      */
     public function RoutineSendAnnouncements()
     {
-        if (!empty($this->intervals)) {
-            foreach ($this->intervals as &$interval) {
-                $lastMessageIndex = $interval['lastMessageIndex'];
-                $messages = $this->getMessagesByChannel($interval['channel']);
+        if (empty($this->intervals)) {
+            return;
+        }
+        
+        foreach ($this->intervals as &$interval) {
+            $lastMessageIndex = $interval['lastMessageIndex'];
+            $messages = $this->getMessagesByChannel($interval['channel']);
+            $messageKeys = array_keys($messages);
 
-                // Check that the time interval between 2 sends has elapsed to send the file
-                if ($interval['lastSentTime'] + $interval['time'] < time()) {
-                    IRC::message($interval['channel'], $messages[$lastMessageIndex]['message']);
+            // Skip the channel if there is no messages available for it
+            if(count($messages) == 0) {
+                continue;
+            }
 
-                    $lastMessageIndex++;
-                    if ($lastMessageIndex >= count($messages)) {
-                        $lastMessageIndex = 0;
-                    }
-                    $interval['lastMessageIndex'] = $lastMessageIndex;
-                    $interval['lastSentTime'] = time();
+            // Check that the time interval between 2 sends has elapsed to send the file
+            if ($interval['lastSentTime'] + $interval['time'] < time()) {
+                IRC::message($interval['channel'], $messages[$messageKeys[$lastMessageIndex]]['message']);
 
-                    HedgeBot::message('Sent auto message "$0".', [$interval['channel']], E_DEBUG);
+                $lastMessageIndex++;
+                if ($lastMessageIndex >= count($messages)) {
+                    $lastMessageIndex = 0;
                 }
+                $interval['lastMessageIndex'] = $lastMessageIndex;
+                $interval['lastSentTime'] = time();
+
+                HedgeBot::message('Sent auto message "$0".', [$interval['channel']], E_DEBUG);
             }
         }
     }
-
+    
     /**
      * Get all messages associated to a specific channel
      *
@@ -147,7 +156,8 @@ class Announcements extends PluginBase
     public function addMessage($message, $channelNames)
     {
         HedgeBot::message("Saving message ...", [], E_DEBUG);
-        $this->messages[] = ['id' => uniqid(true), 'message' => $message, 'channels' => $channelNames];
+        $newId = uniqid(true);
+        $this->messages[$newId] = ['id' => $newId, 'message' => $message, 'channels' => $channelNames];
         $this->data->messages = $this->messages;
     }
 
