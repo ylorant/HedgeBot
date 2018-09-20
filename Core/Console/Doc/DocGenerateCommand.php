@@ -1,6 +1,6 @@
 <?php
 
-namespace HedgeBot\Core\Console;
+namespace HedgeBot\Core\Console\Doc;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -21,7 +21,7 @@ class DocGenerateCommand extends Command
     {
         $this->setName('doc:generate')
             ->setDescription('Generates the user documentation for the bot\'s commands.')
-            ->addArgument('outputDir', InputArgument::OPTIONAL, 'Who do you want to greet?');
+            ->addArgument('outputDir', InputArgument::OPTIONAL, 'Sets the output directory for the generated doc.');
     }
 
     /**
