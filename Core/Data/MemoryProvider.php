@@ -13,6 +13,7 @@ class MemoryProvider extends Provider
     private $data;
 
     const STORAGE_NAME = "memory";
+    const STORAGE_PARAMTERS = [];
 
     /**
      * Loads a key from the storage.
@@ -23,7 +24,7 @@ class MemoryProvider extends Provider
      * @param string $key The key to retrieve.
      * @return mixed A mixed value containing the data.
      */
-    public function get($key)
+    public function get($key = null)
     {
         $keyComponents = explode('.', $key);
 
@@ -69,6 +70,30 @@ class MemoryProvider extends Provider
         }
 
         $currentPath[$varName] = $data;
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function remove($key = null)
+    {
+        $keyComponents = explode('.', $key);
+
+        $varName = array_pop($keyComponents);
+
+        $currentPath = &$this->data;
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
+                return false;
+            } elseif (is_array($currentPath[$component])) {
+                $currentPath = &$currentPath[$component];
+            } else {
+                return false;
+            }
+        }
+
+        unset($currentPath[$varName]);
         return true;
     }
 

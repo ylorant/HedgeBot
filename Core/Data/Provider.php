@@ -11,8 +11,10 @@ use ReflectionClass;
 abstract class Provider
 {
     public $readonly = false; ///< Boolean, prevents writing to the data storage.
+    protected static $classCache = []; ///< Storage class cache
 
     const STORAGE_NAME = "";
+    const STORAGE_PARAMETERS = ["readonly"];
 
     /**
      * Loads a key from the storage.
@@ -24,7 +26,7 @@ abstract class Provider
      *
      * @return mixed A mixed value containing the data.
      */
-    abstract public function get($key);
+    abstract public function get($key = null);
 
     /**
      * Saves a specific key into the storage.
@@ -39,13 +41,24 @@ abstract class Provider
     abstract public function set($key, $data);
 
     /**
+     * Removes a specific key from the storage.
+     * The implemented version of this prototype must allow to remove a single key, or to remove a tree
+     * of nested complex data just by removing it's base branch.
+     * 
+     * @param $key The key of the data to remove. String is preferred.
+     * 
+     * @return bool True if the data has been deleted successfully, false otherwise.
+     */
+    abstract public function remove($key = null);
+
+    /**
      * Connects to the data source.
      * The method implementing this prototype will be used to connect to the data source.
      *
-     * @param $location The data source location to connect to. Can vary between data providers.
+     * @param $parameters The data source parameters to connect with. Content can vary between data providers.
      * @return bool True if the connection to the source succeeded, False otherwise.
      */
-    abstract public function connect($location);
+    abstract public function connect($parameters);
 
     /**
      * Resolves a storage from its name and returns its class name.
@@ -57,34 +70,58 @@ abstract class Provider
      */
     public static function resolveStorage($name)
     {
-        $ignoreClasses = array(
-            'ObjectAccess',
-            'Provider'
-        );
+        $storageClasses = self::getStorageClasses();
 
-        // Getting the current namespace to be able to load classes correctly
-        $reflectionClass = new ReflectionClass(self::class);
-        $currentNamespace = $reflectionClass->getNamespaceName();
-
-        // Scanning the directory of this file, which contains the other classes.
-        $currentDir = scandir(__DIR__);
-        foreach ($currentDir as $file) {
-            if (!is_file(__DIR__ . '/' . $file)) {
-                continue;
-            }
-
-            $className = str_replace('.php', '', $file);
-            if (in_array($className, $ignoreClasses)) {
-                continue;
-            }
-
-            $className = $currentNamespace . "\\" . $className;
-            if ($className::getName() == $name) {
-                return $className;
-            }
+        if(!empty($storageClasses[$name])) {
+            return $storageClasses[$name];
         }
 
         return false;
+    }
+
+    /**
+     * Gets the list of available storages.
+     * 
+     */
+    public static function getStorageList()
+    {
+        $storageClasses = self::getStorageClasses();
+        return array_keys($storageClasses);
+    }
+
+    protected static function getStorageClasses()
+    {
+        // Refresh the storage classes cache if needed
+        if(empty(self::$classCache)) {
+            // Getting the current namespace to be able to load classes correctly
+            $reflectionClass = new ReflectionClass(self::class);
+            $currentNamespace = $reflectionClass->getNamespaceName();
+
+            // Classes to be ignored
+            $ignoreClasses = array(
+                'ObjectAccess',
+                'Provider'
+            );
+
+            // Scanning the directory of this file, which contains the other classes.
+            $currentDir = scandir(__DIR__);
+            foreach ($currentDir as $file) {
+                if (!is_file(__DIR__ . '/' . $file)) {
+                    continue;
+                }
+
+                $className = str_replace('.php', '', $file);
+                if (in_array($className, $ignoreClasses)) {
+                    continue;
+                }
+
+                $className = $currentNamespace . "\\" . $className;
+                $storageName = $className::getName();
+                self::$classCache[$storageName] = $className;
+            }
+        }
+
+        return self::$classCache;
     }
 
     /**
@@ -93,5 +130,10 @@ abstract class Provider
     public static function getName()
     {
         return static::STORAGE_NAME;
+    }
+
+    public static function getParameters()
+    {
+        return array_unique(array_merge(self::STORAGE_PARAMETERS, static::STORAGE_PARAMETERS));
     }
 }

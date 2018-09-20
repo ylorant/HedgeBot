@@ -16,6 +16,7 @@ class IniFileProvider extends Provider
     private $data; // Data storage
 
     const STORAGE_NAME = "ini";
+    const STORAGE_PARAMETERS = ["basepath", "backups"];
 
     /**
      * Loads data from INI formatted files into a directory, recursively.
@@ -200,9 +201,13 @@ class IniFileProvider extends Provider
      * @param string $key The key corresponding to the data to get.
      * @return bool|A|mixed|null The requested data or NULL on failure.
      */
-    public function get($key)
+    public function get($key = null)
     {
-        $keyComponents = explode('.', $key);
+        if(!empty($key)) {
+            $keyComponents = explode('.', $key);
+        } else {
+            $keyComponents = [];
+        }
 
         $currentPath = &$this->data;
         foreach ($keyComponents as $component) {
@@ -221,10 +226,10 @@ class IniFileProvider extends Provider
     /**
      * Sets a variable in the data storage.
      * Sets a var in the data storage, and saves instantly all the data.
-     * TODO: Save only the relevant part ?
+     * TODO: Save only the relevant part instead of all the data ?
      *
      * @param string $key The key under which to save the data.
-     * @param $data The value to save. Could be a complex structure like an array.
+     * @param mixed $data The value to save. Could be a complex structure like an array.
      * @return bool TRUE if the data has been saved, FALSE otherwise.
      */
     public function set($key, $data)
@@ -247,6 +252,38 @@ class IniFileProvider extends Provider
         }
 
         $currentPath[$varName] = $data;
+        $this->writeData();
+        return true;
+    }
+
+    /**
+     * Removes a variable from the data storage.
+     * Removes a var from the data storage and instantly saves all the data.
+     * 
+     * @param string $key The key to delete.
+     * 
+     * @return bool true if the data has been deleted, false otherwise.
+     */
+    public function remove($key = null)
+    {
+        $keyComponents = explode('.', $key);
+
+        $varName = array_pop($keyComponents);
+
+        $currentPath = &$this->data;
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
+                $currentPath[$component] = array();
+            }
+
+            if (is_array($currentPath[$component])) {
+                $currentPath = &$currentPath[$component];
+            } else {
+                return false;
+            }
+        }
+
+        unset($currentPath[$varName]);
         $this->writeData();
         return true;
     }
