@@ -1,17 +1,20 @@
 <?php
 namespace HedgeBot\Core\Console\Data;
 
-use HedgeBot\Core\Console\StorageAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * GetDataCommand class.
  * Allows to get data from the storage and output it to the standard output. Serves as a debug tool mainly.
  */
-class GetDataCommand extends StorageAwareCommand
+class GetDataCommand extends Command
 {
+    use StorageAwareTrait;
+
     public function configure()
     {
         $this->setName('data:get')

@@ -1,13 +1,16 @@
 <?php
 namespace HedgeBot\Core\Console\Data;
 
-use HedgeBot\Core\Console\StorageAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
-class RemoveDataCommand extends StorageAwareCommand
+class RemoveDataCommand extends Command
 {
+    use StorageAwareTrait;
+
     public function configure()
     {
         $this->setName('data:remove')

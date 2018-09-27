@@ -2,24 +2,24 @@
 
 namespace HedgeBot\Plugins\HoraroTextFile\Console;
 
-use HedgeBot\Core\Console\StorageAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Exception\RuntimeException;
 use HedgeBot\Core\API\Plugin;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Class SetScheduleFileCommand
  * @package HedgeBot\Plugins\HoraroTextFile\Console
  */
-class SetScheduleFileCommand extends StorageAwareCommand
+class SetScheduleFileCommand extends Command
 {
     use PluginAwareTrait;
-
+    
     /**
-     *
+     * Configures the command.
      */
     public function configure()
     {

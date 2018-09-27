@@ -2,13 +2,14 @@
 namespace HedgeBot\Core\Console\Data;
 
 use Symfony\Component\Console\Question\ConfirmationQuestion;
-use HedgeBot\Core\Console\StorageAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Data\Provider;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use stdClass;
 use Symfony\Component\Console\Question\Question;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * MigrateDataCommand class
@@ -16,8 +17,10 @@ use Symfony\Component\Console\Question\Question;
  * 
  * @package HedgeBot\Core\Console\Data
  */
-class MigrateDataCommand extends StorageAwareCommand
+class MigrateDataCommand extends Command
 {
+    use StorageAwareTrait;
+
     protected function configure()
     {
         $this->setName('data:migrate')
