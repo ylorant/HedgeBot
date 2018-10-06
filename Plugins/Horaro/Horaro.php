@@ -647,7 +647,12 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $runningSchedules = [];
         $currentTime = new DateTime($this->config['simulatedTime'] ?? null);
 
+        /** @var Schedule $schedule */
         foreach ($this->schedules as $identSlug => $schedule) {
+            if(!$schedule->isEnabled()) {
+                continue;
+            }
+
             $startTime = $schedule->getStartTime();
             $endTime = $schedule->getEndTime();
             $addSchedule = false;
