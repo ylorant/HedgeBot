@@ -72,6 +72,14 @@ class Twitter extends PluginBase
     }
 
     /**
+     * Core event: data has been updated from elsewhere
+     */
+    public function CoreEventDataUpdate()
+    {
+        $this->loadData();
+    }
+
+    /**
      * Core Event: Called when any event is called.
      */
     public function CoreEventEvent(CoreEvent $event)
