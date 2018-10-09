@@ -1,5 +1,4 @@
 <?php
-
 namespace HedgeBot\Core\Console\Doc;
 
 use Symfony\Component\Console\Command\Command;
