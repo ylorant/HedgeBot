@@ -186,7 +186,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
                             HedgeBot::message("Current item index: $0, setting title", [$index], E_DEBUG);
                             $schedule->setCurrentIndex($index);
                             $this->setChannelTitleFromSchedule($schedule);
-                            Plugin::getManager()->callEvent(new HoraroEvent('scheduleUpdated', $schedule));
+                            Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
                             $this->saveData();
                             break;
                         }
@@ -250,7 +250,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
                 // Set the new schedule item, since we're not at the end
                 $this->setChannelTitleFromSchedule($schedule);
-                Plugin::getManager()->callEvent(new HoraroEvent('scheduleUpdated', $schedule));
+                Plugin::getManager()->callEvent(new HoraroEvent('scheduleitemChangeUpdated', $schedule));
                 $this->saveData();
             } elseif (!empty($nextItemAnnounceThresholdTime) && $now >= $nextItemAnnounceThresholdTime && !$schedule->isNextItemAnnounced()) {
                 // Announce the next item and mark it as announced
@@ -702,7 +702,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $scheduleEndTimes = [];
 
         foreach($this->schedules as $identSlug => $schedule) {
-            if(empty($channel) || $schedule->getChannel() == $channel) {
+            if(!empty($schedule->getData()) && (empty($channel) || $schedule->getChannel() == $channel)) {
                 $scheduleStartTimes[$identSlug] = $schedule->getStartTime();
                 $scheduleEndTimes[$identSlug] = $schedule->getEndTime();
             }
@@ -811,6 +811,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         // Update title & game
         $this->setChannelTitleFromSchedule($schedule);
+        Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
 
         // Save the schedule
         $this->saveData();
@@ -840,6 +841,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         // Update title & game
         $this->setChannelTitleFromSchedule($schedule);
+        Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
 
         // Save the schedule
         $this->saveData();
