@@ -13,6 +13,7 @@ use HedgeBot\Core\Events\ServerEvent;
 use HedgeBot\Core\Events\TimeoutEvent;
 use ReflectionClass;
 use HedgeBot\Core\API\Security;
+use HedgeBot\Core\Events\Event;
 
 /**
  * Class PluginManager
@@ -547,5 +548,24 @@ class PluginManager extends EventManager
         foreach ($timeoutsToRemove as $key) {
             unset($this->timeouts[$key]);
         }
+    }
+
+    /**
+     * Overrides the callEvent method from the EventManager class.
+     * 
+     * @param Event $event The event that is called.
+     * 
+     * @return bool TRUE if event has been called correctly, FALSE otherwise.
+     * @see EventManager::callEvent()
+     */
+    public function callEvent(Event $event)
+    {
+        // Do the generic event call only if the event isn't itself a generic event
+        if(!($event instanceof CoreEvent && $event->name == 'event')) {
+            $coreEvent = new CoreEvent('event', ['event' => $event]);
+            $this->callEvent($coreEvent);
+        }
+
+        parent::callEvent($event);
     }
 }
