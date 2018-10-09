@@ -4,6 +4,7 @@ namespace HedgeBot\Core\Store;
 
 use HedgeBot\Core\Store\Formatter\FormatterInterface;
 use HedgeBot\Core\Store\Formatter\TextFormatter;
+use HedgeBot\Core\Store\Formatter\TraverseFormatter;
 
 /**
  * Class Store
@@ -42,6 +43,7 @@ class Store
         $this->formatters = [];
 
         $this->registerFormatter(new TextFormatter($this));
+        $this->registerFormatter(new TraverseFormatter());
     }
 
     /**
