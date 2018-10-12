@@ -184,7 +184,7 @@ class TwitterService
      * 
      * @return string|bool The uploaded media URL, or False if an error occured.
      */
-    public function uploadMedia($account, $mediaUrl)
+    public function uploadMedia($mediaUrl)
     {
         $reply = $this->client->media_upload([
             'media' => $mediaUrl
