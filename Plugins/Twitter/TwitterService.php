@@ -50,7 +50,7 @@ class TwitterService
      */
     public function getAuthorizeUrl()
     {
-        if(empty($this->requestToken)) {
+        // if(empty($this->requestToken)) {
             $tokenReply = $this->client->oauth_requestToken([
                 'oauth_callback' => $this->callbackUrl
             ]);
@@ -61,7 +61,7 @@ class TwitterService
             ];
 
             $this->saveTokens();
-        }
+        // }
 
         $this->client->setToken($this->requestToken['token'], $this->requestToken['secret']);
 
