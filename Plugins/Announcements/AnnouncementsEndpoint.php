@@ -41,4 +41,34 @@ class AnnouncementsEndpoint
     {
         return $this->plugin->getIntervals();
     }
+
+    /**
+     * Adds a message.
+     * 
+     * @see Announcements::addMessage()
+     */
+    public function addMessage($message, $channelNames)
+    {
+        return $this->plugin->addMessage($message, (array) $channelNames);
+    }
+
+    /**
+     * Edits a message.
+     * 
+     * @see Announcements::editMessage()
+     */
+    public function editMessage($messageId, $newMessage, $channelNames)
+    {
+        return $this->plugin->editMessage($messageId, $newMessage, $channelNames);
+    }
+
+    /**
+     * Deletes a message.
+     * 
+     * @see Announcements::deleteMessage()
+     */
+    public function deleteMessage($messageId)
+    {
+        return $this->plugin->deleteMessage($messageId);
+    }
 }

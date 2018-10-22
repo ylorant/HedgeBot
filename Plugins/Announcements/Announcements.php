@@ -159,25 +159,37 @@ class Announcements extends PluginBase
      *
      * @param string $message text can contain Markdown
      * @param array $channelNames list of channels to apply this message
+     * 
+     * @return string The created message's ID.
      */
     public function addMessage($message, $channelNames)
     {
-        HedgeBot::message("Saving message ...", [], E_DEBUG);
         $newId = uniqid(true);
         $this->messages[$newId] = ['id' => $newId, 'message' => $message, 'channels' => $channelNames];
         $this->data->messages = $this->messages;
+
+        return $newId;
     }
 
     /**
-     * @param string $messageId
-     * @param string $newMessage
+     * Edits a message.
+     * 
+     * @param string $messageId The ID of the message to edit.
+     * @param string $newMessage The new message text.
+     * @param array $channelNames The new channel list on which the message is enabled.
+     * 
+     * @return bool True if the message was edited successfully, false if not (mainly the message doesn't exist).
      */
-    public function editMessage($messageId, $newMessage)
+    public function editMessage($messageId, $newMessage, array $channelNames)
     {
-        HedgeBot::message("Editing message ...", [], E_DEBUG);
-
-        $this->messages[$messageId] = ['message' => $newMessage];
+        if(!isset($this->messages[$messageId])) {
+            return false;
+        }
+        
+        $this->messages[$messageId] = ['id' => $messageId, 'message' => $newMessage, 'channels' => $channelNames];
         $this->data->messages = $this->messages;
+
+        return true;
     }
 
     /**
@@ -185,10 +197,14 @@ class Announcements extends PluginBase
      */
     public function deleteMessage($messageId)
     {
-        HedgeBot::message("Deleting message ...", [], E_DEBUG);
+        if(!isset($this->messages[$messageId])) {
+            return false;
+        }
 
         unset($this->messages[$messageId]);
         $this->data->messages = $this->messages;
+
+        return true;
     }
 
     /**
