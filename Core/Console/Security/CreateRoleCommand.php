@@ -10,14 +10,20 @@ use Symfony\Component\Console\Input\InputOption;
 use HedgeBot\Core\Security\SecurityRole;
 use InvalidArgumentException;
 use RuntimeException;
-use HedgeBot\Core\Console\StorageAwareCommand;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * Class CreateRoleCommand
  * @package HedgeBot\Core\Console\Security
  */
-class CreateRoleCommand extends StorageAwareCommand
+class CreateRoleCommand extends Command
 {
+    use StorageAwareTrait;
+
+    /**
+     * Configures the command.
+     */
     public function configure()
     {
         $this->setName('security:role-create')

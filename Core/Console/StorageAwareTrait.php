@@ -6,12 +6,12 @@ use Symfony\Component\Console\Command\Command;
 use HedgeBot\Core\Data\Provider;
 
 /**
- * Class StorageAwareCommand
- * TODO: Replace this class by using the API
+ * Class StorageAwareTrait
+ * TODO: Replace this trait by using the API
  *
  * @package HedgeBot\Core\Console
  */
-abstract class StorageAwareCommand extends Command implements StorageAwareInterface
+trait StorageAwareTrait
 {
     protected $data;
     protected $config;

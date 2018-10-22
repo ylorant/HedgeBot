@@ -8,14 +8,20 @@ use HedgeBot\Core\Security\AccessControlManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use InvalidArgumentException;
-use HedgeBot\Core\Console\StorageAwareCommand;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * Class SetParentRoleCommand
  * @package HedgeBot\Core\Console\Security
  */
-class SetParentRoleCommand extends StorageAwareCommand
+class SetParentRoleCommand extends Command
 {
+    use StorageAwareTrait;
+
+    /**
+     * Configures the command.
+     */
     public function configure()
     {
         $this->setName('security:role-set-parent')

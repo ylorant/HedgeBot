@@ -5,17 +5,20 @@ namespace HedgeBot\Core\Console\Twitch;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
-use HedgeBot\Core\Console\StorageAwareCommand;
 use HedgeBot\Core\Service\Twitch\AuthManager;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * Class RegisterAccessTokenCommand
  * @package HedgeBot\Core\Console\Twitch
  */
-class RegisterAccessTokenCommand extends StorageAwareCommand
+class RegisterAccessTokenCommand extends Command
 {
+    use StorageAwareTrait;
+
     /**
-     *
+     * Configures the command.
      */
     public function configure()
     {

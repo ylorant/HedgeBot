@@ -16,6 +16,7 @@ class JsonFileProvider extends Provider
     private $data; // Data storage
 
     const STORAGE_NAME = "json";
+    const STORAGE_PARAMETERS = ["backups", "path"];
 
     /**
      * Loads the data from the JSON file into the memory.
@@ -103,9 +104,13 @@ class JsonFileProvider extends Provider
      *
      * @return The requested data or NULL on failure.
      */
-    public function get($key)
+    public function get($key = null)
     {
-        $keyComponents = explode('.', $key);
+        if(!empty($key)) {
+            $keyComponents = explode('.', $key);
+        } else {
+            $keyComponents = [];
+        }
 
         $currentPath = &$this->data;
         foreach ($keyComponents as $component) {
@@ -123,7 +128,6 @@ class JsonFileProvider extends Provider
 
     /** Sets a variable in the data storage.
      * Sets a var in the data storage, and saves instantly all the data.
-     * TODO: Save only the relevant part ?
      *
      * @param $key The key under which to save the data.
      * @param $data The value to save. Could be a complex structure like an array.
@@ -156,6 +160,38 @@ class JsonFileProvider extends Provider
         if (!($pathWasEmpty && is_array($data) && empty($data))) {
             $this->writeData();
         }
+        
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function remove($key = null)
+    {
+        if(!empty($key)) {
+            $keyComponents = explode('.', $key);
+        } else {
+            $keyComponents = [];
+        }
+
+        $varName = array_pop($keyComponents);
+
+        $currentPath = &$this->data;
+        foreach ($keyComponents as $component) {
+            if (!isset($currentPath[$component])) {
+                $currentPath[$component] = array();
+            }
+
+            if (is_array($currentPath[$component])) {
+                $currentPath = &$currentPath[$component];
+            } else {
+                return false;
+            }
+        }
+
+        unset($currentPath[$varName]);
+        $this->writeData();
         
         return true;
     }

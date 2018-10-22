@@ -157,7 +157,7 @@ class ConsoleProvider
                 $obj = new $className();
 
                 // Give the config and the data provider to the class if it is storage-aware
-                if ($obj instanceof StorageAwareInterface) {
+                if (in_array(StorageAwareTrait::class, class_uses($obj))) {
                     $obj->setConfigStorage($this->config->getProvider());
                     $obj->setDataStorage($this->data->getProvider());
                 }

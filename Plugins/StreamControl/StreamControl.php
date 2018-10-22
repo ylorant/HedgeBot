@@ -14,7 +14,7 @@ class StreamControl extends Plugin
     public function CommandSetTitle(CommandEvent $ev)
     {
         $args = $ev->arguments;
-        if (count($args) < 2) {
+        if (count($args) < 1) {
             return IRC::reply($ev, "Insufficient parameters.");
         }
 
@@ -28,7 +28,7 @@ class StreamControl extends Plugin
     public function CommandSetGame(CommandEvent $ev)
     {
         $args = $ev->arguments;
-        if (count($args) < 2) {
+        if (count($args) < 1) {
             return IRC::reply($ev, "Insufficient parameters.");
         } 
 

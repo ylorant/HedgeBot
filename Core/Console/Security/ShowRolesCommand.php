@@ -6,16 +6,19 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Security\AccessControlManager;
 use Symfony\Component\Console\Input\InputArgument;
-use HedgeBot\Core\Console\StorageAwareCommand;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * Class ShowRolesCommand
  * @package HedgeBot\Core\Console\Security
  */
-class ShowRolesCommand extends StorageAwareCommand
+class ShowRolesCommand extends Command
 {
+    use StorageAwareTrait;
+
     /**
-     *
+     * Configures the command.
      */
     public function configure()
     {

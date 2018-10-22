@@ -9,16 +9,19 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use InvalidArgumentException;
 use RuntimeException;
-use HedgeBot\Core\Console\StorageAwareCommand;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * Class RevokeRoleCommand
  * @package HedgeBot\Core\Console\Security
  */
-class RevokeRoleCommand extends StorageAwareCommand
+class RevokeRoleCommand extends Command
 {
+    use StorageAwareTrait;
+
     /**
-     *
+     * Configures the command.
      */
     public function configure()
     {

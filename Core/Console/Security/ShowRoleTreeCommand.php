@@ -5,16 +5,19 @@ namespace HedgeBot\Core\Console\Security;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Security\AccessControlManager;
-use HedgeBot\Core\Console\StorageAwareCommand;
+use Symfony\Component\Console\Command\Command;
+use HedgeBot\Core\Console\StorageAwareTrait;
 
 /**
  * Class ShowRoleTreeCommand
  * @package HedgeBot\Core\Console\Security
  */
-class ShowRoleTreeCommand extends StorageAwareCommand
+class ShowRoleTreeCommand extends Command
 {
+    use StorageAwareTrait;
+
     /**
-     *
+     * Configures the command.
      */
     public function configure()
     {

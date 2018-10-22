@@ -8,16 +8,19 @@ use HedgeBot\Core\Security\AccessControlManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use RuntimeException;
-use HedgeBot\Core\Console\StorageAwareCommand;
+use HedgeBot\Core\Console\StorageAwareTrait;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Class SetRoleDefaultCommand
  * @package HedgeBot\Core\Console\Security
  */
-class SetRoleDefaultCommand extends StorageAwareCommand
+class SetRoleDefaultCommand extends Command
 {
+    use StorageAwareTrait;
+
     /**
-     *
+     * Configures the command.
      */
     public function configure()
     {

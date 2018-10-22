@@ -281,6 +281,44 @@ class HedgeBot
     }
 
     /**
+     * Checks that the given object has the given properties in it, and that they are not null.
+     * 
+     * @param object $object The object to check the properties of.
+     * @param array $properties An array containing the property names to check the existence of.
+     * 
+     * @return bool True if all the properties exist, false if not.
+     */
+    public static function objectPropertiesExist($object, array $properties)
+    {
+        foreach($properties as $prop) {
+            if(!isset($object->$prop)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks that the given array has the given keys in it, and that they aren't null.
+     * 
+     * @param array $array The array to check the keys of.
+     * @param array $keys An array containing the keys to check the existence of.
+     * 
+     * @return bool True if all the keys exist, false if not.
+     */
+    public static function arrayKeysExist(array $array, array $keys)
+    {
+        foreach($keys as $key) {
+            if(!isset($array[$key])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * @param $var
      * @return bool
      */
@@ -330,6 +368,7 @@ class HedgeBot
         $verbosity = 1;
 
         $hasColors = self::hasColorSupport();
+        $colorChanger = '';
 
         //Getting type string
         switch ($type) {
@@ -341,7 +380,7 @@ class HedgeBot
             case E_USER_WARNING:
                 $prefix = 'Warning';
                 if ($hasColors) { // If we are on Linux, we use colors
-                    echo "\033[0;33m";
+                    $colorChanger = "\033[0;33m";
                 }
                 break;
             case E_ERROR:
@@ -349,15 +388,13 @@ class HedgeBot
                 $prefix = 'Error';
                 $verbosity = 0;
                 if ($hasColors) { // If we are on Linux, we use colors (yes, I comment twice)
-                    echo "\033[0;31m";
+                    $colorChanger = "\033[0;31m";
                 }
                 break;
             case E_DEBUG:
                 $prefix = 'Debug';
                 $verbosity = 2;
-                if ($hasColors) { // If we are on Linux, we use colors
-                    echo "\033[38;5;245m";
-                }
+                $colorChanger = "\033[38;5;245m";
                 break;
             default:
                 $prefix = 'Unknown';
@@ -378,9 +415,12 @@ class HedgeBot
 
         //Put it in log, if is opened
         if (HedgeBot::$verbose >= $verbosity) {
-            echo date("m/d/Y h:i:s A") . ' -- ' . $prefix . ' -- ' . $message . PHP_EOL;
-            if ($hasColors) {
-                echo "\033[0m";
+            $message = date("m/d/Y h:i:s A") . ' -- ' . $prefix . ' -- ' . $message . PHP_EOL;
+            
+            if ($hasColors) { // If we are on Linux, we use colors
+                echo $colorChanger. $message. "\033[0m";
+            } else {
+                echo $message;
             }
         }
 

@@ -44,6 +44,18 @@ abstract class Event
     }
 
     /**
+     * Magic method to check the existence of a protected or private property inside this class and its children.
+     * 
+     * @param string $name The name of the property to check the existence of.
+     * 
+     * @return bool True if the property exists, false if not.
+     */
+    public function __isset($name)
+    {
+        return isset($this->$name);
+    }
+
+    /**
      * Stops the propagation of the event. If this function is called by a callback during execution of events,
      * then the event flow will be stopped (and the caller may also act accordingly with its propagation).
      */

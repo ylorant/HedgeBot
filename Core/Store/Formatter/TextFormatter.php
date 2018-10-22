@@ -1,5 +1,4 @@
 <?php
-
 namespace HedgeBot\Core\Store\Formatter;
 
 use HedgeBot\Core\Store\Store;
@@ -11,13 +10,11 @@ use HedgeBot\Core\Store\Store;
  * It will replace tokens that are in the form of $path.to.var.in.store
  * by the subsequent value of the token. See doc for the format() method for more info.
  */
-class TextFormatter implements FormatterInterface
+class TextFormatter extends TraverseFormatter implements FormatterInterface
 {
     /** @var Store The store that htis formatter will take its data from */
     protected $store;
-
-    const PATH_SEPARATOR = ".";
-
+    
     /**
      * Constructor. Creates a new formatter, using the given store to provide the values to fill.
      *
@@ -26,14 +23,6 @@ class TextFormatter implements FormatterInterface
     public function __construct(Store $store)
     {
         $this->store = $store;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function getName()
-    {
-        return "textFormatter";
     }
 
     /**
@@ -80,7 +69,7 @@ class TextFormatter implements FormatterInterface
 
         // Restricting the data to its subset for the given root if needed
         if (!empty($root)) {
-            $storeData = $this->walkData($root, $storeData);
+            $storeData = $this->traverse($root, $storeData);
             // The root is empty, no replacement is done
             if ($storeData === null) {
                 return $text;
@@ -89,51 +78,10 @@ class TextFormatter implements FormatterInterface
 
         // Find token values and replace them in the text
         foreach ($tokenList as $token) {
-            $value = $this->walkData($token, $storeData);
+            $value = $this->traverse($token, $storeData);
             $text = str_replace('$' . $token, $value, $text);
         }
 
         return $text;
-    }
-
-    /**
-     * Walks the given path in the given data array, and returns the found value.
-     *
-     * @param string $path The path to walk. Go through recursive paths using the dot "." separator between key names.
-     * @param array $data The data to walk through.
-     * @param mixed $default The default value to return when a path is not found in the data. Defaults to null.
-     *
-     * @return mixed The found data, or the default value if the path has not been found.
-     */
-    protected function walkData($path, $data, $default = null)
-    {
-        $pathParts = explode(self::PATH_SEPARATOR, $path);
-        $currentData = $data;
-
-        // Iterating over the path parts to walk down the initial data to the requested element
-        foreach ($pathParts as $part) {
-            // Before trying to check as an array, we try to see if it's a string readable as markdown, to generate a Markdown
-            // parser from it.
-            if (is_string($currentData)) {
-                $markdownExpression = MarkdownExpression::readMarkdown($currentData);
-                if($markdownExpression) {
-                    $currentData = $markdownExpression;
-                }
-            }
-
-            // If the part isn't present in the data, we stop walking and return the default value
-            if (!isset($currentData[$part])) {
-                return $default;
-            }
-
-            $currentData = $currentData[$part];
-        }
-
-        // We try to remove markdown markers from strings
-        if (is_string($currentData) && strpos($currentData, '*') !== false) {
-            $currentData = preg_replace("#\*{1,2}(.+)\*{1,2}#isU", '$1', $currentData);
-        }
-
-        return $currentData;
     }
 }

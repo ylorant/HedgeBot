@@ -2,7 +2,6 @@
 
 namespace HedgeBot\Plugins\Horaro\Console;
 
-use HedgeBot\Core\Console\StorageAwareCommand;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use HedgeBot\Plugins\Horaro\Horaro;
 use Symfony\Component\Console\Input\InputInterface;
@@ -10,17 +9,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Exception\RuntimeException;
 use HedgeBot\Plugins\Horaro\Entity\Schedule;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Class SetSchedulePropertyCommand
  * @package HedgeBot\Plugins\Horaro\Console
  */
-class SetSchedulePropertyCommand extends StorageAwareCommand
+class SetSchedulePropertyCommand extends Command
 {
     use PluginAwareTrait;
-
+    
     /**
-     *
+     * Configures the command.
      */
     public function configure()
     {
