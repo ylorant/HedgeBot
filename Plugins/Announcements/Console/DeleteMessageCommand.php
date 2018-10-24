@@ -2,32 +2,34 @@
 
 namespace HedgeBot\Plugins\Announcements\Console;
 
-use HedgeBot\Core\Console\StorageAwareCommand;
 use HedgeBot\Plugins\Announcements\Announcements;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Command\Command;
+use RuntimeException;
 
 /**
  * Class DeleteMessageCommand
  * @package HedgeBot\Plugins\Announcements\Console
  */
-class DeleteMessageCommand extends StorageAwareCommand
+class DeleteMessageCommand extends Command
 {
     use PluginAwareTrait;
+
     /**
      *
      */
     public function configure()
     {
-        $this->setName('announcements:delete-message')
+        $this->setName('announcements:message-delete')
             ->setDescription('Delete a message from Announcements plugin messages list.')
             ->addArgument(
-                'channel',
+                'id',
                 InputArgument::REQUIRED,
-                'Channel to display all messages you can delete'
+                'The ID of the message to delete.'
             );
     }
 
@@ -38,42 +40,14 @@ class DeleteMessageCommand extends StorageAwareCommand
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $channelName = $input->getArgument('channel');
-
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
+        $id = $input->getArgument('id');
 
-        $plugin = $this->getPlugin();
-        $messages = $plugin->getMessagesByChannel($channelName);
-        $messagesAnswer = [];
+        $deleted = $plugin->deleteMessage($id);
 
-        $output->writeln([
-            "You can delete those messages :",
-            ""
-        ]);
-        foreach ($messages as $message) {
-            $messagesAnswer[] = $message['id'];
-            $output->writeln([$message['id'] . " => " . $message['message']]);
+        if(!$deleted) {
+            throw new RuntimeException("Message deletion failed. Check that the ID you're trying to delete exists.");
         }
-        $output->writeln([
-            ""
-        ]);
-
-        /** @var SymfonyQuestionHelper $questionHelper */
-        $helper = $this->getHelper('question');
-
-        $choiceQuestion = new ChoiceQuestion(
-            'Which message do you want to delete (type number associated with) ?',
-            $messagesAnswer,
-            null
-        );
-        $choiceQuestion->setErrorMessage('Message n° %s is invalid.');
-        $messageId = $helper->ask($input, $output, $choiceQuestion);
-
-        $plugin->deleteMessage($messageId);
-
-        $output->writeln([
-            "Message deleted !",
-        ]);
     }
 }

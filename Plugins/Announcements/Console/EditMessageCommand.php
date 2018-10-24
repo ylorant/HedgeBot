@@ -11,25 +11,42 @@ use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Helper\SymfonyQuestionHelper;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Question\ChoiceQuestion;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
+use RuntimeException;
 
 /**
  * Class EditMessageCommand
  * @package HedgeBot\Plugins\Announcements\Console
  */
-class EditMessageCommand extends StorageAwareCommand
+class EditMessageCommand extends Command
 {
     use PluginAwareTrait;
+    
     /**
      *
      */
     public function configure()
     {
-        $this->setName('announcements:edit-message')
+        $this->setName('announcements:message-edit')
             ->setDescription('Edit a message from Announcements plugin messages list.')
             ->addArgument(
-                'channel',
+                'id',
                 InputArgument::REQUIRED,
-                'Channel to display all messages you can edit'
+                'The ID of the message to edit.'
+            )
+            ->addOption(
+                'message',
+                'm',
+                InputOption::VALUE_REQUIRED,
+                'The message text to display.'
+            )
+            ->addOption(
+                'channels',
+                'c',
+                InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED,
+                'One or multiples channels to apply this message on '
+                . '(you can specify multiple channels by using the option multiple times or separating them with a comma)'
             );
     }
 
@@ -40,50 +57,38 @@ class EditMessageCommand extends StorageAwareCommand
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $channelName = $input->getArgument('channel');
-
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
-        $messages = $plugin->getMessagesByChannel($channelName);
-        $messagesAnswer = [];
+        $messageId = $input->getArgument("id");
+        $newMessage = $input->getOption("message");
+        $newChannels = $input->getOption("channels");
 
-        $output->writeln([
-            "You can edit those messages :",
-            ""
-        ]);
-        foreach ($messages as $message) {
-            $messagesAnswer[] = $message['id'];
-            $output->writeln([$message['id'] . " => " . $message['message']]);
+        $editedMessage = $plugin->getMessageById($messageId);
+
+        if(empty($editedMessage)) {
+            throw new RuntimeException("Message not found.");
         }
-        $output->writeln([
-            ""
-        ]);
+        
+        // Set values from the original message if not given as options
+        if(empty($newMessage)) {
+            $newMessage = $editedMessage['message'];
+        }
 
-        /** @var SymfonyQuestionHelper $questionHelper */
-        $helper = $this->getHelper('question');
+        if(empty($newChannels)) {
+            $newChannels = $editedMessage['channels'];
+        } else {
+            $channels = [];
+            foreach($newChannels as $newChannel) {
+                $channels = array_merge($channels, explode(',', $newChannel));
+            }
 
-        $choiceQuestion = new ChoiceQuestion(
-            'Which message do you want to edit (type number associated with) ?',
-            $messagesAnswer,
-            null
-        );
-        $choiceQuestion->setErrorMessage('Message n° %s is invalid.');
-        $messageId = $helper->ask($input, $output, $choiceQuestion);
+            $newChannels = array_unique($channels);
+        }
 
-        $messageChosen = $plugin->getMessageById($messageId);
+        $edited = $plugin->editMessage($messageId, $newMessage, $newChannels);
 
-        $messageQuestion = new Question(
-            'Please type the edited message. Old message was : "' . $messageChosen['message'] . '" ',
-            ''
-        );
-        $newMessage = $helper->ask($input, $output, $messageQuestion);
-
-        $plugin->editMessage($messageId, $newMessage);
-
-        $output->writeln([
-            "Message edited !",
-            "",
-            "You will see it on channel(s) soon (depends channel(s) displaying messages frequency)."
-        ]);
+        if(!$edited) {
+            throw new RuntimeException("Message edition failed.");
+        }
     }
 }

@@ -8,12 +8,13 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Class AddMessageCommand
  * @package HedgeBot\Plugins\Announcements\Console
  */
-class AddMessageCommand extends StorageAwareCommand
+class AddMessageCommand extends Command
 {
     use PluginAwareTrait;
     /**
@@ -21,17 +22,17 @@ class AddMessageCommand extends StorageAwareCommand
      */
     public function configure()
     {
-        $this->setName('announcements:add-message')
+        $this->setName('announcements:message-add')
             ->setDescription('Add a message to Announcements plugin messages list.')
             ->addArgument(
                 'message',
                 InputArgument::REQUIRED,
-                'The text to display. Bot can use Markdown so you can use it here too !'
+                'The message text to display.'
             )
             ->addArgument(
                 'channels',
                 InputArgument::IS_ARRAY | InputArgument::REQUIRED,
-                'One or multiples channels to apply this message (separate multiple names with a space)'
+                'One or multiples channels to apply this message on (separate multiple names with a space)'
             );
     }
 
@@ -50,11 +51,5 @@ class AddMessageCommand extends StorageAwareCommand
         $plugin = $this->getPlugin();
 
         $plugin->addMessage($message, $channels);
-
-        $output->writeln([
-            "Message added !",
-            "",
-            "You will see it on channel(s) soon (depends channel(s) displaying messages frequency)."
-        ]);
     }
 }

@@ -10,20 +10,22 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Class setIntervalCommand
  * @package HedgeBot\Plugins\Announcements\Console
  */
-class SetIntervalCommand extends StorageAwareCommand
+class SetIntervalCommand extends Command
 {
     use PluginAwareTrait;
+
     /**
      *
      */
     public function configure()
     {
-        $this->setName('announcements:set-interval')
+        $this->setName('announcements:interval-set')
             ->setDescription('Add/Edit an interval to Announcements plugin channels list.')
             ->addArgument(
                 'channel',
@@ -45,7 +47,7 @@ class SetIntervalCommand extends StorageAwareCommand
     public function execute(InputInterface $input, OutputInterface $output)
     {
 
-        $time= $input->getArgument('interval');
+        $time = $input->getArgument('interval');
         $channelName = $input->getArgument('channel');
         $actionText = "Interval added for channel '";
 
