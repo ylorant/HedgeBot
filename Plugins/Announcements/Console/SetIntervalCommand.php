@@ -53,28 +53,6 @@ class SetIntervalCommand extends Command
 
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
-        /** @var SymfonyQuestionHelper $questionHelper */
-        $questionHelper = $this->getHelper('question');
-
-        $existingInterval = $plugin->getIntervalByChannel($channelName);
-        if ($existingInterval) {
-            $question = new ConfirmationQuestion(
-                'Interval already exists for this channel, set to '
-                . $existingInterval['time'] . ' seconds. Do you want to edit it ?',
-                true
-            );
-            if (!$questionHelper->ask($input, $output, $question)) {
-                $output->writeln(["'Add interval' action cancelled !"]);
-                return;
-            }
-            $actionText = "Interval edited for channel '";
-        }
         $plugin->setInterval($channelName, $time);
-
-        $output->writeln([
-            $actionText . $channelName . "'!",
-            "",
-            "If messages have been already added to this channel, you will see them soon."
-        ]);
     }
 }
