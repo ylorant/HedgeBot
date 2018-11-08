@@ -51,9 +51,9 @@ class AnnouncementsEndpoint
      * 
      * @see Announcements::setInterval()
      */
-    public function setInterval($channelName, $time)
+    public function setInterval($channelName, $time, $messages)
     {
-        return $this->plugin->setInterval($channelName, $time);
+        return $this->plugin->setInterval($channelName, $time, $messages);
     }
 
     /**

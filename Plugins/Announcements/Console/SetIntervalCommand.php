@@ -11,6 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Class setIntervalCommand
@@ -26,16 +27,23 @@ class SetIntervalCommand extends Command
     public function configure()
     {
         $this->setName('announcements:interval-set')
-            ->setDescription('Add/Edit an interval to Announcements plugin channels list.')
+            ->setDescription('Sets an time/message constraint on a channel to send messages on.')
             ->addArgument(
                 'channel',
                 InputArgument::REQUIRED,
                 'One channel to apply this interval'
             )
-            ->addArgument(
-                'interval',
-                InputArgument::REQUIRED,
+            ->addOption(
+                'time',
+                't',
+                InputOption::VALUE_REQUIRED,
                 'The interval time (in seconds) between two messages display'
+            )
+            ->addOption(
+                'messages',
+                'm',
+                InputOption::VALUE_REQUIRED,
+                'The messages count between two messages display'
             );
     }
 
@@ -47,12 +55,13 @@ class SetIntervalCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output)
     {
 
-        $time = $input->getArgument('interval');
+        $time = $input->getOption('time') ?? 0;
+        $messages = $input->getOption('messages') ?? 0;
         $channelName = $input->getArgument('channel');
         $actionText = "Interval added for channel '";
 
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
-        $plugin->setInterval($channelName, $time);
+        $plugin->setInterval($channelName, (int) $time, (int) $messages);
     }
 }

@@ -8,6 +8,7 @@ use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Events\CoreEvent;
+use HedgeBot\Core\Events\ServerEvent;
 
 /**
  * @plugin Announcements
@@ -113,6 +114,8 @@ class Announcements extends PluginBase
         if (empty($this->intervals)) {
             return;
         }
+
+        $intervalUpdated = false;
         
         foreach ($this->intervals as &$interval) {
             $lastMessageIndex = $interval['lastMessageIndex'];
@@ -124,8 +127,11 @@ class Announcements extends PluginBase
                 continue;
             }
 
-            // Check that the time interval between 2 sends has elapsed to send the file
-            if ($interval['lastSentTime'] + $interval['time'] < time()) {
+            // Check that the time/message interval between 2 sends has elapsed to send the message
+            if (
+                $interval['lastSentTime'] + $interval['time'] < time() &&
+                $interval['currentMessageCount'] >= $interval['messages']
+            ) {
                 IRC::message($interval['channel'], $messages[$messageKeys[$lastMessageIndex]]['message']);
 
                 $lastMessageIndex++;
@@ -134,9 +140,16 @@ class Announcements extends PluginBase
                 }
                 $interval['lastMessageIndex'] = $lastMessageIndex;
                 $interval['lastSentTime'] = time();
+                $interval['currentMessageCount'] = 0;
+                $intervalUpdated = true;
 
                 HedgeBot::message('Sent auto message "$0".', [$interval['channel']], E_DEBUG);
             }
+        }
+
+        // Save intervals if at least one has been updated
+        if ($intervalUpdated) {
+            $this->data->intervals = $this->intervals;
         }
     }
     
@@ -208,15 +221,15 @@ class Announcements extends PluginBase
     }
 
     /**
-     * Add interval time (in seconds) on channel
-     * to display, at each interval time, a message
+     * Set the interval of time and/or messages between each message on a channel.
      *
-     * @param int $time time in seconds
-     * @param string $channelName
+     * @param string $channelName The channel to set the interval of.
+     * @param int $time Time interval between each send, in seconds.
+     * @param int $messages Message count between each send.
      * 
      * @return bool True.
      */
-    public function setInterval($channelName, int $time)
+    public function setInterval($channelName, $time, $messages)
     {
         HedgeBot::message("Saving interval to channel '" . $channelName . "' ...", [], E_DEBUG);
         
@@ -224,12 +237,15 @@ class Announcements extends PluginBase
             $this->intervals[$channelName] = [
                 'channel' => $channelName,
                 'time' => 0,
+                'messages' => 0,
+                'currentMessageCount' => 0,
                 'lastSentTime' => 0,
                 'lastMessageIndex' => 0
             ];
         }
         
         $this->intervals[$channelName]['time'] = $time;
+        $this->intervals[$channelName]['messages'] = $messages;
         $this->data->intervals = $this->intervals;
 
         return true;
@@ -251,6 +267,18 @@ class Announcements extends PluginBase
         unset($this->intervals[$channelName]);
         $this->data->intervals = $this->intervals;
         return true;
+    }
+
+    /**
+     * Server event: chat message received, we increase the messsage counter of the specified channel.
+     * 
+     * @param ServerEvent $ev
+     */
+    public function ServerEventPrivmsg(ServerEvent $ev)
+    {
+        if(isset($this->intervals[$ev->channel])) {
+            $this->intervals[$ev->channel]['currentMessageCount']++;
+        }
     }
 
     /**
