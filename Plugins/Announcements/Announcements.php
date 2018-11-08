@@ -213,6 +213,8 @@ class Announcements extends PluginBase
      *
      * @param int $time time in seconds
      * @param string $channelName
+     * 
+     * @return bool True.
      */
     public function setInterval($channelName, int $time)
     {
@@ -229,6 +231,26 @@ class Announcements extends PluginBase
         
         $this->intervals[$channelName]['time'] = $time;
         $this->data->intervals = $this->intervals;
+
+        return true;
+    }
+
+    /**
+     * Removes a set interval configuration on a channel.
+     * 
+     * @param string $channelName The name of the channel o remove the interval of.
+     * 
+     * @return bool True if the interval has been removed, false if not.
+     */
+    public function removeInterval($channelName)
+    {
+        if(!isset($this->intervals[$channelName])) {
+            return false;
+        }
+
+        unset($this->intervals[$channelName]);
+        $this->data->intervals = $this->intervals;
+        return true;
     }
 
     /**

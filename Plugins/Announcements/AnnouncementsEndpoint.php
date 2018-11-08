@@ -26,6 +26,8 @@ class AnnouncementsEndpoint
      * Lists the messages that are registered on the bot.
      *
      * @return array The list of messages.
+     * 
+     * @see Announcements::getMessages()
      */
     public function getMessages()
     {
@@ -36,10 +38,32 @@ class AnnouncementsEndpoint
      * Lists the channels that are registered on the bot.
      *
      * @return array The list of channels.
+     * 
+     * @see Announcements::getIntervals()
      */
     public function getIntervals()
     {
         return $this->plugin->getIntervals();
+    }
+
+    /**
+     * Sets the message interval for a given channel.
+     * 
+     * @see Announcements::setInterval()
+     */
+    public function setInterval($channelName, $time)
+    {
+        return $this->plugin->setInterval($channelName, $time);
+    }
+
+    /**
+     * Removes an interval set on a channel.
+     * 
+     * @see Announcements::removeInterval()
+     */
+    public function removeInterval($channelName)
+    {
+        return $this->plugin->removeInterval($channelName);
     }
 
     /**
