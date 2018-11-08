@@ -2,19 +2,16 @@
 
 namespace HedgeBot\Plugins\Announcements\Console;
 
-use HedgeBot\Core\Console\StorageAwareCommand;
 use HedgeBot\Plugins\Announcements\Announcements;
-use Symfony\Component\Console\Helper\SymfonyQuestionHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
- * Class setIntervalCommand
+ * Class SetIntervalCommand
  * @package HedgeBot\Plugins\Announcements\Console
  */
 class SetIntervalCommand extends Command
@@ -58,7 +55,6 @@ class SetIntervalCommand extends Command
         $time = $input->getOption('time') ?? 0;
         $messages = $input->getOption('messages') ?? 0;
         $channelName = $input->getArgument('channel');
-        $actionText = "Interval added for channel '";
 
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
