@@ -19,8 +19,6 @@ class TwitterService
     protected $callbackUrl;
     /** @var array Access tokens for each user on Twitter */
     protected $accessTokens;
-    /** @var array Request token to identify new users on Twitter */
-    protected $requestToken;
 
     /** 
      * Constructor.
@@ -50,20 +48,16 @@ class TwitterService
      */
     public function getAuthorizeUrl()
     {
-        // if(empty($this->requestToken)) {
-            $tokenReply = $this->client->oauth_requestToken([
-                'oauth_callback' => $this->callbackUrl
-            ]);
-            
-            $this->requestToken = [
-                'token' => $tokenReply->oauth_token,
-                'secret' => $tokenReply->oauth_token_secret
-            ];
+        $tokenReply = $this->client->oauth_requestToken([
+            'oauth_callback' => $this->callbackUrl
+        ]);
+        
+        $requestToken = [
+            'token' => $tokenReply->oauth_token,
+            'secret' => $tokenReply->oauth_token_secret
+        ];
 
-            $this->saveTokens();
-        // }
-
-        $this->client->setToken($this->requestToken['token'], $this->requestToken['secret']);
+        $this->client->setToken($requestToken['token'], $requestToken['secret']);
 
         return $this->client->oauth_authorize();
     }
@@ -163,7 +157,6 @@ class TwitterService
     public function saveTokens()
     {
         $this->tokenStorage->accessTokens = $this->accessTokens;
-        $this->tokenStorage->requestToken = $this->requestToken;
     }
 
     /**
@@ -172,7 +165,6 @@ class TwitterService
     public function reloadTokens()
     {
         $this->accessTokens = $this->tokenStorage->accessTokens->toArray();
-        $this->requestToken = $this->tokenStorage->requestToken->toArray();
     }
 
     /// POSTING METHODS ///
