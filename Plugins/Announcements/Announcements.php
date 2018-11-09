@@ -274,7 +274,7 @@ class Announcements extends PluginBase
      * 
      * @param ServerEvent $ev
      */
-    public function ServerEventPrivmsg(ServerEvent $ev)
+    public function ServerPrivmsg(ServerEvent $ev)
     {
         if(isset($this->intervals[$ev->channel])) {
             $this->intervals[$ev->channel]['currentMessageCount']++;
