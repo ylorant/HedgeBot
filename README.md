@@ -15,21 +15,22 @@ Core functions :
 - Connects to multiple channels
 - It has a flexible plugin management system, based on an event system
 - Handles disconnections
-- Basic Twitch API v5 handling
+- Basic Twitch API v5 handling (via [Twitch PHP Client](https://github.com/ylorant/twitch-php-client))
 - JSON-RPC based API for remote querying (web-based admin ?)
 - Internal API for quick and easy access to bot functions from plugins
 - Documentation generator for plugin commands (outputs Markdown).
 
 Plugins :
 
-- Announcements : Automatically say things on your chat every once in a while
-- **CustomCommands** : Make custom commands that prints messages
-- Quotes : Handles a quote manager
-- Currency : Handles a currency/money system on the chat
-- BlackJack : Handles a blackjack game manager
-- Horaro : ???
-- HoraroTextFile : ???
-- TestManager : development-oriented plugin that allows to test how other plugins are supposed to work.
+- **Announcements**: Sends stored messages periodically on the channel to announce things.
+- **CustomCommands**: Allows to create custom commands that prints messages upon call.
+- Quotes: Handles a quote manager.
+- Currency: Handles a currency/money system on the chat.
+- BlackJack: Handles a blackjack game system.
+- **Horaro**: Handles a stream schedule set via [Horaro](http://horaro.org). It feeds the bot's store and changes the Twitch channel's title and game according to the schedule items values.
+- HoraroTextFile: Stores the current item of a schedule loaded in the **Horaro** plugin in a text file for other programs to access.
+- TestManager: Development-oriented plugin that allows to test how other plugins are supposed to work.
+- Twitter: Allows scheduling tweets to automatically send at a specific time or when a specific event is fired.
 
 (Plugins names in bold **style** means they have also a web-admin interface, see below)
 
