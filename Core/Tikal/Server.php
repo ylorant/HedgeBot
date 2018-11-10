@@ -41,8 +41,8 @@ class Server
 
         $this->baseUrl = $config->baseUrl ? $config->baseUrl : '/';
         $this->token = $config->token;
-        $this->tokenlessMode = isset($config->tokenless) ? $config->tokenless : false;
-
+        $this->tokenlessMode = isset($config->tokenless) ? HedgeBot::parseBool($config->tokenless) : false;
+        
         if ($this->tokenlessMode) {
             HedgeBot::message(
                 "Token-less mode is insecure! We advise you to use a token unless you know what you're doing !",
