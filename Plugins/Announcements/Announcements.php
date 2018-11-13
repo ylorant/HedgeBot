@@ -9,6 +9,8 @@ use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Events\CoreEvent;
 use HedgeBot\Core\Events\ServerEvent;
+use HedgeBot\Core\API\Store;
+use HedgeBot\Core\Store\Formatter\TextFormatter;
 
 /**
  * @plugin Announcements
@@ -132,7 +134,10 @@ class Announcements extends PluginBase
                 $interval['lastSentTime'] + $interval['time'] < time() &&
                 $interval['currentMessageCount'] >= $interval['messages']
             ) {
-                IRC::message($interval['channel'], $messages[$messageKeys[$lastMessageIndex]]['message']);
+                $formatter = Store::getFormatter(TextFormatter::getName());
+                $formattedMessage = $formatter->format($messages[$messageKeys[$lastMessageIndex]]['message'], $interval['channel']);
+
+                IRC::message($interval['channel'], $formattedMessage);
 
                 $lastMessageIndex++;
                 if ($lastMessageIndex >= count($messages)) {
