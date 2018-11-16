@@ -20,6 +20,7 @@ class StreamControl extends Plugin
 
         $title = join(' ', $args);
         Twitch::getClient()->channels->update($ev->channel, ['status' => $title]);
+        IRC::whisper($ev->nick, "Stream title changed to: ". $title);
     }
 
     /**
@@ -30,9 +31,18 @@ class StreamControl extends Plugin
         $args = $ev->arguments;
         if (count($args) < 1) {
             return IRC::reply($ev, "Insufficient parameters.");
-        } 
+        }
 
-        $game = join(' ', $args);
+        // Lookup for the game using the Twitch search API
+        $gameSearch = join(' ', $args);
+        $gamesMatches = Twitch::getClient()->search->games($gameSearch);
+
+        if(empty($gamesMatches)) {
+            return IRC::whisper($ev->nick, "No matching game found.");
+        }
+
+        $game = $gamesMatches[0]->name;
         Twitch::getClient()->channels->update($ev->channel, ['game' => $game]);
+        IRC::whisper($ev->nick, "Stream game changed to: ". $game);
     }
 }
