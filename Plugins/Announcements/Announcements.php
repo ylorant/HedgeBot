@@ -134,15 +134,16 @@ class Announcements extends PluginBase
                 $interval['lastSentTime'] + $interval['time'] < time() &&
                 $interval['currentMessageCount'] >= $interval['messages']
             ) {
+                $lastMessageIndex++;
+                if ($lastMessageIndex >= count($messages)) {
+                    $lastMessageIndex = 0;
+                }
+                
                 $formatter = Store::getFormatter(TextFormatter::getName());
                 $formattedMessage = $formatter->format($messages[$messageKeys[$lastMessageIndex]]['message'], $interval['channel']);
 
                 IRC::message($interval['channel'], $formattedMessage);
 
-                $lastMessageIndex++;
-                if ($lastMessageIndex >= count($messages)) {
-                    $lastMessageIndex = 0;
-                }
                 $interval['lastMessageIndex'] = $lastMessageIndex;
                 $interval['lastSentTime'] = time();
                 $interval['currentMessageCount'] = 0;
@@ -245,7 +246,7 @@ class Announcements extends PluginBase
                 'messages' => 0,
                 'currentMessageCount' => 0,
                 'lastSentTime' => 0,
-                'lastMessageIndex' => 0
+                'lastMessageIndex' => -1
             ];
         }
         
