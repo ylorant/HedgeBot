@@ -247,9 +247,10 @@ class MarkdownExpression implements ArrayAccess, JsonSerializable
         // This is done because, if there are underscores in the links' titles or URLs, they may be mistaken for markup 
         if($matchesCount > 0) {
             $links = array_column($linkMatches, 0);
-            $markupText = str_replace($links, ' ', $markupText);
+            $linkTitles = array_column($linkMatches, 'title');
+            $markupText = str_replace($links, $linkTitles, $markupText);
         }
-
+        
         $matchesCount += preg_match_all('#(?P<markup>[*_]{1,2})(?P<content>[^*_]+)\1#isU', $markupText, $markupMatches, PREG_SET_ORDER); // Bold/Italics
 
         if($matchesCount == 0)

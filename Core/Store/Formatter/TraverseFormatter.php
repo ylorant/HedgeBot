@@ -54,12 +54,7 @@ class TraverseFormatter implements FormatterInterface
 
             $currentData = $currentData[$part];
         }
-
-        // We try to remove markdown markers from strings
-        if (is_string($currentData) && strpos($currentData, '*') !== false) {
-            $currentData = preg_replace("#\*{1,2}(.+)\*{1,2}#isU", '$1', $currentData);
-        }
-
+        
         return $currentData;
     }
 }
