@@ -45,4 +45,14 @@ class StreamControl extends Plugin
         Twitch::getClient()->channels->update($ev->channel, ['game' => $game]);
         IRC::whisper($ev->nick, "Stream game changed to: ". $game);
     }
+
+    public function CommandRaid(CommandEvent $ev)
+    {
+        $args = $ev->arguments;
+        if (count($args) < 1) {
+            return IRC::reply($ev, "Insufficient parameters.");
+        }
+
+        IRC::message($ev->channel, ".raid ". $args[0]);
+    }
 }
