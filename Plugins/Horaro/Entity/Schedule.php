@@ -419,6 +419,11 @@ class Schedule implements JsonSerializable
         return null;
     }
 
+    public function countItems()
+    {
+        return count($this->data->items);
+    }
+
     /**
      * Get the data columns of the schedule.
      *

@@ -250,7 +250,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
                 // Set the new schedule item, since we're not at the end
                 $this->setChannelTitleFromSchedule($schedule);
-                Plugin::getManager()->callEvent(new HoraroEvent('scheduleitemChangeUpdated', $schedule));
+                Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
                 $this->saveData();
             } elseif (!empty($nextItemAnnounceThresholdTime) && $now >= $nextItemAnnounceThresholdTime && !$schedule->isNextItemAnnounced()) {
                 // Announce the next item and mark it as announced
@@ -844,6 +844,31 @@ class Horaro extends PluginBase implements StoreSourceInterface
         Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
 
         // Save the schedule
+        $this->saveData();
+        return true;
+    }
+
+    /**
+     * Goes to a specific item in the given schedule.
+     * 
+     * @param string $identSlug The schedule to set the current item of.
+     * @param int    $itemIndex The index to skip to.
+     */
+    public function goToItem($identSlug, $itemIndex)
+    {
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+
+        // We don't skip item if the schedule isn't found or if we're asking a non-existent item
+        if (empty($schedule) || $itemIndex < 0 || $itemIndex >= $schedule->countItems()) {
+            return false;
+        }
+
+        $schedule->setCurrentIndex($itemIndex);
+        
+        // Update title & game
+        $this->setChannelTitleFromSchedule($schedule);
+        Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
+
         $this->saveData();
         return true;
     }

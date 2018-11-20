@@ -101,6 +101,11 @@ class HoraroEndpoint
         return $this->plugin->previousItem($identSlug);
     }
 
+    public function goToItem($identSlug, $itemIndex)
+    {
+        return $this->plugin->goToItem($identSlug, $itemIndex);
+    }
+
     /**
      * Pauses the schedule.
      * 
