@@ -24,22 +24,6 @@ use HedgeBot\Core\API\Store;
 class AutoHost extends PluginBase
 {
     private $hosts = [];
-    private $hostedChannels = [];
-
-    /**
-     * Get all channels to host associated to a specific channel
-     *
-     * @param string $channelName
-     * @return array
-     */
-    public function getChannelsToHost($channelName)
-    {
-        foreach ($this->hostedChannels as $key => $hostedChannel) {
-            return array_filter($this->hostedChannels, function ($hostedChannel) use ($channelName) {
-                return in_array($channelName, $hostedChannel['channel']);
-            });
-        }
-    }
 
     /**
      * @return bool|void
@@ -70,32 +54,33 @@ class AutoHost extends PluginBase
 
         foreach ($this->hosts as &$host) {
             $lastChannelIndex = 0;
-            $channelsToHost = $this->getChannelsToHost($host['channel']);
-            $channelToHostKeys = array_keys($channelsToHost);
+            $channelsToHost = $host['hostedChannels'];
 
             // Check that the time between 2 hosts has elapsed to host the channel
-            if ($host['lastSentTime'] + $host['time'] < time()) {
+            if ($host['lastHostTime'] + $host['time'] < time()) {
                 $lastChannelIndex++;
                 if ($lastChannelIndex >= count($channelsToHost)) {
                     $lastChannelIndex = 0;
                 }
 
-                $channelToHost = $channelsToHost[$channelToHostKeys[$lastChannelIndex]]['channel'];
-                $streamInfo = Twitch::getClient()->streams->info($channelToHost);
-                if ($streamInfo != null) {
-                    IRC::message($host['channel'], '/host ' . $channelsToHost);
+                foreach ($channelsToHost as &$channelToHost) {
+                    $streamInfo = Twitch::getClient()->streams->info($channelToHost);
+                    if ($streamInfo != null) {
+                        IRC::message($host['channel'], '/host ' . $channelToHost);
+
+                        $host['lastHostTime'] = time();
+                        $host['lastChannelIndex'] = $lastChannelIndex;
+                        $hostUpdated = true;
+                        HedgeBot::message('Sent auto host "$0".', [$host['channel']], E_DEBUG);
+                        break;
+                    }
                 }
-
-                $host['lastSentTime'] = time();
-                $hostUpdated = true;
-
-                HedgeBot::message('Sent auto host "$0".', [$host['channel']], E_DEBUG);
             }
         }
 
         // Save intervals if at least one has been updated
         if ($hostUpdated) {
-            $this->data->intervals = $this->hosts;
+            $this->data->hosts = $this->hosts;
         }
     }
 
@@ -122,7 +107,7 @@ class AutoHost extends PluginBase
         }
         foreach ($this->hosts as &$host) {
             $host['lastChannelIndex'] = $host['lastChannelIndex'] ?? 0;
-            $host['lastSentTime'] = $host['lastSentTime'] ?? 0;
+            $host['lastHostTime'] = $host['lastHostTime'] ?? 0;
         }
     }
 }
