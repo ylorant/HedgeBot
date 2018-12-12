@@ -53,35 +53,97 @@ class AutoHost extends PluginBase
         $hostUpdated = false;
 
         foreach ($this->hosts as &$host) {
-            $lastChannelIndex = 0;
-            $channelsToHost = $host['hostedChannels'];
+            $channelToHost = $this->getChannelToHost($host);
 
             // Check that the time between 2 hosts has elapsed to host the channel
-            if ($host['lastHostTime'] + $host['time'] < time()) {
-                $lastChannelIndex++;
-                if ($lastChannelIndex >= count($channelsToHost)) {
-                    $lastChannelIndex = 0;
-                }
+            if ($channelToHost && $host['lastHostTime'] + $host['time'] < time()) {
+                $streamInfo = Twitch::getClient()->streams->info($channelToHost['channel']);
+                if ($streamInfo != null && $host['lastChannel'] != $channelToHost['channel']) {
+                    IRC::message($host['channel'], '/host ' . $channelToHost['channel']);
 
-                foreach ($channelsToHost as &$channelToHost) {
-                    $streamInfo = Twitch::getClient()->streams->info($channelToHost);
-                    if ($streamInfo != null) {
-                        IRC::message($host['channel'], '/host ' . $channelToHost);
-
-                        $host['lastHostTime'] = time();
-                        $host['lastChannelIndex'] = $lastChannelIndex;
-                        $hostUpdated = true;
-                        HedgeBot::message('Sent auto host "$0".', [$host['channel']], E_DEBUG);
-                        break;
-                    }
+                    $host['lastHostTime'] = time();
+                    $host['lastChannel'] = $channelToHost['channel'];
+                    $hostUpdated = true;
+                    HedgeBot::message('Sent auto host "$0".', [$host['channel']], E_DEBUG);
                 }
+                // Need to force it locally to pass through offline channels
+                // (But don't want to save it)
+                $host['lastChannel'] = $channelToHost['channel'];
             }
         }
 
-        // Save intervals if at least one has been updated
+        // Save host if at least one has been updated
         if ($hostUpdated) {
             $this->data->hosts = $this->hosts;
         }
+    }
+
+    /**
+     * Return channel to host
+     * Depends of precedent channel hosted and priority
+     *
+     * @param array $host
+     * @param integer $priority
+     * @return array|boolean
+     */
+    public function getChannelToHost($host, $priority = 0)
+    {
+            $lastChannel = $host['lastChannel'];
+            $channels = $this->getChannelsToHost($host);
+
+            if ($channels) {
+                $newChannelIndex = array_search($lastChannel, $channels) + 1;
+
+                if ($lastChannel == '' || $newChannelIndex >= count($channels)) {
+                    $newChannelIndex = 0;
+                }
+
+                return $host['hostedChannels'][$newChannelIndex];
+            } else {
+                return false;
+            }
+    }
+
+    /**
+     * Return channels to try to host
+     *
+     * @param array $host
+     * @return array|boolean
+     */
+    public function getChannelsToHost($host)
+    {
+        if (array_key_exists('hostedChannels', $host) && $host['hostedChannels'] != '') {
+            return array_column($host['hostedChannels'], 'channel');
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Set hosting basic informations for one channel
+     *
+     * @param string $channelName The host channel
+     * @param int $time Time interval between each hosting. 600 by default (minimal value allowed by Twitch)
+     *
+     * @return bool True.
+     */
+    public function setHost($channelName, $time = 600)
+    {
+        HedgeBot::message("Saving hosting infos for channel '" . $channelName . "' ...", [], E_DEBUG);
+
+        if (!isset($this->hosts[$channelName])) {
+            $this->hosts[$channelName] = [
+                'channel' => $channelName,
+                'time' => $time,
+                'lastHostTime' => 0,
+                'lastChannel' => ''
+            ];
+        }
+
+        $this->hosts[$channelName]['time'] = $time;
+        $this->data->hosts = $this->hosts;
+
+        return true;
     }
 
     /**
@@ -106,7 +168,7 @@ class AutoHost extends PluginBase
             $this->hosts = $this->data->hosts->toArray();
         }
         foreach ($this->hosts as &$host) {
-            $host['lastChannelIndex'] = $host['lastChannelIndex'] ?? 0;
+            $host['lastChannel'] = '';
             $host['lastHostTime'] = $host['lastHostTime'] ?? 0;
         }
     }
