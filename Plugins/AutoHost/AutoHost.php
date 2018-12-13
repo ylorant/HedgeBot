@@ -86,34 +86,23 @@ class AutoHost extends PluginBase
      * @param integer $priority
      * @return array|boolean
      */
-    public function getChannelToHost($host, $priority = 0)
+    public function getChannelToHost($host, $priority = 1)
     {
-            $lastChannel = $host['lastChannel'];
-            $channels = $this->getChannelsToHost($host);
+        $lastChannel = $host['lastChannel'];
+        if (array_key_exists('hostedChannels', $host) && !empty($host['hostedChannels'])) {
+            $channels = array_column($host['hostedChannels'], 'channel');
+        } else {
+            return false;
+        }
 
-            if ($channels) {
-                $newChannelIndex = array_search($lastChannel, $channels) + 1;
+        if (is_array($channels)) {
+            $newChannelIndex = array_search($lastChannel, $channels) + 1;
 
-                if ($lastChannel == '' || $newChannelIndex >= count($channels)) {
-                    $newChannelIndex = 0;
-                }
-
-                return $host['hostedChannels'][$newChannelIndex];
-            } else {
-                return false;
+            if ($lastChannel == '' || $newChannelIndex >= count($channels)) {
+                $newChannelIndex = 0;
             }
-    }
 
-    /**
-     * Return channels to try to host
-     *
-     * @param array $host
-     * @return array|boolean
-     */
-    public function getChannelsToHost($host)
-    {
-        if (array_key_exists('hostedChannels', $host) && $host['hostedChannels'] != '') {
-            return array_column($host['hostedChannels'], 'channel');
+            return $host['hostedChannels'][$newChannelIndex];
         } else {
             return false;
         }
@@ -147,6 +136,61 @@ class AutoHost extends PluginBase
     }
 
     /**
+     * Add one channel to host on one hosting channel, including priority
+     *
+     * @param string $hostName hosting channel name
+     * @param array $channelName channel to host
+     * @param float $priority priority % for hosting choice
+     *
+     * @return boolean
+     */
+    public function addHostedChannel($hostName, $channelName, $priority)
+    {
+        if (!isset($this->hosts[$hostName])) {
+            return false;
+        }
+
+        $this->hosts[$hostName]['hostedChannels'][] = [
+            'channel' => $channelName,
+            'priority' => (float)$priority,
+            'totalHosted' => 0
+            ];
+        $this->data->hosts = $this->hosts;
+
+        return true;
+    }
+
+    /**
+     * Remove one channel to host on one hosting channel
+     *
+     * @param $hostName
+     * @param $channelName
+     * @return boolean
+     */
+    public function removeHostedChannel($hostName, $channelName)
+    {
+        if (!isset($this->hosts[$hostName])) {
+            return false;
+        }
+
+        $arrayIndex = null;
+        foreach ($this->hosts[$hostName]['hostedChannels'] as $key => $channel) {
+            if ($channel['channel'] == $channelName) {
+                $arrayIndex = $key;
+            }
+        }
+        if (is_null($arrayIndex)) {
+            return false;
+        }
+
+        unset($this->hosts[$hostName]['hostedChannels'][$arrayIndex]);
+        $this->hosts[$hostName]['hostedChannels'] = array_values($this->hosts[$hostName]['hostedChannels']);
+
+        $this->data->hosts = $this->hosts;
+        return true;
+    }
+
+    /**
      * @param CoreEvent $ev
      */
     public function CoreEventConfigUpdate(CoreEvent $ev)
@@ -154,6 +198,9 @@ class AutoHost extends PluginBase
         $this->config = HedgeBot::getInstance()->config->get('plugin.AutoHost');
     }
 
+    /**
+     * @param CoreEvent $ev
+     */
     public function CoreEventDataUpdate(CoreEvent $ev)
     {
         $this->loadData();
