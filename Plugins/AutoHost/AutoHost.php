@@ -59,7 +59,7 @@ class AutoHost extends PluginBase
             if ($channelToHost && $host['lastHostTime'] + $host['time'] < time()) {
                 $streamInfo = Twitch::getClient()->streams->info($channelToHost['channel']);
                 if ($streamInfo != null && $host['lastChannel'] != $channelToHost['channel']) {
-                    IRC::message($host['channel'], '/host ' . $channelToHost['channel']);
+                    IRC::message($host['channel'], 'host ' . $channelToHost['channel']);
 
                     $host['lastHostTime'] = time();
                     $host['lastChannel'] = $channelToHost['channel'];
@@ -80,32 +80,49 @@ class AutoHost extends PluginBase
 
     /**
      * Return channel to host
-     * Depends of precedent channel hosted and priority
+     * Choice is made by including :
+     * - Weight (Depends of priority to host and number of times this channel was hosted)
+     * - Blacklist of words on title's stream (@TODO)
+     * - Whitelist of words on title's stream (@TODO)
      *
      * @param array $host
-     * @param integer $priority
      * @return array|boolean
      */
-    public function getChannelToHost($host, $priority = 1)
+    public function getChannelToHost($host)
     {
-        $lastChannel = $host['lastChannel'];
         if (array_key_exists('hostedChannels', $host) && !empty($host['hostedChannels'])) {
-            $channels = array_column($host['hostedChannels'], 'channel');
+            $channelName = $this->computeWeights($host['hostedChannels']);
+            $channel = array_filter($host['hostedChannels'], function ($channel) use ($channelName) {
+                return ($channel['channel'] == $channelName);
+            });
+            return array_shift($channel);
         } else {
             return false;
         }
+    }
 
-        if (is_array($channels)) {
-            $newChannelIndex = array_search($lastChannel, $channels) + 1;
+    /**
+     * Return a channel name depends of priority to host and number of times this channel was hosted
+     *
+     * @param array $hostedChannels
+     * @return mixed
+     */
+    protected function computeWeights($hostedChannels)
+    {
+        $hostStatsPerChannel = array_column($hostedChannels, 'totalHosted');
+        $totalHosts = count($hostStatsPerChannel);
 
-            if ($lastChannel == '' || $newChannelIndex >= count($channels)) {
-                $newChannelIndex = 0;
-            }
-
-            return $host['hostedChannels'][$newChannelIndex];
-        } else {
-            return false;
+        // Compute each host ratio (as a float)
+        $hostsTargetRatio = [];
+        foreach($hostedChannels as $channel) {
+            $hostActualRatio = $channel['totalHosted'] / $totalHosts;
+            $hostsTargetRatio[$channel['channel']] = ($channel['priority'] - $hostActualRatio) + 1;
         }
+
+        arsort($hostsTargetRatio);
+        $orderedChannels = array_keys($hostsTargetRatio);
+
+        return reset($orderedChannels);
     }
 
     /**
