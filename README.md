@@ -19,6 +19,7 @@ Core functions :
 - JSON-RPC based API for remote querying (web-based admin ?)
 - Internal API for quick and easy access to bot functions from plugins
 - Documentation generator for plugin commands (outputs Markdown).
+- Web admin (see [Hedgebot Web Admin](https://github.com/ylorant/HedgeBot-Admin))
 
 Plugins :
 
@@ -37,14 +38,13 @@ Plugins :
 ## What is planned to do
 
 - [IN PROGRESS] Spam regulation plugin (BannedWords), timing out users for unwanted words in messages, links, walltexts and/or other things
-- Auto hosting, allowing your channel to automatically host streaming people based on a list, and for a set amount of time
+- [IN PROGRESS] Auto hosting, allowing your channel to automatically host streaming people based on a list, and for a set amount of time
 - Donation alerts, with StreamLabs API
 - Cooldown feature, as a core feature (allowing cooldown per user type and per command).
 - Logger core feature, allowing logging actions from every plugin
 - Statistics plugin, gathering real time stats from chat
 - Discord API integration
 - Raffle plugin
-- [IN PROGRESS] Web admin (see [Hedgebot Web Admin](https://github.com/ylorant/HedgeBot-Admin))
 - Update all plugins' comments to fit Documentor standards (like on the Currency plugin).
 
 ## I want it !
