@@ -4,7 +4,9 @@ basepath = conf
 backups = true
 
 [storage.data]
-type = memory
+type = json
+path = datafile.json
+backups = false
 
 [general]
 verbosity = 1
@@ -17,3 +19,14 @@ port = 6667
 name = 
 channels =
 password =
+
+[tikal]
+enabled = true
+address = 127.0.0.1
+port = 8081
+token = 
+tokenless = false
+
+[twitch.auth]
+clientId = 
+clientSecret =
