@@ -49,20 +49,18 @@ class AutoHost extends PluginBase
         if (empty($this->hosts)) {
             return;
         }
-
         $hostUpdated = false;
 
         foreach ($this->hosts as &$host) {
             $channelToHost = $this->getChannelToHost($host);
-
             // Check that the time between 2 hosts has elapsed to host the channel
             if ($channelToHost && $host['lastHostTime'] + $host['time'] < time()) {
                 $streamInfo = Twitch::getClient()->streams->info($channelToHost['channel']);
                 if ($streamInfo != null && $host['lastChannel'] != $channelToHost['channel']) {
-                    IRC::message($host['channel'], 'host ' . $channelToHost['channel']);
-
+                    IRC::message($host['channel'], '/host ' . $channelToHost['channel']);
                     $host['lastHostTime'] = time();
                     $host['lastChannel'] = $channelToHost['channel'];
+                    $host['hostedChannels'][$channelToHost['channel']]['totalHosted']++;
                     $hostUpdated = true;
                     HedgeBot::message('Sent auto host "$0".', [$host['channel']], E_DEBUG);
                 }
@@ -92,10 +90,7 @@ class AutoHost extends PluginBase
     {
         if (array_key_exists('hostedChannels', $host) && !empty($host['hostedChannels'])) {
             $channelName = $this->computeWeights($host['hostedChannels']);
-            $channel = array_filter($host['hostedChannels'], function ($channel) use ($channelName) {
-                return ($channel['channel'] == $channelName);
-            });
-            return array_shift($channel);
+            return $host['hostedChannels'][$channelName];
         } else {
             return false;
         }
@@ -110,13 +105,16 @@ class AutoHost extends PluginBase
     protected function computeWeights($hostedChannels)
     {
         $hostStatsPerChannel = array_column($hostedChannels, 'totalHosted');
-        $totalHosts = count($hostStatsPerChannel);
+        $totalHosts = array_sum($hostStatsPerChannel);
 
         // Compute each host ratio (as a float)
         $hostsTargetRatio = [];
-        foreach($hostedChannels as $channel) {
-            $hostActualRatio = $channel['totalHosted'] / $totalHosts;
-            $hostsTargetRatio[$channel['channel']] = ($channel['priority'] - $hostActualRatio) + 1;
+        foreach ($hostedChannels as $channelName => $channelData) {
+            $hostActualRatio = 0;
+            if ($totalHosts > 0) {
+                $hostActualRatio = $channelData['totalHosted'] / $totalHosts;
+            }
+            $hostsTargetRatio[$channelName] = ($channelData['priority'] - $hostActualRatio) + 1;
         }
 
         arsort($hostsTargetRatio);
@@ -156,7 +154,7 @@ class AutoHost extends PluginBase
      * Add one channel to host on one hosting channel, including priority
      *
      * @param string $hostName hosting channel name
-     * @param array $channelName channel to host
+     * @param string $channelName channel to host
      * @param float $priority priority % for hosting choice
      *
      * @return boolean
@@ -167,7 +165,7 @@ class AutoHost extends PluginBase
             return false;
         }
 
-        $this->hosts[$hostName]['hostedChannels'][] = [
+        $this->hosts[$hostName]['hostedChannels'][$channelName] = [
             'channel' => $channelName,
             'priority' => (float)$priority,
             'totalHosted' => 0
