@@ -11,6 +11,7 @@ use DateInterval;
 use HedgeBot\Core\API\Store;
 use HedgeBot\Core\Store\Formatter\TraverseFormatter;
 use HedgeBot\Core\Events\Event;
+use HedgeBot\Core\API\Tikal;
 
 class Twitter extends PluginBase
 {
@@ -35,6 +36,11 @@ class Twitter extends PluginBase
 
         $this->loadData();
         Plugin::getManager()->addRoutine($this, "RoutineSendTweets", 10);
+
+        // Don't load the API endpoint if we're not on the main environment
+        if (ENV == "main") {
+            Tikal::addEndpoint('/plugin/twitter', new TwitterEndpoint($this));
+        }
     }
 
     /**
@@ -196,7 +202,7 @@ class Twitter extends PluginBase
      */
     public function scheduleTweet(ScheduledTweet $tweet)
     {
-        if(!$this->service->hasToken($tweet->getAccount())) {
+        if(!$this->service->hasAccessToken($tweet->getAccount())) {
             return false;
         }
 
@@ -222,16 +228,18 @@ class Twitter extends PluginBase
      */
     public function deleteScheduledTweet($id)
     {
-        if(!isset($this->scheduledTweets[$id])) {
-            return false;
+        foreach($this->scheduledTweets as $scheduledTweet) {
+            if($scheduledTweet->getId() == $id) {
+                unset($this->scheduledTweets[$id]);
+        
+                $this->saveData();
+                $this->reloadTweetsEvents();
+
+                return true;
+            }
         }
 
-        unset($this->scheduledTweets[$id]);
-
-        $this->saveData();
-        $this->reloadTweetsEvents();
-
-        return true;
+        return false;
     }
 
     /**
@@ -246,6 +254,23 @@ class Twitter extends PluginBase
     }
 
     /**
+     * Gets a scheduled tweet by its ID.
+     * 
+     * @param string $id The tweet ID.
+     * 
+     * @return array|null The tweet or null if not found.
+     */
+    public function getScheduledTweet($id)
+    {
+        foreach($this->scheduledTweets as $scheduledTweet) {
+            if($scheduledTweet->getId() == $id) {
+                return $scheduledTweet;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Gets the Twitter communication service, to perform direct tasks on Twitter.
      * 
      * @return TwitterService The Twitter communication service.
@@ -253,6 +278,20 @@ class Twitter extends PluginBase
     public function getService()
     {
         return $this->service;
+    }
+
+    /**
+     * Gets the consumer key from the plugin's configuration.
+     * 
+     * @return array The consumer and secret keys, in an associative array with "consumer" and "secret" for their 
+     *               respective keys.
+     */
+    public function getConsumerKey()
+    {
+        return [
+            "consumer" => $this->config['consumerApiKey'],
+            "secret" => $this->config['consumerSecretKey']
+        ];
     }
 
     /**
@@ -270,7 +309,7 @@ class Twitter extends PluginBase
         }
 
         $this->data->scheduledTweets = $scheduledTweets;
-        $this->service->saveTokens();
+        $this->service->saveAccessTokens();
     }
 
     /**
@@ -281,14 +320,15 @@ class Twitter extends PluginBase
     public function loadData()
     {
         $this->scheduledTweets = [];
-        $this->service->reloadTokens();
+        $this->service->reloadAccessTokens();
 
         $scheduledTweets = $this->data->scheduledTweets->toArray();
 
         // Hydrate and restore format of each tweet
         if(is_array($scheduledTweets)) {
             foreach($scheduledTweets as $scheduledTweet) {
-                $this->scheduledTweets[] = ScheduledTweet::fromArray($scheduledTweet);
+                $scheduledTweet = ScheduledTweet::fromArray($scheduledTweet);
+                $this->scheduledTweets[$scheduledTweet->getId()] = $scheduledTweet;
             }
         }
         

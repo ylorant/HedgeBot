@@ -35,7 +35,7 @@ class ScheduleTweetCommand extends Command
         $service = $plugin->getService();
         $helper = $this->getHelper('question');
         $tweet = new ScheduledTweet();
-        $accounts = $service->getTokenAccounts();
+        $accounts = $service->getAccessTokenAccounts();
         
         // Account selection
         $acctQuestion = new ChoiceQuestion("Select the account you want to tweet on: ", $accounts);

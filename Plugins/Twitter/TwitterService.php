@@ -34,7 +34,7 @@ class TwitterService
         $this->callbackUrl = $callbackUrl;
         $this->tokenStorage = $tokenStorage;
 
-        $this->reloadTokens();
+        $this->reloadAccessTokens();
     }
     
     /// OAUTH WORKFLOW ///
@@ -52,12 +52,7 @@ class TwitterService
             'oauth_callback' => $this->callbackUrl
         ]);
         
-        $requestToken = [
-            'token' => $tokenReply->oauth_token,
-            'secret' => $tokenReply->oauth_token_secret
-        ];
-
-        $this->client->setToken($requestToken['token'], $requestToken['secret']);
+        $this->client->setToken($tokenReply->oauth_token, $tokenReply->oauth_token_secret);
 
         return $this->client->oauth_authorize();
     }
@@ -94,7 +89,7 @@ class TwitterService
             'secret' => $accessReply->oauth_token_secret
         ];
 
-        $this->saveTokens();
+        $this->saveAccessTokens();
         return true;
     }
 
@@ -126,7 +121,7 @@ class TwitterService
      * 
      * @return bool true if the token exists, false if not.
      */
-    public function hasToken($account)
+    public function hasAccessToken($account)
     {
         return isset($this->accessTokens[$account]);
     }
@@ -136,7 +131,7 @@ class TwitterService
      * 
      * @return array The list of tokens, indexed by channel.
      */
-    public function getTokens()
+    public function getAccessTokens()
     {
         return $this->accessTokens;
     }
@@ -146,15 +141,32 @@ class TwitterService
      * 
      * @return array An array of all the tokens in the token list.
      */
-    public function getTokenAccounts()
+    public function getAccessTokenAccounts()
     {
         return array_keys($this->accessTokens);
     }
 
     /**
+     * Deletes a registered access token.
+     * 
+     * @param $account The account to delete the access token of
+     */
+    public function deleteAccessToken($account)
+    {
+        if(!isset($this->accessTokens[$account])) {
+            return false;
+        }
+
+        unset($this->accessTokens[$account]);
+        $this->saveAccessTokens();
+
+        return true;
+    }
+
+    /**
      * Saves the tokens into the storage.
      */
-    public function saveTokens()
+    public function saveAccessTokens()
     {
         $this->tokenStorage->accessTokens = $this->accessTokens;
     }
@@ -162,7 +174,7 @@ class TwitterService
     /**
      * Loads the tokens from the storage.
      */
-    public function reloadTokens()
+    public function reloadAccessTokens()
     {
         $this->accessTokens = $this->tokenStorage->accessTokens->toArray();
     }
