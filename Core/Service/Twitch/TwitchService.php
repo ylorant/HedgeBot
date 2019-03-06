@@ -163,6 +163,6 @@ class TwitchService implements TokenProvider
             return false;
         }
 
-        $this->dataProvider->set(self::DATA_TOKEN_BASEPATH . '.' . $target, null);
+        $this->dataProvider->remove(self::DATA_TOKEN_BASEPATH . '.' . $target);
     }
 }

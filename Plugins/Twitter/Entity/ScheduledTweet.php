@@ -193,7 +193,7 @@ class ScheduledTweet implements JsonSerializable
      *
      * @return  self
      */ 
-    public function setSentTime(DateTime $sentTime)
+    public function setSentTime(DateTime $sentTime = null)
     {
         $this->sentTime = $sentTime;
 
@@ -233,7 +233,7 @@ class ScheduledTweet implements JsonSerializable
      *
      * @return  self
      */ 
-    public function setSendTime(DateTime $sendTime)
+    public function setSendTime(DateTime $sendTime = null)
     {
         $this->sendTime = $sendTime;
 
@@ -351,6 +351,11 @@ class ScheduledTweet implements JsonSerializable
             if (isset($data[$key])) {
                 $obj->$key = $data[$key];
             }
+        }
+
+        // Handle business logic for the tweet integrity
+        if(!$obj->sent) {
+            $obj->setSentTime(null);
         }
 
         return $obj;
