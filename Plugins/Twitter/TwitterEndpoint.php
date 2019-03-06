@@ -101,4 +101,16 @@ class TwitterEndpoint
     {
         return $this->plugin->scheduleTweet(ScheduledTweet::fromArray((array) $tweet));
     }
+
+    /**
+     * Deletes a scheduled tweet by its ID.
+     * 
+     * @param string $tweetId The ID of the tweet to delete.
+     * 
+     * @see Twitter::deleteScheduledTweet()
+     */
+    public function deleteScheduledTweet($tweetId)
+    {
+        return $this->plugin->deleteScheduledTweet($tweetId);
+    }
 }
