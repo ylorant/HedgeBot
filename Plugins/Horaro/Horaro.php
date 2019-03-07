@@ -144,6 +144,8 @@ class Horaro extends PluginBase implements StoreSourceInterface
     {
         HedgeBot::message("Checking Horaro schedules...", [], E_DEBUG);
         $now = new DateTime($this->config['simulatedTime'] ?? null);
+        $earlyActionsTime = clone $now;
+        $earlyActionsTime->add(new DateInterval("PT" . ($this->config['earlyActionsInterval'] ?? 0) . "S"));
 
         /** @var Schedule $schedule */
         foreach ($this->schedules as $currentSlug => $schedule) {
@@ -191,6 +193,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
                             break;
                         }
                     }
+                } elseif ($earlyActionsTime > $scheduleStartTime && $now < $scheduleEndTime && !$schedule->isEarlyActionsDone()) {
+                    $schedule->setEarlyActionsDone(true);
+                    $this->setChannelTitleFromSchedule($schedule);
+                    $this->saveData();
+
                 } elseif ($now > $scheduleEndTime) { // The schedule is outdated, we disable it to save some processing time
                     $schedule->setEnabled(false);
                     $this->saveData();
