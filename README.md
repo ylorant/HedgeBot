@@ -46,6 +46,7 @@ Plugins :
 - Discord API integration
 - Raffle plugin
 - Update all plugins' comments to fit Documentor standards (like on the Currency plugin).
+- Twitter plugin: Allow tweets with multiple images.
 
 ## I want it !
 
