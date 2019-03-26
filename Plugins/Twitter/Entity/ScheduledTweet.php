@@ -358,6 +358,13 @@ class ScheduledTweet implements JsonSerializable
             $obj->setSentTime(null);
         }
 
+        // Transform the constraints to arrays if needed
+        foreach($obj->constraints as &$constraint) {
+            if(!is_array($constraint)) {
+                $constraint = (array) $constraint;
+            }
+        }
+
         return $obj;
     }
 
