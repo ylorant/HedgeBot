@@ -383,7 +383,7 @@ class PluginManager extends EventManager
         HedgeBot::message('Deleting routine $0', array(get_class($plugin) . '::' . $method), E_DEBUG);
 
         if (!isset($this->routines[get_class($plugin)])) {
-            HedgeBot::message('Plugin $0 does not exists in routine list.', array($event), E_DEBUG);
+            HedgeBot::message('Plugin $0 does not exists in routine list.', array($plugin), E_DEBUG);
             return false;
         }
 
