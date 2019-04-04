@@ -50,7 +50,7 @@ class AutoHost extends PluginBase
 
         foreach ($this->hosts as &$host) {
             // If there is no hosted channel defined in the host channel, skip it
-            if(empty($host['hostedChannels'])) {
+            if(empty($host['hostedChannels']) || $host['lastHostTime'] + $host['time'] > time()) {
                 continue;
             }
 
@@ -59,22 +59,27 @@ class AutoHost extends PluginBase
             $hostTarget = $host['hostedChannels'][$hostTargetName];
 
             // Check that the time between 2 hosts has elapsed to host the channel
-            if ($hostTarget && $host['lastHostTime'] + $host['time'] < time()) {
+            if ($hostTarget) {
                 $streamInfo = Twitch::getClient()->streams->info($hostTarget['channel']);
 
-                if ($streamInfo != null && $host['lastChannel'] != $hostTarget['channel']) {
-                    // IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
-
+                if ($streamInfo != null) {
+                    if($host['lastChannel'] != $hostTarget['channel']) {
+                        IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
+                        $hostUpdated = true;
+    
+                        HedgeBot::message('Sent auto host request for "$0" -> "$1".', [$host['channel'], $hostTargetName], E_DEBUG);
+                    } else {
+                        HedgeBot::message('Keeping current hosting "$0" -> "$1"', [$host['channel'], $hostTargetName], E_DEBUG);
+                    }
+                    
+                    // Even if the channel wasn't actually hosted, set the time to reset the timer
                     $host['lastHostTime'] = time();
-                    $host['hostedChannels'][$hostTarget['channel']]['totalHosted']++;
-                    $hostUpdated = true;
-
-                    HedgeBot::message('Sent auto host request for "$0" -> "$1".', [$host['channel'], $hostTargetName], E_DEBUG);
                 }
-
-                // Need to force it locally to pass through offline channels
-                // (But don't want to save it)
+                
+                // Even if the host operation failed because we're already hosting that channel or it is offline, count it as hosted because it will
+                // avoid a deadlock in case of balancing favorizing that channel.
                 $host['lastChannel'] = $hostTarget['channel'];
+                $host['hostedChannels'][$hostTarget['channel']]['totalHosted']++;
             }
         }
 
@@ -247,6 +252,7 @@ class AutoHost extends PluginBase
         if (!empty($this->data->hosts)) {
             $this->hosts = $this->data->hosts->toArray();
         }
+
         foreach ($this->hosts as &$host) {
             $host['lastChannel'] = '';
             $host['lastHostTime'] = $host['lastHostTime'] ?? 0;
