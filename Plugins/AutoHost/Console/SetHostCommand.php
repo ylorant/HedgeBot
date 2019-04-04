@@ -1,5 +1,4 @@
 <?php
-
 namespace HedgeBot\Plugins\AutoHost\Console;
 
 use HedgeBot\Plugins\AutoHost\AutoHost;

@@ -1,5 +1,4 @@
 <?php
-
 namespace HedgeBot\Plugins\AutoHost;
 
 use HedgeBot\Core\API\Twitch;
