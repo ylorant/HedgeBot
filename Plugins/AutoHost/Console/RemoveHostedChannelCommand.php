@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\RuntimeException;
 
 /**
  * Class RemoveHostedChannelCommand
@@ -22,7 +23,7 @@ class RemoveHostedChannelCommand extends Command
     public function configure()
     {
         $this->setName('autohost:hosted-channel-remove')
-            ->setDescription('Remove one hosted channel on a hosting channel.')
+            ->setDescription('Remove one hosted channel from a hosting channel.')
             ->addArgument(
                 'host',
                 InputArgument::REQUIRED,
@@ -49,6 +50,10 @@ class RemoveHostedChannelCommand extends Command
         /** @var AutoHost $plugin */
         $plugin = $this->getPlugin();
 
-        $plugin->removeHostedChannel($host, $channel);
+        $removed = $plugin->removeHostedChannel($host, $channel);
+
+        if(!$removed) {
+            throw new RuntimeException("The given host channel hasn't been configured or the hosted channel wasn't found.");
+        }
     }
 }

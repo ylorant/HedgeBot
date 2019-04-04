@@ -4,12 +4,11 @@ namespace HedgeBot\Plugins\AutoHost\Console;
 
 use HedgeBot\Plugins\AutoHost\AutoHost;
 use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Command\Command;
-use RuntimeException;
+use Symfony\Component\Console\Exception\RuntimeException;
 
 /**
  * Class SetHostCommand
@@ -20,12 +19,12 @@ class SetHostCommand extends Command
     use PluginAwareTrait;
 
     /**
-     *
+     * @inheritDoc
      */
     public function configure()
     {
         $this->setName('autohost:host-set')
-            ->setDescription('Sets an time constraint on a channel to launch one hosting.')
+            ->setDescription('Sets an time constraint on a channel to send host requests.')
             ->addArgument(
                 'channel',
                 InputArgument::REQUIRED,
@@ -34,7 +33,7 @@ class SetHostCommand extends Command
             ->addArgument(
                 'time',
                 InputArgument::REQUIRED,
-                'The interval time (in seconds, must be more than 600) between two messages display'
+                'The interval time (in seconds, must be more than 600) between two host requests'
             );
     }
 
@@ -47,13 +46,17 @@ class SetHostCommand extends Command
     {
         $channelName = $input->getArgument('channel');
         $time = $input->getArgument('time');
-        // Twitch doesn't allow less than 10 minutes between two hosting
+        // Twitch doesn't allow more than 3 hosts per 30 minutes
         if ($time < 600) {
-            throw new RuntimeException("Twitch doesn't allow less than 10 minutes between two hosting. Time must be greater than 600.");
+            throw new RuntimeException("Twitch doesn't allow less than 30 minutes between 2 hosts. Time must be greater than 600 seconds.");
         }
 
         /** @var AutoHost $plugin */
         $plugin = $this->getPlugin();
-        $plugin->setHost($channelName, (int) $time);
+        $hostSet = $plugin->setHost($channelName, (int) $time);
+
+        if(!$hostSet) {
+            throw new RuntimeException("There has been an error while setting the host channel parameters.");
+        }
     }
 }

@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\RuntimeException;
 
 /**
  * Class AddHostedChannelCommand
@@ -54,6 +55,10 @@ class AddHostedChannelCommand extends Command
         /** @var AutoHost $plugin */
         $plugin = $this->getPlugin();
 
-        $plugin->addHostedChannel($host, $channel, $priority);
+        $added = $plugin->addHostedChannel($host, $channel, $priority);
+
+        if(!$added) {
+            throw new RuntimeException("The given host channel hasn't been configured.");
+        }
     }
 }

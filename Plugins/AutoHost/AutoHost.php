@@ -15,7 +15,7 @@ use HedgeBot\Core\API\Store;
 /**
  * @plugin AutoHost
  *
- * Manage a list of channels to autohost.
+ * Manages a list of channels to host automatically.
  * For each channel, an interval time is defined, in seconds.
  * When this interval time is passed for this channel, first channel to host assigned for this channel is hosted.
  * You must wait another interval to host the second channel (a channel is hosted only if is online).
@@ -23,7 +23,7 @@ use HedgeBot\Core\API\Store;
  */
 class AutoHost extends PluginBase
 {
-    private $hosts = [];
+    protected $hosts = [];
 
     /**
      * @return bool|void
@@ -46,60 +46,74 @@ class AutoHost extends PluginBase
      */
     public function RoutineSendAutoHost()
     {
-        if (empty($this->hosts)) {
-            return;
-        }
         $hostUpdated = false;
 
         foreach ($this->hosts as &$host) {
-            $channelToHost = $this->getChannelToHost($host);
+            // If there is no hosted channel defined in the host channel, skip it
+            if(empty($host['hostedChannels'])) {
+                continue;
+            }
+
+            // Get the channel that will get hosted depending on the previous hosts stats
+            $hostTargetName = $this->computeWeights($host['hostedChannels']);
+            $hostTarget = $host['hostedChannels'][$hostTargetName];
+
             // Check that the time between 2 hosts has elapsed to host the channel
-            if ($channelToHost && $host['lastHostTime'] + $host['time'] < time()) {
-                $streamInfo = Twitch::getClient()->streams->info($channelToHost['channel']);
-                if ($streamInfo != null && $host['lastChannel'] != $channelToHost['channel']) {
-                    IRC::message($host['channel'], '/host ' . $channelToHost['channel']);
+            if ($hostTarget && $host['lastHostTime'] + $host['time'] < time()) {
+                $streamInfo = Twitch::getClient()->streams->info($hostTarget['channel']);
+
+                if ($streamInfo != null && $host['lastChannel'] != $hostTarget['channel']) {
+                    // IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
+
                     $host['lastHostTime'] = time();
-                    $host['lastChannel'] = $channelToHost['channel'];
-                    $host['hostedChannels'][$channelToHost['channel']]['totalHosted']++;
+                    $host['hostedChannels'][$hostTarget['channel']]['totalHosted']++;
                     $hostUpdated = true;
-                    HedgeBot::message('Sent auto host "$0".', [$host['channel']], E_DEBUG);
+
+                    HedgeBot::message('Sent auto host request for "$0" -> "$1".', [$host['channel'], $hostTargetName], E_DEBUG);
                 }
+
                 // Need to force it locally to pass through offline channels
                 // (But don't want to save it)
-                $host['lastChannel'] = $channelToHost['channel'];
+                $host['lastChannel'] = $hostTarget['channel'];
             }
         }
 
-        // Save host if at least one has been updated
+        // Save hosts if at least one has been updated
         if ($hostUpdated) {
-            $this->data->hosts = $this->hosts;
+            $this->saveData();
         }
     }
 
     /**
-     * Return channel to host
+     * Returns the channel to host for a given hosting channel name.
      * Choice is made by including :
      * - Weight (Depends of priority to host and number of times this channel was hosted)
      * - Blacklist of words on title's stream (@TODO)
      * - Whitelist of words on title's stream (@TODO)
      *
-     * @param array $host
+     * @param array $channelName The hosting channel info.
      * @return array|boolean
      */
-    public function getChannelToHost($host)
+    public function getChannelToHost($channelName)
     {
-        if (array_key_exists('hostedChannels', $host) && !empty($host['hostedChannels'])) {
-            $channelName = $this->computeWeights($host['hostedChannels']);
-            return $host['hostedChannels'][$channelName];
+        if(!isset($this->hosts[$channelName])) {
+            return false;
+        }
+
+        $hostingChannelInfo = $this->hosts[$channelName];
+
+        if (array_key_exists('hostedChannels', $hostingChannelInfo) && !empty($hostingChannelInfo['hostedChannels'])) {
+            $hostTarget = $this->computeWeights($hostingChannelInfo['hostedChannels']);
+            return $hostingChannelInfo['hostedChannels'][$hostTarget];
         } else {
             return false;
         }
     }
 
     /**
-     * Return a channel name depends of priority to host and number of times this channel was hosted
+     * Return a channel name depending on its priority and the number of times this channel has already been hosted.
      *
-     * @param array $hostedChannels
+     * @param array $hostedChannels The list of channels to sort through.
      * @return mixed
      */
     protected function computeWeights($hostedChannels)
@@ -111,15 +125,19 @@ class AutoHost extends PluginBase
         $hostsTargetRatio = [];
         foreach ($hostedChannels as $channelName => $channelData) {
             $hostActualRatio = 0;
+
             if ($totalHosts > 0) {
                 $hostActualRatio = $channelData['totalHosted'] / $totalHosts;
             }
+
             $hostsTargetRatio[$channelName] = ($channelData['priority'] - $hostActualRatio) + 1;
         }
 
+        // Ordering the channels by their ratio, in the reverse order (the channel most under its host ratio target first)
         arsort($hostsTargetRatio);
         $orderedChannels = array_keys($hostsTargetRatio);
 
+        // Picking the most-likely to host channel
         return reset($orderedChannels);
     }
 
@@ -145,7 +163,7 @@ class AutoHost extends PluginBase
         }
 
         $this->hosts[$channelName]['time'] = $time;
-        $this->data->hosts = $this->hosts;
+        $this->saveData();
 
         return true;
     }
@@ -170,7 +188,7 @@ class AutoHost extends PluginBase
             'priority' => (float)$priority,
             'totalHosted' => 0
             ];
-        $this->data->hosts = $this->hosts;
+        $this->saveData();
 
         return true;
     }
@@ -201,7 +219,7 @@ class AutoHost extends PluginBase
         unset($this->hosts[$hostName]['hostedChannels'][$arrayIndex]);
         $this->hosts[$hostName]['hostedChannels'] = array_values($this->hosts[$hostName]['hostedChannels']);
 
-        $this->data->hosts = $this->hosts;
+        $this->saveData();
         return true;
     }
 
@@ -233,5 +251,14 @@ class AutoHost extends PluginBase
             $host['lastChannel'] = '';
             $host['lastHostTime'] = $host['lastHostTime'] ?? 0;
         }
+    }
+
+    /**
+     * Saves data into the storage.
+     */
+    protected function saveData()
+    {
+        HedgeBot::message("Saving hosts list...", [], E_DEBUG);
+        $this->data->hosts = $this->hosts;
     }
 }
