@@ -22,6 +22,6 @@ class TwitchLogger extends AbstractLogger
         ];
 
         $level = str_replace(array_keys($logLevels), array_values($logLevels), $level);
-        HedgeBot::message($message, $context, $level);
+        HedgeBot::message("[Twitch client] ". $message, $context, $level);
     }
 }
