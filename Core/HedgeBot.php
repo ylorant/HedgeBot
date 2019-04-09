@@ -28,6 +28,7 @@ use HedgeBot\Core\Tikal\Endpoint\StoreEndpoint as TikalStoreEndpoint;
 use HedgeBot\Core\Store\Store;
 use HedgeBot\Core\API\Store as StoreAPI;
 use HedgeBot\Core\Service\Twitch\TwitchService;
+use HedgeBot\Core\Service\Twitch\TwitchLogger;
 
 define('E_DEBUG', 32768);
 
@@ -137,6 +138,8 @@ class HedgeBot
         $clientSecret = $this->config->get('twitch.auth.clientSecret');
 
         $twitchService = new TwitchService($clientID, $clientSecret, $this->data->getProvider());
+        $twitchService->getClient(TwitchService::CLIENT_TYPE_KRAKEN)->setLogger(new TwitchLogger());
+        $twitchService->getClient(TwitchService::CLIENT_TYPE_AUTH)->setLogger(new TwitchLogger());
         Twitch::setObject($twitchService);
 
         // Initializing "Tikal" API server
