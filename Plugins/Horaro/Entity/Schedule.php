@@ -31,6 +31,8 @@ class Schedule implements JsonSerializable
     protected $started;
     /** @var string The template for the channel title while this schedule is running */
     protected $titleTemplate;
+    /** @var bool Wether the early actions for the schedule have already been done or not. */
+    protected $earlyActionsDone;
     /**
      * @var string The template for the channel game while this schedule is running.
      * Usually it's the column var for the game name.
@@ -56,7 +58,8 @@ class Schedule implements JsonSerializable
         "titleTemplate",
         "gameTemplate",
         "announceTemplate",
-        "nextItemAnnounced"
+        "nextItemAnnounced",
+        "earlyActionsDone"
     ];
 
     /**
@@ -74,6 +77,7 @@ class Schedule implements JsonSerializable
         $this->currentIndex = 0;
         $this->channel = "";
         $this->nextItemAnnounced = false;
+        $this->earlyActionsDone = false;
     }
 
     // Property access methods
@@ -324,6 +328,28 @@ class Schedule implements JsonSerializable
     public function setNextItemAnnounced($nextItemAnnounced)
     {
         $this->nextItemAnnounced = $nextItemAnnounced;
+    }
+
+    
+
+    /**
+     * Get the value of earlyActionsDone
+     */ 
+    public function isEarlyActionsDone()
+    {
+        return $this->earlyActionsDone;
+    }
+
+    /**
+     * Set the value of earlyActionsDone
+     *
+     * @return  self
+     */ 
+    public function setEarlyActionsDone($earlyActionsDone)
+    {
+        $this->earlyActionsDone = $earlyActionsDone;
+
+        return $this;
     }
 
     // Generated props access methods
