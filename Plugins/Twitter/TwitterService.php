@@ -34,6 +34,9 @@ class TwitterService
         $this->callbackUrl = $callbackUrl;
         $this->tokenStorage = $tokenStorage;
 
+        // Setting longer timeout to account for slow responding servers
+        $this->client->setRemoteDownloadTimeout(15000);
+
         $this->reloadAccessTokens();
     }
     

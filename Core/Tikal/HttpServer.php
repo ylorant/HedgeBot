@@ -19,6 +19,8 @@ class HttpServer
     private $clients = [];
     private $times = [];
 
+    const PACKET_LENGTH = 65535;
+
     /**
      * HttpServer constructor.
      * @param null $address
@@ -93,7 +95,7 @@ class HttpServer
 
         if ($modified > 0) {
             foreach ($read as $id => $client) {
-                $buffer = socket_read($this->clients[$id], 1024);
+                $buffer = socket_read($this->clients[$id], self::PACKET_LENGTH);
                 if ($buffer) {
                     $this->times[$id] = time();
                     $request = new HttpRequest($id, $buffer);
