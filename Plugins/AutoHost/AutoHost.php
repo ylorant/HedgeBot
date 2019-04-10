@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\AutoHost;
 
 use HedgeBot\Core\API\Twitch;
@@ -8,8 +9,7 @@ use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Events\CoreEvent;
-use HedgeBot\Core\Events\ServerEvent;
-use HedgeBot\Core\API\Store;
+use Transliterator;
 
 /**
  * @plugin AutoHost
@@ -49,7 +49,7 @@ class AutoHost extends PluginBase
 
         foreach ($this->hosts as &$host) {
             // If there is no hosted channel defined in the host channel, skip it
-            if(empty($host['hostedChannels']) || $host['lastHostTime'] + $host['time'] > time()) {
+            if (empty($host['hostedChannels']) || $host['lastHostTime'] + $host['time'] > time()) {
                 continue;
             }
 
@@ -62,19 +62,31 @@ class AutoHost extends PluginBase
                 $streamInfo = Twitch::getClient()->streams->info($hostTarget['channel']);
 
                 if ($streamInfo != null) {
-                    if($host['lastChannel'] != $hostTarget['channel']) {
+                    $streamTitleValidated = $this->checkTitleValidity(
+                        $streamInfo->channel->status,
+                        $host
+                    );
+                    if ($host['lastChannel'] != $hostTarget['channel'] && $streamTitleValidated) {
                         IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
                         $hostUpdated = true;
-    
-                        HedgeBot::message('Sent auto host request for "$0" -> "$1".', [$host['channel'], $hostTargetName], E_DEBUG);
+
+                        HedgeBot::message(
+                            'Sent auto host request for "$0" -> "$1".',
+                            [$host['channel'], $hostTargetName],
+                            E_DEBUG
+                        );
                     } else {
-                        HedgeBot::message('Keeping current hosting "$0" -> "$1"', [$host['channel'], $hostTargetName], E_DEBUG);
+                        HedgeBot::message(
+                            'Keeping current hosting "$0" -> "$1"',
+                            [$host['channel'], $hostTargetName],
+                            E_DEBUG
+                        );
                     }
-                    
+
                     // Even if the channel wasn't actually hosted, set the time to reset the timer
                     $host['lastHostTime'] = time();
                 }
-                
+
                 // Even if the host operation failed because we're already hosting that channel or it is offline, count it as hosted because it will
                 // avoid a deadlock in case of balancing favorizing that channel.
                 $host['lastChannel'] = $hostTarget['channel'];
@@ -90,17 +102,17 @@ class AutoHost extends PluginBase
 
     /**
      * Returns the channel to host for a given hosting channel name.
-     * Choice is made by including :
-     * - Weight (Depends of priority to host and number of times this channel was hosted)
-     * - Blacklist of words on title's stream (@TODO)
-     * - Whitelist of words on title's stream (@TODO)
+     * Choice is made with weight system (Depends of priority to host and number of times this channel was hosted)
+     *
+     * NB : Blacklist of words on title's stream and Whitelist of words on title's stream are used
+     * after verifying if channel chosen here is online
      *
      * @param array $channelName The hosting channel info.
      * @return array|boolean
      */
     public function getChannelToHost($channelName)
     {
-        if(!isset($this->hosts[$channelName])) {
+        if (!isset($this->hosts[$channelName])) {
             return false;
         }
 
@@ -112,6 +124,47 @@ class AutoHost extends PluginBase
         } else {
             return false;
         }
+    }
+
+    /**
+     * Check if title of streams contains at least one word from whitelist and blacklist
+     * Returns TRUE if we can host it
+     * i.e. (One word or more in whitelist OR whitelist empty) AND (no word in blacklist OR blacklist empty)
+     *
+     * @param string $title
+     * @param array $host
+     * @return bool
+     */
+    protected function checkTitleValidity($title, array $host)
+    {
+        $whiteWordFound = true;
+        $blackWordFound = false;
+        $transliterator = Transliterator::createFromRules(
+            ':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;',
+            Transliterator::FORWARD
+        );
+        $title = $transliterator->transliterate(mb_strtolower($title, 'UTF-8'));
+
+
+        if (array_key_exists('titleWhiteList', $host) && !empty($host['titleWhiteList'])) {
+            $whiteList = array_map('mb_strtolower', $host['titleWhiteList']);
+            $whiteWordFound = false;
+            foreach ($whiteList as $word) {
+                if (stripos($title, $word) !== false) {
+                    $whiteWordFound = true;
+                }
+            }
+        }
+        if (array_key_exists('titleBlackList', $host) && !empty($host['titleBlackList'])) {
+            $blackList = array_map('mb_strtolower', $host['titleBlackList']);
+            foreach ($blackList as $word) {
+                if (stripos($title, $word) !== false) {
+                    $blackWordFound = true;
+                }
+            }
+        }
+
+        return $whiteWordFound && !$blackWordFound;
     }
 
     /**
@@ -146,7 +199,7 @@ class AutoHost extends PluginBase
     }
 
     /**
-     * Set hosting basic informations for one channel
+     * Set hosting basic data for one channel
      *
      * @param string $channelName The host channel
      * @param int $time Time interval between each hosting. 600 by default (minimal value allowed by Twitch)
@@ -162,7 +215,9 @@ class AutoHost extends PluginBase
                 'channel' => $channelName,
                 'time' => $time,
                 'lastHostTime' => 0,
-                'lastChannel' => ''
+                'lastChannel' => '',
+                'titleWhiteList' => [],
+                'titleBlackList' => [],
             ];
         }
 
@@ -191,7 +246,7 @@ class AutoHost extends PluginBase
             'channel' => $channelName,
             'priority' => (float)$priority,
             'totalHosted' => 0
-            ];
+        ];
         $this->saveData();
 
         return true;

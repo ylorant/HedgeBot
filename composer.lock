@@ -494,8 +494,9 @@
                 "shasum": ""
             },
             "require": {
-                "ext-curl": "*",
                 "php": ">=7.0.0",
+                "ext-curl": "*",
+                "ext-intl": "*",
                 "psr/log": "^1.0"
             },
             "require-dev": {
@@ -530,7 +531,8 @@
     "prefer-lowest": false,
     "platform": {
         "php": ">=7.0",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "ext-intl": "*"
     },
     "platform-dev": []
 }

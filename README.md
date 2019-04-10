@@ -27,11 +27,14 @@ Plugins :
 - **CustomCommands**: Allows to create custom commands that prints messages upon call.
 - Quotes: Handles a quote manager.
 - Currency: Handles a currency/money system on the chat.
+- BannedWords: ??? (_plugin to rework_).
 - BlackJack: Handles a blackjack game system.
 - **Horaro**: Handles a stream schedule set via [Horaro](http://horaro.org). It feeds the bot's store and changes the Twitch channel's title and game according to the schedule items values.
 - HoraroTextFile: Stores the current item of a schedule loaded in the **Horaro** plugin in a text file for other programs to access.
 - TestManager: Development-oriented plugin that allows to test how other plugins are supposed to work.
-- Twitter: Allows scheduling tweets to automatically send at a specific time or when a specific event is fired.
+- **Twitter**: Allows scheduling tweets to automatically send at a specific time or when a specific event is fired.
+- StreamControl : ???
+- AutoHost: Handles a hosting manager, included priorities (with %), time to switch to another stream and whitelist/blacklist of words into title.
 
 (Plugins names in bold **style** means they have also a web-admin interface, see below)
 

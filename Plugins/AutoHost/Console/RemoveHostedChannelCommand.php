@@ -51,7 +51,7 @@ class RemoveHostedChannelCommand extends Command
 
         $removed = $plugin->removeHostedChannel($host, $channel);
 
-        if(!$removed) {
+        if (!$removed) {
             throw new RuntimeException("The given host channel hasn't been configured or the hosted channel wasn't found.");
         }
     }

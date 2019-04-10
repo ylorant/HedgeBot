@@ -30,7 +30,7 @@ class AddHostedChannelCommand extends Command
             )
             ->addArgument(
                 'channel',
-                 InputArgument::REQUIRED,
+                InputArgument::REQUIRED,
                 'One channel to host'
             )->addArgument(
                 'priority',
@@ -56,7 +56,7 @@ class AddHostedChannelCommand extends Command
 
         $added = $plugin->addHostedChannel($host, $channel, $priority);
 
-        if(!$added) {
+        if (!$added) {
             throw new RuntimeException("The given host channel hasn't been configured.");
         }
     }

@@ -54,7 +54,7 @@ class SetHostCommand extends Command
         $plugin = $this->getPlugin();
         $hostSet = $plugin->setHost($channelName, (int) $time);
 
-        if(!$hostSet) {
+        if (!$hostSet) {
             throw new RuntimeException("There has been an error while setting the host channel parameters.");
         }
     }
