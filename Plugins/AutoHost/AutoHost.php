@@ -24,6 +24,8 @@ class AutoHost extends PluginBase
 {
     protected $hosts = [];
 
+    const TRANSLIT_RULES = ':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;';
+
     /**
      * @return bool|void
      */
@@ -62,29 +64,21 @@ class AutoHost extends PluginBase
                 $streamInfo = Twitch::getClient()->streams->info($hostTarget['channel']);
 
                 if ($streamInfo != null) {
-                    $streamTitleValidated = $this->checkTitleValidity(
-                        $streamInfo->channel->status,
-                        $host
-                    );
-                    if ($host['lastChannel'] != $hostTarget['channel'] && $streamTitleValidated) {
-                        IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
-                        $hostUpdated = true;
+                    $streamTitleValid = $this->checkTitleValidity($streamInfo->channel->status, $host);
 
-                        HedgeBot::message(
-                            'Sent auto host request for "$0" -> "$1".',
-                            [$host['channel'], $hostTargetName],
-                            E_DEBUG
-                        );
-                    } else {
-                        HedgeBot::message(
-                            'Keeping current hosting "$0" -> "$1"',
-                            [$host['channel'], $hostTargetName],
-                            E_DEBUG
-                        );
+                    if($streamTitleValid) {
+                        if ($host['lastChannel'] != $hostTarget['channel']) {
+                            IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
+                            $hostUpdated = true;
+
+                            HedgeBot::message('Sent auto host request for "$0" -> "$1".', [$host['channel'], $hostTargetName], E_DEBUG);
+                        } else {
+                            HedgeBot::message('Keeping current hosting "$0" -> "$1"', [$host['channel'], $hostTargetName], E_DEBUG);
+                        }
+
+                        // Even if the channel wasn't actually hosted, set the time to reset the timer
+                        $host['lastHostTime'] = time();
                     }
-
-                    // Even if the channel wasn't actually hosted, set the time to reset the timer
-                    $host['lastHostTime'] = time();
                 }
 
                 // Even if the host operation failed because we're already hosting that channel or it is offline, count it as hosted because it will
@@ -131,22 +125,18 @@ class AutoHost extends PluginBase
      * Returns TRUE if we can host it
      * i.e. (One word or more in whitelist OR whitelist empty) AND (no word in blacklist OR blacklist empty)
      *
-     * @param string $title
-     * @param array $host
-     * @return bool
+     * @param string $title The stream title to check the validity of.
+     * @param array $host The hoster info, namely the whitelist and the blacklist.
+     * @return bool True if it is a valid title, false if it isn't.
      */
     protected function checkTitleValidity($title, array $host)
     {
         $whiteWordFound = true;
-        $blackWordFound = false;
-        $transliterator = Transliterator::createFromRules(
-            ':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;',
-            Transliterator::FORWARD
-        );
+        
+        $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
         $title = $transliterator->transliterate(mb_strtolower($title, 'UTF-8'));
 
-
-        if (array_key_exists('titleWhiteList', $host) && !empty($host['titleWhiteList'])) {
+        if (!empty($host['titleWhiteList'])) {
             $whiteList = array_map('mb_strtolower', $host['titleWhiteList']);
             $whiteWordFound = false;
             foreach ($whiteList as $word) {
@@ -155,16 +145,17 @@ class AutoHost extends PluginBase
                 }
             }
         }
-        if (array_key_exists('titleBlackList', $host) && !empty($host['titleBlackList'])) {
+
+        if (!empty($host['titleBlackList'])) {
             $blackList = array_map('mb_strtolower', $host['titleBlackList']);
             foreach ($blackList as $word) {
                 if (stripos($title, $word) !== false) {
-                    $blackWordFound = true;
+                    return false;
                 }
             }
         }
 
-        return $whiteWordFound && !$blackWordFound;
+        return $whiteWordFound;
     }
 
     /**
