@@ -66,7 +66,7 @@ class AutoHost extends PluginBase
                 if ($streamInfo != null) {
                     $streamTitleValid = $this->checkTitleValidity($streamInfo->channel->status, $host);
 
-                    if($streamTitleValid) {
+                    if ($streamTitleValid) {
                         if ($host['lastChannel'] != $hostTarget['channel']) {
                             IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
                             $hostUpdated = true;
@@ -81,8 +81,8 @@ class AutoHost extends PluginBase
                     }
                 }
 
-                // Even if the host operation failed because we're already hosting that channel or it is offline, count it as hosted because it will
-                // avoid a deadlock in case of balancing favorizing that channel.
+                // Even if the host operation failed because we're already hosting that channel or it is offline,
+                // count it as hosted because it will avoid a deadlock in case of balancing favorizing that channel.
                 $host['lastChannel'] = $hostTarget['channel'];
                 $host['hostedChannels'][$hostTarget['channel']]['totalHosted']++;
             }
@@ -101,7 +101,7 @@ class AutoHost extends PluginBase
      * NB : Blacklist of words on title's stream and Whitelist of words on title's stream are used
      * after verifying if channel chosen here is online
      *
-     * @param array $channelName The hosting channel info.
+     * @param string $channelName The hosting channel info.
      * @return array|boolean
      */
     public function getChannelToHost($channelName)
@@ -134,22 +134,20 @@ class AutoHost extends PluginBase
         $whiteWordFound = true;
         
         $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
-        $title = $transliterator->transliterate(mb_strtolower($title, 'UTF-8'));
+        $title = strtolower($transliterator->transliterate($title));
 
         if (!empty($host['titleWhiteList'])) {
-            $whiteList = array_map('mb_strtolower', $host['titleWhiteList']);
             $whiteWordFound = false;
-            foreach ($whiteList as $word) {
-                if (stripos($title, $word) !== false) {
+            foreach ($host['titleWhiteList'] as $word) {
+                if (strpos($title, $word) !== false) {
                     $whiteWordFound = true;
                 }
             }
         }
 
         if (!empty($host['titleBlackList'])) {
-            $blackList = array_map('mb_strtolower', $host['titleBlackList']);
-            foreach ($blackList as $word) {
-                if (stripos($title, $word) !== false) {
+            foreach ($host['titleBlackList'] as $word) {
+                if (strpos($title, $word) !== false) {
                     return false;
                 }
             }
@@ -219,6 +217,22 @@ class AutoHost extends PluginBase
     }
 
     /**
+     * Get informations about a specific host channel
+     *
+     * @param string $hostName
+     *
+     * @return array|bool
+     */
+    public function getHost($hostName)
+    {
+        if (!isset($this->hosts[$hostName])) {
+            return false;
+        }
+
+        return $this->hosts[$hostName];
+    }
+
+    /**
      * Add one channel to host on one hosting channel, including priority
      *
      * @param string $hostName hosting channel name
@@ -246,8 +260,8 @@ class AutoHost extends PluginBase
     /**
      * Remove one channel to host on one hosting channel
      *
-     * @param $hostName
-     * @param $channelName
+     * @param string $hostName
+     * @param string $channelName
      * @return boolean
      */
     public function removeHostedChannel($hostName, $channelName)
@@ -271,6 +285,77 @@ class AutoHost extends PluginBase
 
         $this->saveData();
         return true;
+    }
+
+    /**
+     * Add a word into a defined filter list for one host channel
+     *
+     * @param string $hostName
+     * @param int $typeFilter
+     * @param string $word
+     *
+     * @return boolean
+     */
+    public function addFilterList($hostName, $typeFilter, $word)
+    {
+        if (!isset($this->hosts[$hostName])) {
+            return false;
+        }
+
+        if ($typeFilter == 1) {
+            $filterListName = 'titleBlackList';
+        } elseif ($typeFilter == 2) {
+            $filterListName = 'titleWhiteList';
+        } else {
+            return false;
+        }
+
+        $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
+        $word = strtolower($transliterator->transliterate($word));
+
+        if (!in_array($word, $this->hosts[$hostName][$filterListName], true)) {
+            array_push($this->hosts[$hostName][$filterListName], $word);
+        }
+
+        $this->saveData();
+        return true;
+    }
+
+    /**
+     * Remove a word into a defined filter list for one host channel
+     *
+     * @param string $hostName
+     * @param int $typeFilter
+     * @param string $word
+     *
+     * @return boolean
+     */
+    public function removeFilterList($hostName, $typeFilter, $word)
+    {
+        if (!isset($this->hosts[$hostName])) {
+            return false;
+        }
+
+        if ($typeFilter == 1) {
+            $filterListName = 'titleBlackList';
+        } elseif ($typeFilter == 2) {
+            $filterListName = 'titleWhiteList';
+        } else {
+            return false;
+        }
+
+        if (array_key_exists($typeFilter, $this->hosts[$hostName])) {
+            $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
+            $word = strtolower($transliterator->transliterate($word));
+
+            foreach (array_keys($this->hosts[$hostName][$filterListName], $word, true) as $key) {
+                unset($this->hosts[$hostName][$filterListName][$key]);
+            }
+
+            $this->saveData();
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -35,6 +35,18 @@ class AutoHostEndpoint
     }
 
     /**
+     * get hosting basic informations for one channel
+     *
+     * @see AutoHost::setHost()
+     * @param string $channelName
+     * @return array|bool
+     */
+    public function getHost($channelName)
+    {
+        return $this->plugin->getHost($channelName);
+    }
+
+    /**
      * Add one channel to host
      *
      * @see AutoHost::addHostedChannel()
@@ -59,5 +71,33 @@ class AutoHostEndpoint
     public function removeHostedChannel($hostName, $channelName)
     {
         return $this->plugin->removeHostedChannel($hostName, $channelName);
+    }
+
+    /**
+     * Add a word into a defined filter list for one host channel
+     *
+     * @see AutoHost::addFilterList()
+     * @param string $hostName
+     * @param int $typeFilter
+     * @param string $word
+     * @return bool
+     */
+    public function addFilterList($hostName, $typeFilter, $word)
+    {
+        return $this->plugin->addFilterList($hostName, $typeFilter, $word);
+    }
+
+    /**
+     * Remove a word into a defined filter list for one host channel
+     *
+     * @see AutoHost::removeFilterList()
+     * @param string $hostName
+     * @param int $typeFilter
+     * @param string $word
+     * @return bool
+     */
+    public function removeFilterList($hostName, $typeFilter, $word)
+    {
+        return $this->plugin->removeFilterList($hostName, $typeFilter, $word);
     }
 }

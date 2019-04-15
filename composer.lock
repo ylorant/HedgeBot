@@ -497,6 +497,7 @@
                 "php": ">=7.0.0",
                 "ext-curl": "*",
                 "ext-intl": "*",
+                "ext-json": "*",
                 "psr/log": "^1.0"
             },
             "require-dev": {
@@ -532,7 +533,8 @@
     "platform": {
         "php": ">=7.0",
         "ext-curl": "*",
-        "ext-intl": "*"
+        "ext-intl": "*",
+        "ext-json": "*"
     },
     "platform-dev": []
 }
