@@ -21,7 +21,7 @@ class GetHostCommand extends Command
      */
     public function configure()
     {
-        $this->setName('autohost:host-info-get')
+        $this->setName('autohost:host-get')
             ->setDescription('Display host channel info.')
             ->addArgument(
                 'host',

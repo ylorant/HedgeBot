@@ -18,13 +18,17 @@ use Transliterator;
  * For each channel, an interval time is defined, in seconds.
  * When this interval time is passed for this channel, first channel to host assigned for this channel is hosted.
  * You must wait another interval to host the second channel (a channel is hosted only if is online).
- * It will loop on first channel to host when all channels has been hosted.
+ * It will loop on first channel to host priority-wise when all channels have been hosted.
  */
 class AutoHost extends PluginBase
 {
+    /** @var array $hosts Host info */
     protected $hosts = [];
+    /** @var array $channelStatus Channel status (online or offline) */
+    protected $channelStatus = [];
 
     const TRANSLIT_RULES = ':: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;';
+    const FILTER_TYPES = ['titleWhiteList', 'titleBlackList'];
 
     /**
      * @return bool|void
@@ -34,6 +38,7 @@ class AutoHost extends PluginBase
         $this->loadData();
 
         $pluginManager = Plugin::getManager();
+        $pluginManager->addRoutine($this, 'RoutineCheckOnlineChannels', 60);
         $pluginManager->addRoutine($this, 'RoutineSendAutoHost');
 
         // Don't load the API endpoint if we're not on the main environment
@@ -43,7 +48,17 @@ class AutoHost extends PluginBase
     }
 
     /**
-     * AutoHost main routine
+     * Checks the status on the hosting channels, to see if they're online or not.
+     */
+    public function RoutineCheckOnlineChannels()
+    {
+        foreach($this->hosts as $host) {
+            $this->isChannelStreaming($host['channel'], false);
+        }
+    }
+
+    /**
+     * AutoHost main routine, cycles through hosting channels and sends auto-hosting requests to them.
      */
     public function RoutineSendAutoHost()
     {
@@ -52,6 +67,11 @@ class AutoHost extends PluginBase
         foreach ($this->hosts as &$host) {
             // If there is no hosted channel defined in the host channel, skip it
             if (empty($host['hostedChannels']) || $host['lastHostTime'] + $host['time'] > time()) {
+                continue;
+            }
+
+            // Skip hosting if the channel is streaming
+            if($this->isChannelStreaming($host['channel'])) {
                 continue;
             }
 
@@ -188,6 +208,27 @@ class AutoHost extends PluginBase
     }
 
     /**
+     * Checks if the given channel is currently streaming or not, and refreshes the cache if needed.
+     * 
+     * @param string $channel The channel to check the stream status of.
+     * @param bool $useCache Wether to use the cache or not. Defaults to true.
+     * 
+     * @return bool True if the channel is streaming, false if not.
+     */
+    protected function isChannelStreaming($channel, $useCache = true)
+    {
+        // Use the cache if possible and not asked otherwise
+        if($useCache && !empty($this->channelStatus[$channel])) {
+            return $this->channelStatus[$channel];
+        }
+
+        $streamInfo = Twitch::getClient()->streams->info($channel);
+        $this->channelStatus[$channel] = !empty($streamInfo);
+
+        return $this->channelStatus[$channel];
+    }
+
+    /**
      * Set hosting basic data for one channel
      *
      * @param string $channelName The host channel
@@ -296,25 +337,23 @@ class AutoHost extends PluginBase
      *
      * @return boolean
      */
-    public function addFilterList($hostName, $typeFilter, $word)
+    public function addFilterWord($hostName, $filterListName, $word)
     {
-        if (!isset($this->hosts[$hostName])) {
+        if (!isset($this->hosts[$hostName]) || !in_array($filterListName, self::FILTER_TYPES)) {
             return false;
         }
 
-        if ($typeFilter == 1) {
-            $filterListName = 'titleBlackList';
-        } elseif ($typeFilter == 2) {
-            $filterListName = 'titleWhiteList';
-        } else {
-            return false;
+        // Create the list if needed
+        if(!isset($this->hosts[$hostName][$filterListName])) {
+            $this->hosts[$hostName][$filterListName] = [];
         }
 
         $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
         $word = strtolower($transliterator->transliterate($word));
 
-        if (!in_array($word, $this->hosts[$hostName][$filterListName], true)) {
-            array_push($this->hosts[$hostName][$filterListName], $word);
+        // Only add the word into the list if the word isn't already in it.
+        if (!in_array($word, $this->hosts[$hostName][$filterListName])) {
+            $this->hosts[$hostName][$filterListName][] = $word;
         }
 
         $this->saveData();
@@ -330,32 +369,30 @@ class AutoHost extends PluginBase
      *
      * @return boolean
      */
-    public function removeFilterList($hostName, $typeFilter, $word)
+    public function removeFilterWord($hostName, $filterListName, $word)
     {
-        if (!isset($this->hosts[$hostName])) {
+        if (!isset($this->hosts[$hostName]) || !in_array($filterListName, self::FILTER_TYPES)) {
             return false;
         }
 
-        if ($typeFilter == 1) {
-            $filterListName = 'titleBlackList';
-        } elseif ($typeFilter == 2) {
-            $filterListName = 'titleWhiteList';
-        } else {
-            return false;
-        }
-
-        if (array_key_exists($typeFilter, $this->hosts[$hostName])) {
-            $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
-            $word = strtolower($transliterator->transliterate($word));
-
-            foreach (array_keys($this->hosts[$hostName][$filterListName], $word, true) as $key) {
-                unset($this->hosts[$hostName][$filterListName][$key]);
-            }
-
-            $this->saveData();
+        // Don't do anything if the list doesn't exist, but return true as it's not technically an error.
+        if (!isset($this->hosts[$hostName][$filterListName])) {
             return true;
         }
-        return false;
+
+        $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
+        $word = strtolower($transliterator->transliterate($word));
+
+        $searchKeys = array_keys($this->hosts[$hostName][$filterListName], $word);
+
+        foreach ($searchKeys as $key) {
+            unset($this->hosts[$hostName][$filterListName][$key]);
+        }
+
+        $this->hosts[$hostName][$filterListName] = array_values($this->hosts[$hostName][$filterListName]);
+        $this->saveData();
+        
+        return true;
     }
 
     /**

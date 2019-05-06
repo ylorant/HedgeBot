@@ -10,10 +10,10 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException;
 
 /**
- * Class AddHostedChannelCommand
+ * Class RemoveFilterWordCommand
  * @package HedgeBot\Plugins\AutoHost\Console
  */
-class AddFilterListCommand extends Command
+class RemoveFilterWordCommand extends Command
 {
     use PluginAwareTrait;
     /**
@@ -21,21 +21,21 @@ class AddFilterListCommand extends Command
      */
     public function configure()
     {
-        $this->setName('autohost:filter-list-add')
-            ->setDescription('Add a word into a defined filter list for one host channel.')
+        $this->setName('autohost:filter-word-remove')
+            ->setDescription('Removes a word from one of the filter lists for one host channel.')
             ->addArgument(
                 'host',
                 InputArgument::REQUIRED,
                 'The hosting channel'
             )
             ->addArgument(
-                'typeList',
+                'listName',
                 InputArgument::REQUIRED,
-                'Type of filter list to modify. 1 for blacklist, 2 for whitelist.'
+                'Name of the filter list to remove the word from. Can be: ' . join(', ', AutoHost::FILTER_TYPES). '.'
             )->addArgument(
                 'word',
                 InputArgument::REQUIRED,
-                'Word to add into the chosen filter list'
+                'Word to remove into the chosen filter list.'
             );
     }
 
@@ -48,16 +48,19 @@ class AddFilterListCommand extends Command
     {
 
         $host = $input->getArgument('host');
-        $typeList = $input->getArgument('typeList');
+        $listName = $input->getArgument('listName');
         $word = $input->getArgument('word');
+        
+        if(!in_array($listName, AutoHost::FILTER_TYPES)) {
+            throw new RuntimeException("Wrong filter list name supplied.");
+        }
 
         /** @var AutoHost $plugin */
         $plugin = $this->getPlugin();
+        $removed = $plugin->removeFilterWord($host, $listName, $word);
 
-        $added = $plugin->addFilterList($host, $typeList, $word);
-
-        if (!$added) {
-            throw new RuntimeException("The chosen filter list hasn't been modified.");
+        if (!$removed) {
+            throw new RuntimeException("The remove operation failed.");
         }
     }
 }
