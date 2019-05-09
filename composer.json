@@ -4,6 +4,8 @@
     "require": {
         "php": ">=7.0",
         "ext-curl": "*",
+        "ext-intl": "*",
+        "ext-json": "*",
         "symfony/console": "^3.3",
         "symfony/event-dispatcher": "^4.0",
         "ylorant/twitch-php-client": "dev-master",

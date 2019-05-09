@@ -1,7 +1,7 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
     "content-hash": "8f335876153ce91e3fdf4a0e936b4ee2",
@@ -187,16 +187,16 @@
         },
         {
             "name": "psr/log",
-            "version": "1.0.2",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d"
+                "reference": "6c001f1daafa3a3ac1d8ff69ee4db8e799a654dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
-                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/6c001f1daafa3a3ac1d8ff69ee4db8e799a654dd",
+                "reference": "6c001f1daafa3a3ac1d8ff69ee4db8e799a654dd",
                 "shasum": ""
             },
             "require": {
@@ -230,7 +230,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2016-10-10T12:19:37+00:00"
+            "time": "2018-11-20T15:27:04+00:00"
         },
         {
             "name": "symfony/console",
@@ -485,17 +485,19 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ylorant/twitch-php-client.git",
-                "reference": "6b4b443c6681f46416694085e3dd5c32116d1ff9"
+                "reference": "f8e82d743365de6aded1e37f27cedc339978034c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/6b4b443c6681f46416694085e3dd5c32116d1ff9",
-                "reference": "6b4b443c6681f46416694085e3dd5c32116d1ff9",
+                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/f8e82d743365de6aded1e37f27cedc339978034c",
+                "reference": "f8e82d743365de6aded1e37f27cedc339978034c",
                 "shasum": ""
             },
             "require": {
-                "ext-curl": "*",
                 "php": ">=7.0.0",
+                "ext-curl": "*",
+                "ext-intl": "*",
+                "ext-json": "*",
                 "psr/log": "^1.0"
             },
             "require-dev": {
@@ -517,7 +519,7 @@
                 "MIT"
             ],
             "description": "PHP client for Twitch's multiple APIs, easily extendable and embeddable.",
-            "time": "2018-11-14T12:56:11+00:00"
+            "time": "2019-04-10T00:09:29+00:00"
         }
     ],
     "packages-dev": [],
@@ -530,7 +532,9 @@
     "prefer-lowest": false,
     "platform": {
         "php": ">=7.0",
-        "ext-curl": "*"
+        "ext-curl": "*",
+        "ext-intl": "*",
+        "ext-json": "*"
     },
     "platform-dev": []
 }
