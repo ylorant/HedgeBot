@@ -41,6 +41,12 @@ class SetIntervalCommand extends Command
                 'm',
                 InputOption::VALUE_REQUIRED,
                 'The messages count between two messages display'
+            )
+            ->addOption(
+                'enabled',
+                'e',
+                InputOption::VALUE_REQUIRED,
+                'The boolean to enable/disable messages display for one channel'
             );
     }
 
@@ -54,10 +60,11 @@ class SetIntervalCommand extends Command
 
         $time = $input->getOption('time') ?? 0;
         $messages = $input->getOption('messages') ?? 0;
+        $enabled = $input->getArgument('enabled') ?? true;
         $channelName = $input->getArgument('channel');
 
         /** @var Announcements $plugin */
         $plugin = $this->getPlugin();
-        $plugin->setInterval($channelName, (int) $time, (int) $messages);
+        $plugin->setInterval($channelName, (int) $time, (int) $messages, (bool) $enabled);
     }
 }
