@@ -47,6 +47,16 @@ class AutoHostEndpoint
     }
 
     /**
+     * get hosting basic informations for all channels
+     *
+     * @return array|bool
+     */
+    public function getHosts()
+    {
+        return $this->plugin->getHosts();
+    }
+
+    /**
      * Add one channel to host
      *
      * @see AutoHost::addHostedChannel()
