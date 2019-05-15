@@ -52,7 +52,7 @@ class AutoHost extends PluginBase
      */
     public function RoutineCheckOnlineChannels()
     {
-        foreach($this->hosts as $host) {
+        foreach ($this->hosts as $host) {
             $this->isChannelStreaming($host['channel'], false);
         }
     }
@@ -65,13 +65,18 @@ class AutoHost extends PluginBase
         $hostUpdated = false;
 
         foreach ($this->hosts as &$host) {
+            // Skip if autohost is disabled for this channel
+            if (!$host['enabled']) {
+                continue;
+            }
+
             // If there is no hosted channel defined in the host channel, skip it
             if (empty($host['hostedChannels']) || $host['lastHostTime'] + $host['time'] > time()) {
                 continue;
             }
 
             // Skip hosting if the channel is streaming
-            if($this->isChannelStreaming($host['channel'])) {
+            if ($this->isChannelStreaming($host['channel'])) {
                 continue;
             }
 
@@ -83,7 +88,7 @@ class AutoHost extends PluginBase
             if ($hostTarget) {
                 $streamInfo = Twitch::getClient()->streams->info($hostTarget['channel']);
 
-                if ($streamInfo != null) {
+                if ($hostTarget['enabled'] && $streamInfo != null) {
                     $streamTitleValid = $this->checkTitleValidity($streamInfo->channel->status, $host);
 
                     if ($streamTitleValid) {
@@ -91,9 +96,17 @@ class AutoHost extends PluginBase
                             IRC::message($host['channel'], '/host ' . $hostTarget['channel']);
                             $hostUpdated = true;
 
-                            HedgeBot::message('Sent auto host request for "$0" -> "$1".', [$host['channel'], $hostTargetName], E_DEBUG);
+                            HedgeBot::message(
+                                'Sent auto host request for "$0" -> "$1".',
+                                [$host['channel'], $hostTargetName],
+                                E_DEBUG
+                            );
                         } else {
-                            HedgeBot::message('Keeping current hosting "$0" -> "$1"', [$host['channel'], $hostTargetName], E_DEBUG);
+                            HedgeBot::message(
+                                'Keeping current hosting "$0" -> "$1"',
+                                [$host['channel'], $hostTargetName],
+                                E_DEBUG
+                            );
                         }
 
                         // Even if the channel wasn't actually hosted, set the time to reset the timer
@@ -101,7 +114,8 @@ class AutoHost extends PluginBase
                     }
                 }
 
-                // Even if the host operation failed because we're already hosting that channel or it is offline,
+                // Even if the host operation failed because
+                // we're already hosting that channel or it is deactivate/offline,
                 // count it as hosted because it will avoid a deadlock in case of balancing favorizing that channel.
                 $host['lastChannel'] = $hostTarget['channel'];
                 $host['hostedChannels'][$hostTarget['channel']]['totalHosted']++;
@@ -209,16 +223,16 @@ class AutoHost extends PluginBase
 
     /**
      * Checks if the given channel is currently streaming or not, and refreshes the cache if needed.
-     * 
+     *
      * @param string $channel The channel to check the stream status of.
      * @param bool $useCache Wether to use the cache or not. Defaults to true.
-     * 
+     *
      * @return bool True if the channel is streaming, false if not.
      */
     protected function isChannelStreaming($channel, $useCache = true)
     {
         // Use the cache if possible and not asked otherwise
-        if($useCache && !empty($this->channelStatus[$channel])) {
+        if ($useCache && !empty($this->channelStatus[$channel])) {
             return $this->channelStatus[$channel];
         }
 
@@ -233,16 +247,18 @@ class AutoHost extends PluginBase
      *
      * @param string $channelName The host channel
      * @param int $time Time interval between each hosting. 600 by default (minimal value allowed by Twitch)
+     * @param bool $enabled to activate/deactivate autohost from this channel
      *
      * @return bool True.
      */
-    public function setHost($channelName, $time = 600)
+    public function setHost($channelName, $time = 600, $enabled = true)
     {
         HedgeBot::message("Saving hosting infos for channel '" . $channelName . "' ...", [], E_DEBUG);
 
         if (!isset($this->hosts[$channelName])) {
             $this->hosts[$channelName] = [
                 'channel' => $channelName,
+                'enabled' => $enabled,
                 'time' => $time,
                 'lastHostTime' => 0,
                 'lastChannel' => '',
@@ -274,15 +290,30 @@ class AutoHost extends PluginBase
     }
 
     /**
+     * Get informations for all host channels
+     *
+     * @return array|bool
+     */
+    public function getHosts()
+    {
+        if (!isset($this->hosts)) {
+            return false;
+        }
+
+        return $this->hosts;
+    }
+
+    /**
      * Add one channel to host on one hosting channel, including priority
      *
      * @param string $hostName hosting channel name
      * @param string $channelName channel to host
      * @param float $priority priority % for hosting choice
+     * @param bool $enabled to activate/deactivate hosting this channel
      *
      * @return boolean
      */
-    public function addHostedChannel($hostName, $channelName, $priority)
+    public function addHostedChannel($hostName, $channelName, $priority, $enabled = true)
     {
         if (!isset($this->hosts[$hostName])) {
             return false;
@@ -290,6 +321,7 @@ class AutoHost extends PluginBase
 
         $this->hosts[$hostName]['hostedChannels'][$channelName] = [
             'channel' => $channelName,
+            'enabled' => $enabled,
             'priority' => (float)$priority,
             'totalHosted' => 0
         ];
@@ -332,7 +364,7 @@ class AutoHost extends PluginBase
      * Add a word into a defined filter list for one host channel
      *
      * @param string $hostName
-     * @param int $typeFilter
+     * @param string $filterListName
      * @param string $word
      *
      * @return boolean
@@ -344,7 +376,7 @@ class AutoHost extends PluginBase
         }
 
         // Create the list if needed
-        if(!isset($this->hosts[$hostName][$filterListName])) {
+        if (!isset($this->hosts[$hostName][$filterListName])) {
             $this->hosts[$hostName][$filterListName] = [];
         }
 
@@ -364,7 +396,7 @@ class AutoHost extends PluginBase
      * Remove a word into a defined filter list for one host channel
      *
      * @param string $hostName
-     * @param int $typeFilter
+     * @param string $filterListName
      * @param string $word
      *
      * @return boolean
