@@ -45,7 +45,7 @@ class HoraroTextFile extends PluginBase
      * @param HoraroEvent $event The event.
      * @throws \Exception
      */
-    public function HoraroScheduleUpdated(HoraroEvent $event)
+    public function HoraroItemChange(HoraroEvent $event)
     {
         /** @var Schedule $schedule */
         $schedule = $event->schedule;
