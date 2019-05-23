@@ -53,15 +53,24 @@ class HoraroTextFile extends PluginBase
 
         // Check if we have a file mapping for this schedule slug
         if (!empty($this->fileMapping[$identSlug])) {
+            // Get current item
             $item = $schedule->getCurrentItem();
             $itemFileContent = join("\n", $item->data);
-
-            // FIXME: Same fix as the replace in the Schedule class, cf it.
-            $itemFileContent = preg_replace("#\[(.+)\]\((.+)\)#isU", "$1", $itemFileContent);
 
             // Add estimate, see to replace with provider stuff
             $dateInterval = new DateInterval($item->length);
             $itemFileContent .= "\n" . $dateInterval->format("%H:%I:%S");
+            
+            // Get next item
+            $nextItem = $schedule->getNextItem();
+            $itemFileContent .= "\n\n". join("\n", $nextItem->data);
+
+            // Add estimate, see to replace with provider stuff
+            $dateInterval = new DateInterval($nextItem->length);
+            $itemFileContent .= "\n" . $dateInterval->format("%H:%I:%S");
+
+            // FIXME: Same fix as the replace in the Schedule class, cf it.
+            $itemFileContent = preg_replace("#\[(.+)\]\((.+)\)#isU", "$1", $itemFileContent);
 
             file_put_contents($this->fileMapping[$identSlug], $itemFileContent);
         }
