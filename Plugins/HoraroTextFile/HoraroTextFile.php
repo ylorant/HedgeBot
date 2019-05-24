@@ -63,11 +63,13 @@ class HoraroTextFile extends PluginBase
             
             // Get next item
             $nextItem = $schedule->getNextItem();
-            $itemFileContent .= "\n\n". join("\n", $nextItem->data);
+            if(!empty($nextItem)) {
+                $itemFileContent .= "\n\n". join("\n", $nextItem->data);
 
-            // Add estimate, see to replace with provider stuff
-            $dateInterval = new DateInterval($nextItem->length);
-            $itemFileContent .= "\n" . $dateInterval->format("%H:%I:%S");
+                // Add estimate, see to replace with provider stuff
+                $dateInterval = new DateInterval($nextItem->length);
+                $itemFileContent .= "\n" . $dateInterval->format("%H:%I:%S");
+            }
 
             // FIXME: Same fix as the replace in the Schedule class, cf it.
             $itemFileContent = preg_replace("#\[(.+)\]\((.+)\)#isU", "$1", $itemFileContent);
