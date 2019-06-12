@@ -46,7 +46,7 @@ class SetIntervalCommand extends Command
                 'enabled',
                 'e',
                 InputOption::VALUE_REQUIRED,
-                'The boolean to enable/disable messages display for one channel'
+                'Toggle to enable messsage display on the channel. Be sure to include it if you want to enable messages.'
             );
     }
 
