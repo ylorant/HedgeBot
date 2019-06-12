@@ -120,6 +120,11 @@ class Announcements extends PluginBase
         $intervalUpdated = false;
         
         foreach ($this->intervals as &$interval) {
+            // Skip the channel if disabled
+            if (!$interval['enabled']) {
+                continue;
+            }
+
             $lastMessageIndex = $interval['lastMessageIndex'];
             $messages = $this->getMessagesByChannel($interval['channel']);
             $messageKeys = array_keys($messages);
@@ -213,6 +218,7 @@ class Announcements extends PluginBase
 
     /**
      * @param string $messageId
+     * @return bool
      */
     public function deleteMessage($messageId)
     {
@@ -232,16 +238,18 @@ class Announcements extends PluginBase
      * @param string $channelName The channel to set the interval of.
      * @param int $time Time interval between each send, in seconds.
      * @param int $messages Message count between each send.
+     * @param bool $enabled
      * 
      * @return bool True.
      */
-    public function setInterval($channelName, $time, $messages)
+    public function setInterval($channelName, $time, $messages, $enabled)
     {
         HedgeBot::message("Saving interval to channel '" . $channelName . "' ...", [], E_DEBUG);
         
         if (!isset($this->intervals[$channelName])) {
             $this->intervals[$channelName] = [
                 'channel' => $channelName,
+                'enabled' => false,
                 'time' => 0,
                 'messages' => 0,
                 'currentMessageCount' => 0,
@@ -249,7 +257,8 @@ class Announcements extends PluginBase
                 'lastMessageIndex' => -1
             ];
         }
-        
+
+        $this->intervals[$channelName]['enabled'] = $enabled;
         $this->intervals[$channelName]['time'] = $time;
         $this->intervals[$channelName]['messages'] = $messages;
         $this->data->intervals = $this->intervals;
