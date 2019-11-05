@@ -41,9 +41,21 @@ class StreamControl extends Plugin
             return IRC::whisper($ev->nick, "No matching game found.");
         }
 
-        $game = $gamesMatches[0]->name;
-        Twitch::getClient()->channels->update($ev->channel, ['game' => $game]);
-        IRC::whisper($ev->nick, "Stream game changed to: ". $game);
+        // Try to find the closest game to the given title
+        $closest = null;
+        $closestLevenshtein = null;
+
+        foreach($gamesMatches as $game) {
+            $gameLevenshtein = levenshtein($game->name, $gameSearch);
+            
+            if($closestLevenshtein == null || $gameLevenshtein < $closestLevenshtein) {
+                $closestLevenshtein = $gameLevenshtein;
+                $closest = $game->name;
+            }
+        }
+
+        Twitch::getClient()->channels->update($ev->channel, ['game' => $closest]);
+        IRC::whisper($ev->nick, "Stream game changed to: ". $closest);
     }
 
     public function CommandRaid(CommandEvent $ev)
