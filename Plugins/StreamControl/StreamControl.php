@@ -5,6 +5,7 @@ use HedgeBot\Core\Plugins\Plugin;
 use HedgeBot\Core\Events\CommandEvent;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Core\API\Twitch;
+use HedgeBot\Core\HedgeBot;
 
 class StreamControl extends Plugin
 {
@@ -20,7 +21,7 @@ class StreamControl extends Plugin
 
         $title = join(' ', $args);
         Twitch::getClient()->channels->update($ev->channel, ['status' => $title]);
-        IRC::whisper($ev->nick, "Stream title changed to: ". $title);
+        IRC::reply($ev, "Stream title changed to: ". $title);
     }
 
     /**
@@ -37,25 +38,33 @@ class StreamControl extends Plugin
         $gameSearch = join(' ', $args);
         $gamesMatches = Twitch::getClient()->search->games($gameSearch);
 
+        HedgeBot::message("Game change requested: $0", [$gameSearch]);
+
         if(empty($gamesMatches)) {
-            return IRC::whisper($ev->nick, "No matching game found.");
+            HedgeBot::message("No match.");
+            return IRC::reply($ev, "No matching game found.");
         }
 
         // Try to find the closest game to the given title
-        $closest = null;
-        $closestLevenshtein = null;
+        $gamesLevenshtein = [];
 
         foreach($gamesMatches as $game) {
-            $gameLevenshtein = levenshtein($game->name, $gameSearch);
-            
-            if($closestLevenshtein == null || $gameLevenshtein < $closestLevenshtein) {
-                $closestLevenshtein = $gameLevenshtein;
-                $closest = $game->name;
-            }
+            $gamesLevenshtein[$game->name] = levenshtein($game->name, $gameSearch);
+        }
+
+        asort($gamesLevenshtein);
+        $gamesOrdered = array_keys($gamesLevenshtein);
+        $closest = reset($gamesOrdered);
+
+        Hedgebot::message("Most pertinent game name found: $0 ($1)", [$closest, $gamesLevenshtein[$closest]]);
+
+        HedgeBot::message("Results order:", [], E_DEBUG);
+        foreach($gamesOrdered as $game => $score) {
+            HedgeBot::message("$0 => $1", [$game, $score], E_DEBUG);
         }
 
         Twitch::getClient()->channels->update($ev->channel, ['game' => $closest]);
-        IRC::whisper($ev->nick, "Stream game changed to: ". $closest);
+        IRC::reply($ev, "Stream game changed to: ". $closest);
     }
 
     public function CommandRaid(CommandEvent $ev)
