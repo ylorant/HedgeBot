@@ -104,7 +104,7 @@ class HttpRequest
             }
 
             if ($saveHeader) {
-                $this->headers[substr($row[0], 0, -1)] = $row[1];
+                $this->headers[substr($row[0], 0, -1)] = $row[1] ?? null;
             }
         }
 
