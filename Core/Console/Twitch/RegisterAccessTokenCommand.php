@@ -39,9 +39,10 @@ class RegisterAccessTokenCommand extends Command
         $channel = $input->getArgument('channel');
         $token = $input->getArgument('token');
 
-        $twitchAuth = new AuthManager($config->get('twitch.auth.clientId'), $this->getDataStorage());
-        $twitchAuth->setAccessToken($channel, $token);
+        $clientID = $this->config->get('twitch.auth.clientId');
+        $clientSecret = $this->config->get('twitch.auth.clientSecret');
 
-        $twitchAuth->saveToStorage();
+        $twitchService = new TwitchService($clientID, $clientSecret, $this->getDataStorage());
+        $twitchService->addAccessToken($channel);
     }
 }

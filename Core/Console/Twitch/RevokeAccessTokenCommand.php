@@ -5,9 +5,9 @@ namespace HedgeBot\Core\Console\Twitch;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
-use HedgeBot\Core\Service\Twitch\AuthManager;
 use Symfony\Component\Console\Command\Command;
 use HedgeBot\Core\Console\StorageAwareTrait;
+use HedgeBot\Core\Service\Twitch\TwitchService;
 
 /**
  * Class RevokeAccessTokenCommand
@@ -37,9 +37,10 @@ class RevokeAccessTokenCommand extends Command
         $config = $this->getConfigStorage();
         $channel = $input->getArgument('channel');
 
-        $twitchAuth = new AuthManager($config->get('twitch.auth.clientId'), $this->getDataStorage());
-        $twitchAuth->removeAccessToken($channel);
+        $clientID = $this->config->get('twitch.auth.clientId');
+        $clientSecret = $this->config->get('twitch.auth.clientSecret');
 
-        $twitchAuth->saveToStorage();
+        $twitchService = new TwitchService($clientID, $clientSecret, $this->getDataStorage());
+        $twitchService->removeAccessToken($channel);
     }
 }
