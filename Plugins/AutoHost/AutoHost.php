@@ -173,7 +173,7 @@ class AutoHost extends PluginBase
         if (!empty($host['titleWhiteList'])) {
             $whiteWordFound = false;
             foreach ($host['titleWhiteList'] as $word) {
-                if (strpos($title, $word) !== false) {
+                if ($word != '' && strpos($title, $word) !== false) {
                     $whiteWordFound = true;
                 }
             }
@@ -181,7 +181,7 @@ class AutoHost extends PluginBase
 
         if (!empty($host['titleBlackList'])) {
             foreach ($host['titleBlackList'] as $word) {
-                if (strpos($title, $word) !== false) {
+                if ($word != '' && strpos($title, $word) !== false) {
                     return false;
                 }
             }
@@ -213,7 +213,8 @@ class AutoHost extends PluginBase
             $hostsTargetRatio[$channelName] = ($channelData['priority'] - $hostActualRatio) + 1;
         }
 
-        // Ordering the channels by their ratio, in the reverse order (the channel most under its host ratio target first)
+        // Ordering the channels by their ratio in the reverse order
+        //     (the channel most under its host ratio target first)
         arsort($hostsTargetRatio);
         $orderedChannels = array_keys($hostsTargetRatio);
 
@@ -245,21 +246,21 @@ class AutoHost extends PluginBase
     /**
      * Set hosting basic data for one channel
      *
-     * @param string $channelName The host channel
-     * @param int $time Time interval between each hosting. 600 by default (minimal value allowed by Twitch)
+     * @param string $hostName The host channel
+     * @param int $timeInterval Time interval between each hosting. 600 by default (minimal value allowed by Twitch)
      * @param bool $enabled to activate/deactivate autohost from this channel
      *
      * @return bool True.
      */
-    public function setHost($channelName, $time = 600, $enabled = true)
+    public function setHost($hostName, $timeInterval = 600, $enabled = true)
     {
-        HedgeBot::message("Saving hosting infos for channel '" . $channelName . "' ...", [], E_DEBUG);
+        HedgeBot::message("Saving hosting infos for channel '" . $hostName . "' ...", [], E_DEBUG);
 
-        if (!isset($this->hosts[$channelName])) {
-            $this->hosts[$channelName] = [
-                'channel' => $channelName,
+        if (!isset($this->hosts[$hostName])) {
+            $this->hosts[$hostName] = [
+                'channel' => $hostName,
                 'enabled' => $enabled,
-                'time' => $time,
+                'time' => $timeInterval,
                 'lastHostTime' => 0,
                 'lastChannel' => '',
                 'titleWhiteList' => [],
@@ -267,7 +268,7 @@ class AutoHost extends PluginBase
             ];
         }
 
-        $this->hosts[$channelName]['time'] = $time;
+        $this->hosts[$hostName]['time'] = $timeInterval;
         $this->saveData();
 
         return true;
@@ -303,10 +304,56 @@ class AutoHost extends PluginBase
         return $this->hosts;
     }
 
+    /***
+     * Edit a host channel configuration, including whitelist and blacklist words
+     *
+     * @param string $hostName
+     * @param boolean $enabled
+     * @param integer $timeInterval
+     * @param array $whiteList
+     * @param array $blackList
+     * @return bool
+     */
+    public function editHostConfiguration($hostName, $enabled, $timeInterval, $whiteList, $blackList)
+    {
+        if (!isset($this->hosts[$hostName])) {
+            return false;
+        }
+
+        $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
+        $newWhiteList = [];
+        $newBlackList = [];
+
+        foreach ($whiteList as $word) {
+            $word = strtolower($transliterator->transliterate($word));
+            $newWhiteList[] = $word;
+        }
+        foreach ($blackList as $word) {
+            $word = strtolower($transliterator->transliterate($word));
+            $newBlackList[] = $word;
+        }
+
+        $newHostData = [
+            'channel' => $hostName,
+            'enabled' => (bool)$enabled,
+            'time' => (int)$timeInterval,
+            'titleWhiteList' => $newWhiteList,
+            'titleBlackList' => $newBlackList,
+        ];
+        $this->hosts[$hostName] = array_merge(
+            $this->hosts[$hostName],
+            $newHostData
+        );
+
+        $this->data->hosts = $this->hosts;
+
+        return true;
+    }
+
     /**
      * Add one channel to host on one hosting channel, including priority
      *
-     * @param string $hostName hosting channel name
+     * @param string $hostName
      * @param string $channelName channel to host
      * @param float $priority priority % for hosting choice
      * @param bool $enabled to activate/deactivate hosting this channel
@@ -315,10 +362,6 @@ class AutoHost extends PluginBase
      */
     public function addHostedChannel($hostName, $channelName, $priority, $enabled = true)
     {
-        if (!isset($this->hosts[$hostName])) {
-            return false;
-        }
-
         $this->hosts[$hostName]['hostedChannels'][$channelName] = [
             'channel' => $channelName,
             'enabled' => $enabled,
@@ -326,6 +369,37 @@ class AutoHost extends PluginBase
             'totalHosted' => 0
         ];
         $this->saveData();
+
+        return true;
+    }
+
+    /**
+     * Edits a message.
+     *
+     * @param string $hostName
+     * @param string $channelName channel to host
+     * @param float $priority priority % for hosting choice
+     * @param bool $enabled to activate/deactivate hosting this channel
+     *
+     * @return boolean
+     */
+    public function editHostedChannel($hostName, $channelName, $priority, $enabled)
+    {
+        if (!isset($this->hosts[$hostName]) || !isset($this->hosts[$hostName]['hostedChannels'][$channelName])) {
+            return false;
+        }
+
+        $newHostedData = [
+            'channel' => $channelName,
+            'enabled' => $enabled,
+            'priority' => (float)$priority
+        ];
+        $this->hosts[$hostName]['hostedChannels'][$channelName] = array_merge(
+            $this->hosts[$hostName]['hostedChannels'][$channelName],
+            $newHostedData
+        );
+
+        $this->data->hosts = $this->hosts;
 
         return true;
     }
@@ -339,24 +413,13 @@ class AutoHost extends PluginBase
      */
     public function removeHostedChannel($hostName, $channelName)
     {
-        if (!isset($this->hosts[$hostName])) {
+        if (!isset($this->hosts[$hostName]) || !isset($this->hosts[$hostName]['hostedChannels'][$channelName])) {
             return false;
         }
 
-        $arrayIndex = null;
-        foreach ($this->hosts[$hostName]['hostedChannels'] as $key => $channel) {
-            if ($channel['channel'] == $channelName) {
-                $arrayIndex = $key;
-            }
-        }
-        if (is_null($arrayIndex)) {
-            return false;
-        }
+        unset($this->hosts[$hostName]['hostedChannels'][$channelName]);
+        $this->data->hosts = $this->hosts;
 
-        unset($this->hosts[$hostName]['hostedChannels'][$arrayIndex]);
-        $this->hosts[$hostName]['hostedChannels'] = array_values($this->hosts[$hostName]['hostedChannels']);
-
-        $this->saveData();
         return true;
     }
 

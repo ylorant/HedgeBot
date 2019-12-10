@@ -69,7 +69,7 @@ class Announcements extends PluginBase
      */
     public function getMessageById($messageId)
     {
-        if(isset($this->messages[$messageId])) {
+        if (isset($this->messages[$messageId])) {
             return $this->messages[$messageId];
         }
 
@@ -130,13 +130,12 @@ class Announcements extends PluginBase
             $messageKeys = array_keys($messages);
 
             // Skip the channel if there is no messages available for it
-            if(count($messages) == 0) {
+            if (count($messages) == 0) {
                 continue;
             }
 
             // Check that the time/message interval between 2 sends has elapsed to send the message
-            if (
-                $interval['lastSentTime'] + $interval['time'] < time() &&
+            if ($interval['lastSentTime'] + $interval['time'] < time() &&
                 $interval['currentMessageCount'] >= $interval['messages']
             ) {
                 $lastMessageIndex++;
@@ -145,7 +144,10 @@ class Announcements extends PluginBase
                 }
                 
                 $formatter = Store::getFormatter(TextFormatter::getName());
-                $formattedMessage = $formatter->format($messages[$messageKeys[$lastMessageIndex]]['message'], $interval['channel']);
+                $formattedMessage = $formatter->format(
+                    $messages[$messageKeys[$lastMessageIndex]]['message'],
+                    $interval['channel']
+                );
 
                 IRC::message($interval['channel'], $formattedMessage);
 
@@ -183,7 +185,7 @@ class Announcements extends PluginBase
      *
      * @param string $message text can contain Markdown
      * @param array $channelNames list of channels to apply this message
-     * 
+     *
      * @return string The created message's ID.
      */
     public function addMessage($message, $channelNames)
@@ -197,16 +199,16 @@ class Announcements extends PluginBase
 
     /**
      * Edits a message.
-     * 
+     *
      * @param string $messageId The ID of the message to edit.
      * @param string $newMessage The new message text.
      * @param array $channelNames The new channel list on which the message is enabled.
-     * 
+     *
      * @return bool True if the message was edited successfully, false if not (mainly the message doesn't exist).
      */
     public function editMessage($messageId, $newMessage, array $channelNames)
     {
-        if(!isset($this->messages[$messageId])) {
+        if (!isset($this->messages[$messageId])) {
             return false;
         }
         
@@ -222,7 +224,7 @@ class Announcements extends PluginBase
      */
     public function deleteMessage($messageId)
     {
-        if(!isset($this->messages[$messageId])) {
+        if (!isset($this->messages[$messageId])) {
             return false;
         }
 
@@ -239,7 +241,7 @@ class Announcements extends PluginBase
      * @param int $time Time interval between each send, in seconds.
      * @param int $messages Message count between each send.
      * @param bool $enabled
-     * 
+     *
      * @return bool True.
      */
     public function setInterval($channelName, $time, $messages, $enabled)
@@ -268,14 +270,14 @@ class Announcements extends PluginBase
 
     /**
      * Removes a set interval configuration on a channel.
-     * 
+     *
      * @param string $channelName The name of the channel o remove the interval of.
-     * 
+     *
      * @return bool True if the interval has been removed, false if not.
      */
     public function removeInterval($channelName)
     {
-        if(!isset($this->intervals[$channelName])) {
+        if (!isset($this->intervals[$channelName])) {
             return false;
         }
 
@@ -286,12 +288,12 @@ class Announcements extends PluginBase
 
     /**
      * Server event: chat message received, we increase the messsage counter of the specified channel.
-     * 
+     *
      * @param ServerEvent $ev
      */
     public function ServerPrivmsg(ServerEvent $ev)
     {
-        if(isset($this->intervals[$ev->channel])) {
+        if (isset($this->intervals[$ev->channel])) {
             $this->intervals[$ev->channel]['currentMessageCount']++;
         }
     }
@@ -304,6 +306,9 @@ class Announcements extends PluginBase
         $this->config = HedgeBot::getInstance()->config->get('plugin.Announcements');
     }
 
+    /**
+     * @param CoreEvent $ev
+     */
     public function CoreEventDataUpdate(CoreEvent $ev)
     {
         $this->loadData();

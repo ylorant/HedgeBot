@@ -33,15 +33,14 @@ Plugins :
 - HoraroTextFile: Stores the current item of a schedule loaded in the **Horaro** plugin in a text file for other programs to access.
 - TestManager: Development-oriented plugin that allows to test how other plugins are supposed to work.
 - **Twitter**: Allows scheduling tweets to automatically send at a specific time or when a specific event is fired.
-- StreamControl : ???
-- AutoHost: Handles a hosting manager, included priorities (with %), time to switch to another stream and whitelist/blacklist of words into title.
+- StreamControl : Handle basic stream updates : title, game, ...
+- **AutoHost**: Handles a hosting manager, included priorities (with %), time to switch to another stream and whitelist/blacklist of words into title.
 
 (Plugins names in bold **style** means they have also a web-admin interface, see below)
 
 ## What is planned to do
 
 - [IN PROGRESS] Spam regulation plugin (BannedWords), timing out users for unwanted words in messages, links, walltexts and/or other things
-- [IN PROGRESS] Auto hosting, allowing your channel to automatically host streaming people based on a list, and for a set amount of time
 - Donation alerts, with StreamLabs API
 - Cooldown feature, as a core feature (allowing cooldown per user type and per command).
 - Logger core feature, allowing logging actions from every plugin

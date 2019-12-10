@@ -57,6 +57,21 @@ class AutoHostEndpoint
     }
 
     /**
+     * Edit a host channel configuration, including whitelist and blacklist words
+     *
+     * @param string $hostName
+     * @param boolean $enabled
+     * @param integer $timeInterval
+     * @param array $whiteList
+     * @param array $blackList
+     * @return bool
+     */
+    public function editHostConfiguration($hostName, $enabled, $timeInterval, $whiteList, $blackList)
+    {
+        return $this->plugin->editHostConfiguration($hostName, $enabled, $timeInterval, $whiteList, $blackList);
+    }
+
+    /**
      * Add one channel to host
      *
      * @see AutoHost::addHostedChannel()
@@ -68,6 +83,21 @@ class AutoHostEndpoint
     public function addHostedChannel($hostName, $channelName, $priority)
     {
         return $this->plugin->addHostedChannel($hostName, $channelName, $priority);
+    }
+
+    /**
+     * Add one channel to host
+     *
+     * @see AutoHost::addHostedChannel()
+     * @param string $hostName
+     * @param string $channelName
+     * @param float $priority
+     * @param bool $enabled
+     * @return bool
+     */
+    public function editHostedChannel($hostName, $channelName, $priority, $enabled)
+    {
+        return $this->plugin->editHostedChannel($hostName, $channelName, $priority, $enabled);
     }
 
     /**
