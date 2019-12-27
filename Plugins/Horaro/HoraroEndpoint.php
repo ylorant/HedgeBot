@@ -1,6 +1,7 @@
 <?php
 namespace HedgeBot\Plugins\Horaro;
 
+use HedgeBot\Plugins\Horaro\Entity\Schedule;
 use \stdClass;
 
 class HoraroEndpoint
@@ -158,5 +159,23 @@ class HoraroEndpoint
         }
 
         return $schedule->getData();
+    }
+
+    /**
+     * Gets the data from all the schedules that the plugin fetched from Horaro.
+     * 
+     * @return array|null The schedules data.
+     */
+    public function getSchedulesData()
+    {
+        $schedulesData = [];
+        $schedules = $this->plugin->getSchedules();
+
+        /** @var Schedule $schedule */
+        foreach($schedules as $schedule) {
+            $schedulesData[$schedule->getIdentSlug()] = $schedule->getData();
+        }
+
+        return $schedulesData;
     }
 }
