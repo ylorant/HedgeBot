@@ -157,8 +157,8 @@ class Horaro extends PluginBase implements StoreSourceInterface
             HedgeBot::message("Checking schedule $0...", [$schedule->getIdentSlug()], E_DEBUG);
 
             // Only process schedules that are enabled and not paused (duh)
-            if (!$schedule->isEnabled() || $schedule->isPaused()) {
-                HedgeBot::message("Schedule is disabled and/or paused. Skipping.", [], E_DEBUG);
+            if (!$schedule->isEnabled()) {
+                HedgeBot::message("Schedule is disabled. Skipping.", [], E_DEBUG);
                 continue;
             }
 
@@ -176,23 +176,29 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
                     $schedule->setStarted(true);
 
-                    $scheduleItems = $schedule->getData('items');
-                    foreach ($scheduleItems as $index => $item) {
-                        $itemStartTime = new DateTime($item->scheduled);
-                        $itemEndTime = clone $itemStartTime;
-                        $itemEndTime->add(new DateInterval($item->length));
-                        $itemEndTime->add(new DateInterval($schedule->getData()->setup)); // Taking the setup time after the run in the run time
+                    if(!$schedule->isPaused()) {
+                        $scheduleItems = $schedule->getData('items');
+                        foreach ($scheduleItems as $index => $item) {
+                            $itemStartTime = new DateTime($item->scheduled);
+                            $itemEndTime = clone $itemStartTime;
+                            $itemEndTime->add(new DateInterval($item->length));
+                            $itemEndTime->add(new DateInterval($schedule->getData()->setup)); // Taking the setup time after the run in the run time
 
-                        // If the item is the one currently running
-                        if ($now >= $itemStartTime && $now < $itemEndTime) {
-                            HedgeBot::message("Current item index: $0, setting title", [$index], E_DEBUG);
-                            $schedule->setCurrentIndex($index);
-                            $this->setChannelTitleFromSchedule($schedule);
-                            Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
-                            $this->saveData();
-                            break;
+                            // If the item is the one currently running
+                            if ($now >= $itemStartTime && $now < $itemEndTime) {
+                                HedgeBot::message("Current item index: $0, setting title", [$index], E_DEBUG);
+                                $schedule->setCurrentIndex($index);
+                                $this->setChannelTitleFromSchedule($schedule);
+                                Plugin::getManager()->callEvent(new HoraroEvent('itemChange', $schedule));
+                                break;
+                            }
                         }
+                    } else {                
+                        Hedgebot::message("Schedule is paused.", [], E_DEBUG);
                     }
+
+                    $this->saveData();
+
                 } elseif ($earlyActionsTime > $scheduleStartTime && $now < $scheduleEndTime && !$schedule->isEarlyActionsDone()) {
                     $schedule->setEarlyActionsDone(true);
                     $this->setChannelTitleFromSchedule($schedule);
@@ -203,6 +209,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
                     $this->saveData();
                 }
 
+                continue;
+            }
+
+            if ($schedule->isPaused()) {
+                Hedgebot::message("Schedule is started, but paused, skipping.", [], E_DEBUG);
                 continue;
             }
 
@@ -218,8 +229,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
                 continue;
             }
 
-            // Schedule is started, we check compared to the current item
-            $currentItem = $schedule->getCurrentItem();
+            // Schedule is started, we check current time compared to the next item
             $nextItem = $schedule->getNextItem();
 
             // Get current item end time and next item start time
@@ -240,7 +250,6 @@ class Horaro extends PluginBase implements StoreSourceInterface
             // Increment the item and change the title and game for the stream when coming on the next run time
             if (!empty($nextItemStartTime) && $now > $nextItemStartTime) {
                 HedgeBot::message("Previous item is finished, advancing.", [], E_DEBUG);
-                $totalItems = count($schedule->getData('items'));
                 $schedule->setCurrentIndex($schedule->getCurrentIndex() + 1);
                 $schedule->setNextItemAnnounced(false);
 
