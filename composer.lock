@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8f335876153ce91e3fdf4a0e936b4ee2",
+    "content-hash": "26d8934828f73bb2e404b139e5075e35",
     "packages": [
         {
             "name": "composer/installers",
@@ -485,19 +485,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ylorant/twitch-php-client.git",
-                "reference": "f8e82d743365de6aded1e37f27cedc339978034c"
+                "reference": "11beaf3a1125dd22890cfa183b8666ecfc6abee6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/f8e82d743365de6aded1e37f27cedc339978034c",
-                "reference": "f8e82d743365de6aded1e37f27cedc339978034c",
+                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/11beaf3a1125dd22890cfa183b8666ecfc6abee6",
+                "reference": "11beaf3a1125dd22890cfa183b8666ecfc6abee6",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.0.0",
                 "ext-curl": "*",
-                "ext-intl": "*",
-                "ext-json": "*",
+                "php": ">=7.0.0",
                 "psr/log": "^1.0"
             },
             "require-dev": {
@@ -519,7 +517,7 @@
                 "MIT"
             ],
             "description": "PHP client for Twitch's multiple APIs, easily extendable and embeddable.",
-            "time": "2019-04-10T00:09:29+00:00"
+            "time": "2020-01-19T21:55:42+00:00"
         }
     ],
     "packages-dev": [],

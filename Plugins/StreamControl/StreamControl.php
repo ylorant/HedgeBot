@@ -4,11 +4,24 @@ namespace HedgeBot\Plugins\StreamControl;
 use HedgeBot\Core\Plugins\Plugin;
 use HedgeBot\Core\Events\CommandEvent;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\HedgeBot;
 
 class StreamControl extends Plugin
 {
+    /**
+     * Plugin initialization.
+     */
+    public function init()
+    {
+        // Don't load the API endpoint if we're not on the main environment
+        if (ENV == "main") {
+            Tikal::addEndpoint('/plugin/streamcontrol', new StreamControlEndpoint($this));
+        }
+
+    }
+
     /**
      * Command: sets the stream title.
      */
@@ -36,13 +49,92 @@ class StreamControl extends Plugin
 
         // Lookup for the game using the Twitch search API
         $gameSearch = join(' ', $args);
-        $gamesMatches = Twitch::getClient()->search->games($gameSearch);
 
         HedgeBot::message("Game change requested: $0", [$gameSearch]);
+        $closest = $this->resolveGameName($gameSearch);
+        
+        if(empty($closest)) {
+            return IRC::reply($ev, "No matching game found.");
+        }
+
+        Twitch::getClient()->channels->update($ev->channel, ['game' => $closest]);
+        IRC::reply($ev, "Stream game changed to: ". $closest);
+    }
+
+    /**
+     * Starts a raid on the given channel.
+     */
+    public function CommandRaid(CommandEvent $ev)
+    {
+        $args = $ev->arguments;
+        if (count($args) < 1) {
+            return IRC::reply($ev, "Insufficient parameters.");
+        }
+
+        IRC::message($ev->channel, ".raid ". $args[0]);
+    }
+
+    /**
+     * Gets the stream info for the given channel from the Twitch API.
+     * 
+     * @param string $channel The channel to get info from.
+     * @return array|null The channel info, as an array, or null if an error occured.
+     */
+    public function getChannelInfo(string $channel)
+    {
+        $channelInfo = Twitch::getClient()->channels->info($channel);
+        
+        if($channelInfo != false) {   
+            return (array) $channelInfo;
+        }
+
+        return null;
+    }
+
+    /**
+     * Sets the stream info for the given channel via the Twitch API.
+     * 
+     * @param string $channel The channel to update the info of.
+     * @param string $title The new strean title.
+     * @param string $category The new stream category.
+     * @return array|bool The new channel info, or False if the request didn't succeed.
+     */
+    public function setChannelInfo(string $channel, string $title, string $category)
+    {
+        $resolvedCategory = $this->resolveGameName($category);
+
+        if(empty($resolvedCategory)) {
+            return false;
+        }
+
+        $update = Twitch::getClient()->channels->update($channel, ['status' => $title, 'game' => $resolvedCategory]);
+
+        return $update;
+    }
+
+    /**
+     * Starts ads on a given channel, for the given duration
+     * @param string $channel The channel to start ads on.
+     * @param int $duration The ads duration, in seconds. Can be one of 30, 60, 90, 120, 150, 180.
+     * @return bool True if the ads started, false if a problem occured.
+     */
+    public function startAds(string $channel, int $duration)
+    {
+        return Twitch::getClient()->channels->startCommercial($channel, $duration);
+    }
+
+    /**
+     * Tries to resolve the game name from the Twitch API.
+     * @param string $gameSearch The game to search for.
+     * @return string|null The resolved game name or null if no game is found. 
+     */
+    protected function resolveGameName(string $gameSearch)
+    {
+        $gamesMatches = Twitch::getClient()->search->games($gameSearch);
 
         if(empty($gamesMatches)) {
             HedgeBot::message("No match.");
-            return IRC::reply($ev, "No matching game found.");
+            return null;
         }
 
         // Try to find the closest game to the given title
@@ -63,17 +155,6 @@ class StreamControl extends Plugin
             HedgeBot::message("$0 => $1", [$game, $score], E_DEBUG);
         }
 
-        Twitch::getClient()->channels->update($ev->channel, ['game' => $closest]);
-        IRC::reply($ev, "Stream game changed to: ". $closest);
-    }
-
-    public function CommandRaid(CommandEvent $ev)
-    {
-        $args = $ev->arguments;
-        if (count($args) < 1) {
-            return IRC::reply($ev, "Insufficient parameters.");
-        }
-
-        IRC::message($ev->channel, ".raid ". $args[0]);
+        return $closest;
     }
 }
