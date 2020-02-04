@@ -221,7 +221,7 @@ class Server
 
         HedgeBot::message(
             "Tikal: Success. Reply: $0.",
-            [!empty($response->data["result"]) ? gettype($response->data["result"]) : "null"],
+            [!is_null($response->data["result"]) ? gettype($response->data["result"]) : "null"],
             E_DEBUG
         );
 
