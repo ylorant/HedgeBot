@@ -52,6 +52,7 @@ class HedgeBot
     private $run;
 
     private static $instance;
+    private static $env;
 
     const VENDOR_NAMESPACE = "HedgeBot"; // Base "vendor" namespace for autoloading
     const DEFAULT_CONFIG_DIR = "./conf";
@@ -60,25 +61,16 @@ class HedgeBot
      * Initializes the bot, connects the storages, loads the plugins, load peripheral services...
      *
      * TODO: Instead of initializing services like that, why not do a service container of some sorts ?
+     * 
+     * @param array $options The options the bot are started with. See StartBotCommand::configure() to see options.
      *
      * @return bool True if the bot initialized correctly, false if not.
      * @throws \ReflectionException
+     * @see StartBotCommand::configure()
      */
-    public function init()
+    public function init($configDir = null)
     {
         HedgeBot::$instance = $this;
-        HedgeBot::$verbose = 1;
-
-        $options = $this->parseCLIOptions();
-
-        if (isset($options['verbose']) || isset($options['v'])) {
-            HedgeBot::$verbose = 2;
-        }
-
-        $configDir = self::DEFAULT_CONFIG_DIR;
-        if (isset($options['config']) || isset($options['c'])) {
-            $configDir = !empty($options['config']) ? $options['config'] : $options['c'];
-        }
 
         HedgeBot::message('Starting HedgeBot...');
         HedgeBot::message('Starting in verbose mode.', null, E_DEBUG);
@@ -93,7 +85,7 @@ class HedgeBot
         // config files in the given configuration directory.
         $fileProvider = new IniFileProvider();
         $this->config = new ObjectAccess($fileProvider);
-        $connected = $fileProvider->connect($configDir);
+        $connected = $fileProvider->connect($configDir ?? self::DEFAULT_CONFIG_DIR);
 
         if (!$connected) {
             return HedgeBot::message('Cannot locate configuration directory', null, E_ERROR);
@@ -281,6 +273,27 @@ class HedgeBot
     public static function getInstance()
     {
         return self::$instance;
+    }
+
+    /**
+     * Sets the bot environment.
+     * 
+     * @param string $env The environment.
+     * @return void
+     */
+    public static function setEnv(string $env)
+    {
+        self::$env = $env;
+    }
+
+    /**
+     * Gets the bot environment.
+     * 
+     * @return string The bot environment.
+     */
+    public static function getEnv()
+    {
+        return self::$env;
     }
 
     /**
@@ -565,6 +578,8 @@ class HedgeBot
             if (!empty($this->tikalServer)) {
                 $this->tikalServer->process();
             }
+            
+            usleep(1000);
         }
 
         foreach ($this->servers as $name => $server) {

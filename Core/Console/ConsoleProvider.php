@@ -18,6 +18,7 @@ use HedgeBot\Core\API\Config;
 use HedgeBot\Core\API\Data;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Store as StoreAPI;
+use HedgeBot\Core\Console\Bot\StartBotCommand;
 use HedgeBot\Core\Store\Store;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -42,6 +43,9 @@ class ConsoleProvider
     /** @var string $arguments The arguments passed to the console command */
     protected $arguments;
 
+    /** @var string If this var is set to true, then most of the loading will be skipped and only the core commands will be loaded */
+    protected $bareInit;
+
     protected static $hedgebot;
 
     /**
@@ -52,6 +56,7 @@ class ConsoleProvider
     {
         if (empty(self::$hedgebot)) {
             self::$hedgebot = new HedgeBot();
+            HedgeBot::setEnv("console");
         }
 
         array_shift($arguments);
@@ -68,11 +73,17 @@ class ConsoleProvider
     {
         // Load the storages
         $this->init($application);
-        $this->loadStorages();
+
+        if(!$this->bareInit) {
+            $this->loadStorages();
+        }
 
         // Populate the different parts
         $this->populateCoreCommands($application);
-        $this->populatePluginCommands($application);
+
+        if(!$this->bareInit) {
+            $this->populatePluginCommands($application);
+        }
     }
 
     /**
@@ -93,6 +104,10 @@ class ConsoleProvider
         $input = new ArgvInput();
         $verbosityLevel = $input->getParameterOption('--log-verbosity');
         HedgeBot::$verbose = $verbosityLevel ?? 0; // Default to a completely silent output
+
+        if ($input->getFirstArgument() == StartBotCommand::COMMAND_NAME) {
+            $this->bareInit = true;
+        }
     }
 
     /**
@@ -157,7 +172,7 @@ class ConsoleProvider
                 $obj = new $className();
 
                 // Give the config and the data provider to the class if it is storage-aware
-                if (in_array(StorageAwareTrait::class, class_uses($obj))) {
+                if (in_array(StorageAwareTrait::class, class_uses($obj)) && !$this->bareInit) {
                     $obj->setConfigStorage($this->config->getProvider());
                     $obj->setDataStorage($this->data->getProvider());
                 }
@@ -205,5 +220,15 @@ class ConsoleProvider
                 }
             }
         }
+    }
+
+    /**
+     * Gets the bot instance.
+     * 
+     * @return HedgeBot The bot instance. 
+     */
+    public static function getBot()
+    {
+        return self::$hedgebot;
     }
 }
