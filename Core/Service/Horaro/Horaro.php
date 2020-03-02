@@ -218,6 +218,11 @@ class Horaro
         if (!isset($data->data) && !empty($data->links)) {
             return $this->query(self::HORARO_HOST . $data->links[0]->uri);
         }
+        
+        // Return false if no data is present in the reply (for example Internet is not accessible)
+        if(empty($data)) {
+             return false;
+        }
 
         return $data->data;
     }
