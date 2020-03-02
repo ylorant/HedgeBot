@@ -105,8 +105,12 @@ class ConsoleProvider
         $verbosityLevel = $input->getParameterOption('--log-verbosity');
         HedgeBot::$verbose = $verbosityLevel ?? 0; // Default to a completely silent output
 
+        // If we ask to start the bot (a bit of a direct call here), we have to skip loading most of the console environment
         if ($input->getFirstArgument() == StartBotCommand::COMMAND_NAME) {
+            define('ENV', 'main');
             $this->bareInit = true;
+        } else {
+            define('ENV', 'console');
         }
     }
 

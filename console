@@ -8,8 +8,6 @@ require __DIR__ . '/Core/HedgeBot.php';
 
 spl_autoload_register([HedgeBot::class, 'autoload']);
 
-const ENV = "console";
-
 use Symfony\Component\Console\Application;
 use HedgeBot\Core\Console\ConsoleProvider;
 

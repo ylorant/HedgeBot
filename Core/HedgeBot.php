@@ -74,6 +74,7 @@ class HedgeBot
 
         HedgeBot::message('Starting HedgeBot...');
         HedgeBot::message('Starting in verbose mode.', null, E_DEBUG);
+        HedgeBot::message('Current environment: $0', [ENV], E_DEBUG);
 
         ServerList::setMain($this);
 
