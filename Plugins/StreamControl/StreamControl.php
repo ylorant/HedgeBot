@@ -33,8 +33,13 @@ class StreamControl extends Plugin
         }
 
         $title = join(' ', $args);
-        Twitch::getClient()->channels->update($ev->channel, ['status' => $title]);
-        IRC::reply($ev, "Stream title changed to: ". $title);
+        $updatedInfo = $this->setChannelInfo($ev->channel, $title);
+        
+        if(!empty($updatedInfo)) {
+            IRC::reply($ev, "Stream title changed to: ". $title);
+        } else {
+            IRC::reply($ev, "Failed updating stream title.");
+        }
     }
 
     /**
@@ -49,16 +54,13 @@ class StreamControl extends Plugin
 
         // Lookup for the game using the Twitch search API
         $gameSearch = join(' ', $args);
+        $updatedInfo = $this->setChannelInfo($ev->channel, null, $gameSearch);
 
-        HedgeBot::message("Game change requested: $0", [$gameSearch]);
-        $closest = $this->resolveGameName($gameSearch);
-        
-        if(empty($closest)) {
-            return IRC::reply($ev, "No matching game found.");
-        }
-
-        Twitch::getClient()->channels->update($ev->channel, ['game' => $closest]);
-        IRC::reply($ev, "Stream game changed to: ". $closest);
+        if(!empty($updatedInfo)) {
+            IRC::reply($ev, "Stream game changed to: ". $updatedInfo->game);
+        } else {
+            IRC::reply($ev, "Failed updating stream game.");
+        }        
     }
 
     /**
@@ -93,22 +95,36 @@ class StreamControl extends Plugin
 
     /**
      * Sets the stream info for the given channel via the Twitch API.
+     * The caller must at least mention either a new title or a new category.
      * 
      * @param string $channel The channel to update the info of.
      * @param string $title The new strean title.
      * @param string $category The new stream category.
      * @return array|bool The new channel info, or False if the request didn't succeed.
      */
-    public function setChannelInfo(string $channel, string $title, string $category)
+    public function setChannelInfo(string $channel, string $title = null, string $category = null)
     {
-        $resolvedCategory = $this->resolveGameName($category);
-
-        if(empty($resolvedCategory)) {
+        $updateParams = [];
+        
+        if(empty($title) && empty($category)) {
             return false;
         }
+        
+        if(!empty($category)) {
+            $resolvedCategory = $this->resolveGameName($category);
 
-        $update = Twitch::getClient()->channels->update($channel, ['status' => $title, 'game' => $resolvedCategory]);
+            if(empty($resolvedCategory)) {
+                return false;
+            }
 
+            $updateParams['game'] = $resolvedCategory;
+        }
+
+        if(!empty($title)) {
+            $updateParams['status'] = $title;
+        }
+
+        $update = Twitch::getClient()->channels->update($channel, $updateParams);
         return $update;
     }
 
