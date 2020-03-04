@@ -51,4 +51,26 @@ class StreamControlEndpoint
     {
         return $this->plugin->startAds($channel, $duration);
     }
+
+    /**
+     * Starts a raid from a channel to another target channel.
+     * @param string $from The channel to raid with.
+     * @param string $target The target channel.
+     * @return void 
+     */
+    public function raidChannel(string $from, string $target)
+    {
+        return $this->plugin->raidChannel($from, $target);
+    }
+
+    /**
+     * Starts hosting a channel from another given channel.
+     * @param string $from The channel to host from.
+     * @param string $target The target channel to host.
+     * @return void 
+     */
+    public function hostChannel(string $from, string $target)
+    {
+        return $this->plugin->hostChannel($from, $target);
+    }
 }

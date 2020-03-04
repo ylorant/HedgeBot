@@ -72,8 +72,8 @@ class StreamControl extends Plugin
         if (count($args) < 1) {
             return IRC::reply($ev, "Insufficient parameters.");
         }
-
-        IRC::message($ev->channel, ".raid ". $args[0]);
+        
+        $this->raidChannel($args[0]);
     }
 
     /**
@@ -137,6 +137,32 @@ class StreamControl extends Plugin
     public function startAds(string $channel, int $duration)
     {
         return Twitch::getClient()->channels->startCommercial($channel, $duration);
+    }
+
+    /**
+     * Starts a raid on the given channel. The raid will be launched 90s after this call.
+     * 
+     * @param string $from    The channel to raid from.
+     * @param string $target  The channel to start a raid on.
+     * 
+     * @return void
+     */
+    public function raidChannel(string $from, string $target)
+    {
+        IRC::message($from, ".raid ". $target);
+    }
+
+    /**
+     * Starts hosting the given channel.
+     * 
+     * @param string $from    The channel to host from.
+     * @param string $target  The channel to host.
+     * 
+     * @return void 
+     */
+    public function hostChannel(string $from, string $target)
+    {
+        IRC::message($from, '.host '. $target);
     }
 
     /**
