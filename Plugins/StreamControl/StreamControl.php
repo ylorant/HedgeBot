@@ -73,7 +73,7 @@ class StreamControl extends Plugin
             return IRC::reply($ev, "Insufficient parameters.");
         }
         
-        $this->raidChannel($args[0]);
+        $this->raidChannel($ev->channel, $args[0]);
     }
 
     /**
