@@ -50,6 +50,11 @@ class SetMappingCommand extends Command
         $type = $input->getArgument('type');
         $identifier = $input->getArgument('identifier');
         $path = $input->getArgument('path');
+        $allowedTypes = [HoraroTextFile::TYPE_CHANNEL, HoraroTextFile::TYPE_SCHEDULE];
+
+        if(!in_array($type, $allowedTypes)) {
+            throw new RuntimeException("Invalid type, must be of type [". join(', ', $allowedTypes). "]");
+        }
 
         /** @var HoraroTextFile $plugin */
         $plugin = $this->getPlugin();

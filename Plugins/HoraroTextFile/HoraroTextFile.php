@@ -41,6 +41,20 @@ class HoraroTextFile extends PluginBase
     public function CoreEventDataUpdate()
     {
         $this->loadData();
+
+        // Trigger an item change for each of the schedules that we could have
+        $schedules = $this->horaroPlugin->getSchedules();
+
+        /** @var Schedule $schedule */
+        foreach($schedules as $schedule) {
+            foreach($this->fileMappings as $mapping) {
+                if($mapping->getType() == self::TYPE_CHANNEL && $mapping->getId() == $schedule->getChannel()
+                || $mapping->getType() == self::TYPE_SCHEDULE && $mapping->getId() == $schedule->getIdentSlug()) {
+                    $event = new HoraroEvent('itemChange', $schedule);
+                    $this->HoraroItemChange($event);
+                }
+            }
+        }
     }
 
     /**
@@ -138,8 +152,12 @@ class HoraroTextFile extends PluginBase
      */
     public function saveMapping($type, $identifier, $filePath)
     {
+        if(!in_array($type, [self::TYPE_CHANNEL, self::TYPE_SCHEDULE])) {
+            return false;
+        }
+
         // Update the mapping if it already exists
-        foreach($this->fileMappings as &$mapping) {
+        foreach($this->fileMappings as $mapping) {
             if($mapping->getType() == $type && $mapping->getId() == $identifier) {
                 $mapping->setPath($filePath);
                 return true;

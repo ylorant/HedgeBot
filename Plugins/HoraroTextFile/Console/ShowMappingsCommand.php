@@ -55,9 +55,9 @@ class ShowMappingsCommand extends Command
 
         if(!empty($sortedMappings[HoraroTextFile::TYPE_SCHEDULE])) {
             $output->writeln("Schedules:");
-            /** @var FileMapping $channelMapping */
-            foreach($sortedMappings[HoraroTextFile::TYPE_SCHEDULE] as $channelMapping) {
-                $output->writeln("\t". $channelMapping->getId(). ": ". $channelMapping->getPath());
+            /** @var FileMapping $scheduleMapping */
+            foreach($sortedMappings[HoraroTextFile::TYPE_SCHEDULE] as $scheduleMapping) {
+                $output->writeln("\t". $scheduleMapping->getId(). ": ". $scheduleMapping->getPath());
             }
         }
     }
