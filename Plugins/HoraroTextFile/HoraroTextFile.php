@@ -43,7 +43,7 @@ class HoraroTextFile extends PluginBase
         $this->loadData();
 
         // Trigger an item change for each of the schedules that we could have
-        $schedules = $this->horaroPlugin->getSchedules();
+        $schedules = $this->horaroPlugin->getSchedules(true);
 
         /** @var Schedule $schedule */
         foreach($schedules as $schedule) {
