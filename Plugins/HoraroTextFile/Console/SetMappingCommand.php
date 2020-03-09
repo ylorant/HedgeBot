@@ -39,6 +39,8 @@ class SetMappingCommand extends Command
     }
 
     /**
+     * Executes the command.
+     * 
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|null|void
@@ -63,7 +65,7 @@ class SetMappingCommand extends Command
             }
         }
 
-        $plugin->setFile($type, $identifier, $path);
+        $plugin->saveMapping($type, $identifier, $path);
         $plugin->saveData();
     }
 }

@@ -5,10 +5,8 @@ class FileMapping
 {
     /** @var string $type The mapping type */
     protected $type;
-    /** @var string $schedule The mapped schedule */
-    protected $schedule;
-    /** @var string $channel The mapped channel */
-    protected $channel;
+    /** @var string $id The mapping identifier, either a schedule ident slug or a channel name */
+    protected $id;
     /** @var string $path The file path to write on */
     protected $path;
 
@@ -38,41 +36,21 @@ class FileMapping
     }
 
     /**
-     * Get the value of schedule
+     * Get the value of id
      */ 
-    public function getSchedule()
+    public function getId()
     {
-        return $this->schedule;
+        return $this->id;
     }
 
     /**
-     * Set the value of schedule
+     * Set the value of id
      *
      * @return  self
      */ 
-    public function setSchedule($schedule)
+    public function setId($id)
     {
-        $this->schedule = $schedule;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of channel
-     */ 
-    public function getChannel()
-    {
-        return $this->channel;
-    }
-
-    /**
-     * Set the value of channel
-     *
-     * @return  self
-     */ 
-    public function setChannel($channel)
-    {
-        $this->channel = $channel;
+        $this->id = $id;
 
         return $this;
     }
@@ -106,9 +84,9 @@ class FileMapping
     {
         $newMapping = new FileMapping();
         
-        foreach($this as $key => $value) {
+        foreach($newMapping as $key => $value) {
             if(isset($data[$key])) {
-                $newMapping->$key = $value;
+                $newMapping->$key = $data[$key];
             }
         }
 
