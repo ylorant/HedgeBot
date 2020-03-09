@@ -564,6 +564,7 @@ class PluginManager extends EventManager
         if(!($event instanceof CoreEvent && $event->name == 'event')) {
             $coreEvent = new CoreEvent('event', ['event' => $event]);
             $this->callEvent($coreEvent);
+            HedgeBot::message("Event called: $0/$1", [$event::getType(), $event->name], E_DEBUG);
         }
 
         parent::callEvent($event);

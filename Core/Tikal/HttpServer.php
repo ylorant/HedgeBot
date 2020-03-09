@@ -108,7 +108,6 @@ class HttpServer
         //Checking timeouts
         foreach ($this->times as $id => $time) {
             if ($time + $this->timeout < $now) {
-                HedgeBot::message('Timeout from client $0', [$id], E_DEBUG);
                 $this->closeConnection($id);
             }
         }
