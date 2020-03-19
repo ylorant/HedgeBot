@@ -13,13 +13,6 @@ verbosity = 1
 pluginsDirectory = Plugins
 plugins = Currency
 
-[servers.twitch]
-address = irc.twitch.tv
-port = 6667
-name = 
-channels =
-password =
-
 [tikal]
 enabled = true
 address = 127.0.0.1
@@ -30,3 +23,24 @@ tokenless = false
 [twitch.auth]
 clientId = 
 clientSecret =
+
+[servers.twitch]
+address = irc.twitch.tv
+port = 6667
+name =
+channels =
+password =
+
+[plugin.Currency]
+currencyName = HedgebotCoin
+currencyNamePlural = HedgebotCoins
+statusCommand = money
+statusMessage = Hey @name, you have @total @currency !
+initialAmount = 100
+
+[plugin.Twitter]
+consumerApiKey=
+consumerSecretKey=
+oauthCallbackUrl=
+deleteSentTweets=false
+resetSentDelay=3600
