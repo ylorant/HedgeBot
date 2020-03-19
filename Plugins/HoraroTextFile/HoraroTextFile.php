@@ -41,33 +41,50 @@ class HoraroTextFile extends PluginBase
     public function CoreEventDataUpdate()
     {
         $this->loadData();
-
-        // Trigger an item change for each of the schedules that we could have
-        $schedules = $this->horaroPlugin->getSchedules(true);
-
-        /** @var Schedule $schedule */
-        foreach($schedules as $schedule) {
-            foreach($this->fileMappings as $mapping) {
-                if($mapping->getType() == self::TYPE_CHANNEL && $mapping->getId() == $schedule->getChannel()
-                || $mapping->getType() == self::TYPE_SCHEDULE && $mapping->getId() == $schedule->getIdentSlug()) {
-                    $event = new HoraroEvent('itemChange', $schedule);
-                    $this->HoraroItemChange($event);
-                }
-            }
-        }
     }
 
     /**
+     * Event: The schedule started.
+     * 
+     * @param HoraroEvent $event The event.
+     * @return void 
+     */
+    public function HoraroScheduleStart(HoraroEvent $event)
+    {
+        $this->updateScheduleMapping($event->schedule);
+    }
+
+    /**
+     * Event: Schedule is about to start.
+     * 
+     * @param HoraroEvent $event The event.
+     * @return void 
+     */
+    public function HoraroSchedulePreStart(HoraroEvent $event)
+    {
+        $this->updateScheduleMapping($event->schedule);
+    }
+
+
+    /**
      * Event: Schedule has been updated by the Horaro plugin.
-     * We match the corresponding file to the new item if needed.
      *
      * @param HoraroEvent $event The event.
      * @throws \Exception
      */
     public function HoraroItemChange(HoraroEvent $event)
     {
-        /** @var Schedule $schedule */
-        $schedule = $event->schedule;
+        $this->updateScheduleMapping($event->schedule);
+    }
+    
+    /**
+     * Matches the corresponding file to the current schedule item if needed.
+     * 
+     * @param Schedule $schedule The schedule to update the mapping of.
+     * @return void 
+     */
+    public function updateScheduleMapping(Schedule $schedule)
+    {
         $identSlug = $schedule->getIdentSlug();
         $channel = $schedule->getChannel();
 
@@ -205,6 +222,21 @@ class HoraroTextFile extends PluginBase
         if(!empty($fileMappings)) {
             foreach($fileMappings as $mapping) {
                 $this->fileMappings[] = FileMapping::fromArray($mapping);
+            }
+        }
+
+        // Trigger a schedule update in each schedule having a mapping, to force a refresh on load
+        $schedules = $this->horaroPlugin->getSchedules(true);
+
+        /** @var Schedule $schedule */
+        foreach($schedules as $schedule) {
+            foreach($this->fileMappings as $mapping) {
+                if($mapping->getType() == self::TYPE_CHANNEL && $mapping->getId() == $schedule->getChannel()
+                || $mapping->getType() == self::TYPE_SCHEDULE && $mapping->getId() == $schedule->getIdentSlug()) {
+                    if($schedule->isStarted() || $schedule->isEarlyActionsDone()) {
+                        $this->updateScheduleMapping($schedule);
+                    }
+                }
             }
         }
     }

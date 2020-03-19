@@ -199,10 +199,14 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
                     $this->saveData();
 
-                } elseif ($earlyActionsTime > $scheduleStartTime && $now < $scheduleEndTime && !$schedule->isEarlyActionsDone()) {
+                    Plugin::getManager()->callEvent(new HoraroEvent('scheduleStart', $schedule));
+
+                } elseif ($earlyActionsTime >= $scheduleStartTime && $now < $scheduleEndTime && !$schedule->isEarlyActionsDone()) {
                     $schedule->setEarlyActionsDone(true);
                     $this->setChannelTitleFromSchedule($schedule);
                     $this->saveData();
+
+                    Plugin::getManager()->callEvent(new HoraroEvent('schedulePreStart', $schedule));
 
                 } elseif ($now > $scheduleEndTime) { // The schedule is outdated, we disable it to save some processing time
                     $schedule->setEnabled(false);
@@ -225,6 +229,8 @@ class Horaro extends PluginBase implements StoreSourceInterface
                 $schedule->setEnabled(false);
                 $schedule->setStarted(false);
                 $this->saveData();
+
+                Plugin::getManager()->callEvent(new HoraroEvent('scheduleEnd', $schedule));
 
                 continue;
             }
