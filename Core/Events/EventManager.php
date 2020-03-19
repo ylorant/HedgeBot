@@ -1,16 +1,5 @@
 <?php
 
-/**
- * @file core/Events.class.php
- * @author Yohann Lorant <yohann.lorant@gmail.com>
- * @version 0.5
- * @brief Events class file.
- * 
- * @section DESCRIPTION
- *
- * This file hosts the Events class, handling all events.
- */
-
 namespace HedgeBot\Core\Events;
 
 use HedgeBot\Core\HedgeBot;
