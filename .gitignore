@@ -3,7 +3,7 @@ conf/*.ini
 conf/*/*.ini
 conf.*/*.ini
 conf.*/*/*.ini
-data/
+data/*
 doc/*
 *.log
 vendor

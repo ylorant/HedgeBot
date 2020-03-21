@@ -1,4 +1,6 @@
 # HedgeBot
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fylorant%2FHedgeBot.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fylorant%2FHedgeBot?ref=badge_shield)
+
 
 *Hedgebot, chatting around at the speed of sound*
 
@@ -65,3 +67,6 @@ If you want to help improving this bot, you can do it in the following ways :
 
 For all of these things, if you want to discuss about it, feel free to contact me on my Twitter : [@linkboss](https://twitter.com/linkboss).
 If the project grows a bit, other means of discussion will be put in place.
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fylorant%2FHedgeBot.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fylorant%2FHedgeBot?ref=badge_large)
