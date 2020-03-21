@@ -90,7 +90,7 @@ class Twitter extends PluginBase
      */
     public function CoreEventEvent(CoreEvent $event)
     {
-        $eventFQN = strtolower($event->event->getType(). "/". $event->event->name);
+        $eventFQN = $event->event->getType(). "/". $event->event->name;
 
         if(!in_array($eventFQN, $this->listenedEvents)) {
             return;
