@@ -90,7 +90,7 @@ class Twitter extends PluginBase
      */
     public function CoreEventEvent(CoreEvent $event)
     {
-        $eventFQN = $event->event->getType(). "/". $event->event->name;
+        $eventFQN = strtolower($event->event->getType(). "/". $event->event->name);
 
         if(!in_array($eventFQN, $this->listenedEvents)) {
             return;
@@ -162,6 +162,8 @@ class Twitter extends PluginBase
      * Sends a scheduled tweet
      * 
      * @param ScheduledTweet $tweet The scheduled tweet to send.
+     * 
+     * TODO: Handle service exceptions from Codebird
      */
     public function sendTweet(ScheduledTweet $tweet)
     {
@@ -188,6 +190,8 @@ class Twitter extends PluginBase
         $this->saveData();
 
         HedgeBot::message("Tweeted scheduled tweet $0", [$tweet->getId()], E_DEBUG);
+
+        return true;
     }
 
     /**
@@ -258,7 +262,7 @@ class Twitter extends PluginBase
      * 
      * @param string $id The tweet ID.
      * 
-     * @return array|null The tweet or null if not found.
+     * @return ScheduledTweet|null The tweet or null if not found.
      */
     public function getScheduledTweet($id)
     {

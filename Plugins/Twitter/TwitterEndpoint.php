@@ -113,4 +113,21 @@ class TwitterEndpoint
     {
         return $this->plugin->deleteScheduledTweet($tweetId);
     }
+
+    /**
+     * Sends a scheduled tweet manually.
+     * 
+     * @param mixed $tweetId The ID of the tweet to be sent.
+     * @return bool True if the tweet was sent, false if an error occured
+     */
+    public function sendScheduledTweet($tweetId)
+    {
+        $tweet = $this->plugin->getScheduledTweet($tweetId);
+        
+        if(empty($tweet)) {
+            return false;
+        }
+
+        return $this->plugin->sendTweet($tweet);
+    }
 }
