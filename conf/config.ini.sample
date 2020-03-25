@@ -1,7 +1,8 @@
 [storage.config]
-type = file
+type = ini
 basepath = conf
-backups = true
+backups = false
+readonly = true
 
 [storage.data]
 type = json
