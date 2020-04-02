@@ -12,6 +12,8 @@ class Timer implements JsonSerializable
 {
     /** @var string Timer ID */
     protected $id;
+    /** @var string Timer title */
+    protected $title;
     /** @var float The timer start time for the last active segment, as microtime() */
     protected $startTime;
     /** @var float The timer offset in seconds (float for microseconds) */
@@ -91,6 +93,26 @@ class Timer implements JsonSerializable
     public function setId($id)
     {
         $this->id = $id;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of title
+     */ 
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
+    /**
+     * Set the value of title
+     *
+     * @return Timer self
+     */ 
+    public function setTitle($title)
+    {
+        $this->title = $title;
 
         return $this;
     }

@@ -45,6 +45,14 @@ class Timer extends PluginBase
     }
 
     /**
+     * Data has been updated externally, reload the timers.
+     */
+    public function CoreEventDataUpdate()
+    {
+        $this->loadData();
+    }
+
+    /**
      * Command event: Timer start/stop.
      * @param CommandEvent $event 
      * @return void 
@@ -123,7 +131,7 @@ class Timer extends PluginBase
      * 
      * @return EntityTimer|bool The new timer, or false if it couldn't be created (most likely ID is already taken). 
      */
-    public function createTimer(string $id)
+    public function createTimer(string $id, $title = null)
     {
         if(empty($id) || !empty($this->getTimerById($id))) {
             return false;
@@ -136,6 +144,7 @@ class Timer extends PluginBase
 
         $newTimer = new EntityTimer();
         $newTimer->setId($id);
+        $newTimer->setTitle($title);
 
         $this->timers[] = $newTimer;
         $this->saveData();

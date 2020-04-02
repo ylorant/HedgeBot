@@ -24,7 +24,8 @@ class NewTimerCommand extends Command
     {
         $this->setName('timer:new')
             ->setDescription('Creates a new timer.')
-            ->addArgument('id', InputArgument::REQUIRED, 'The timer ID.');
+            ->addArgument('id', InputArgument::REQUIRED, 'The timer ID.')
+            ->addArgument('title', InputArgument::OPTIONAL, 'The timer title (optional)');
     }
 
     /**
@@ -35,12 +36,13 @@ class NewTimerCommand extends Command
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $id = $input->getArgument('id');
+        $title = $input->getArgument('title');
         $plugin = $this->getPlugin();
 
         if(!empty($plugin->getTimerById($id))) {
             throw new RuntimeException("This timer ID already exists.");
         }
 
-        $plugin->createTimer($id);
+        $plugin->createTimer($id, $title);
     }
 }
