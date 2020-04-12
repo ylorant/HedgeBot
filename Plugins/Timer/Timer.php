@@ -183,27 +183,33 @@ class Timer extends PluginBase
      * @param EntityTimer $timer The timer to start/stop
      * @return EntityTimer The timer.
      */
-    public function startStopTimer(EntityTimer $timer)
+    public function startStopTimer(EntityTimer $timer, $sendEvents = true)
     {
+        $event = null;
+
         // Timer is not started or paused -> we start it
         if((!$timer->isStarted()) || $timer->isPaused()) {
             if(!$timer->isStarted()) {
-                $this->resetTimer($timer);
+                $this->resetTimer($timer, false);
             }
 
             $timer->setStartTime(microtime(true));
             $timer->setStarted(true);
-            $this->saveData();
 
-            Plugin::getManager()->callEvent(new TimerEvent('start', $timer));
+            $event = "start";
         } else {
             // Stopping timer by setting its offset and its stop time.
             $timer->setOffset($this->getTimerElapsedTime($timer));
             $timer->setStartTime(null);
             $timer->setStarted(false);
-            $this->saveData();
+            
+            $event = "stop";
+        }
 
-            Plugin::getManager()->callEvent(new TimerEvent('stop', $timer));
+        $this->saveData();
+
+        if($sendEvents) {
+            Plugin::getManager()->callEvent(new TimerEvent($event, $timer));
         }
 
         return $timer;
@@ -215,27 +221,33 @@ class Timer extends PluginBase
      * @param EntityTimer $timer The timer to pause.
      * @return EntityTimer The timer. 
      */
-    public function pauseResumeTimer(EntityTimer $timer)
+    public function pauseResumeTimer(EntityTimer $timer, $sendEvents = true)
     {
         if(!$timer->isStarted()) {
             return $timer;
         }
 
+        $event = null;
+
         // Can only pause the timer if it's started and not already paused
-        if((!$timer->isPaused())) {
+        if(!$timer->isPaused()) {
             $timer->setOffset($this->getTimerElapsedTime($timer));
             $timer->setStartTime(null);
             $timer->setPaused(true);
-            $this->saveData();
 
-            Plugin::getManager()->callEvent(new TimerEvent('pause', $timer));
-        } elseif($timer->isPaused()) {
+            $event = "pause";
+        } else {
             $timer->setStarted(true);
             $timer->setStartTime(microtime(true));
             $timer->setPaused(false);
-            $this->saveData();
 
-            Plugin::getManager()->callEvent(new TimerEvent('resume', $timer));
+            $event = "resume";
+        }
+
+        $this->saveData();
+
+        if($sendEvents && $event) {
+            Plugin::getManager()->callEvent(new TimerEvent($event, $timer));
         }
 
         return $timer;
@@ -247,7 +259,7 @@ class Timer extends PluginBase
      * @param EntityTimer $timer The timer to reset.
      * @return EntityTimer The timer.
      */
-    public function resetTimer(EntityTimer $timer)
+    public function resetTimer(EntityTimer $timer, $sendEvents = true)
     {
         if($timer->isPaused()) {
             $timer->setPaused(false);
@@ -255,14 +267,17 @@ class Timer extends PluginBase
 
         // Stop timer if it is started
         if($timer->isStarted()) {
-            $this->startStopTimer($timer);
+            $this->startStopTimer($timer, false);
         }
 
         $timer->setStartTime(null);
         $timer->setOffset(0);
         
         $this->saveData();
-        Plugin::getManager()->callEvent(new TimerEvent('reset', $timer));
+
+        if($sendEvents) {
+            Plugin::getManager()->callEvent(new TimerEvent('reset', $timer));
+        }
 
         return $timer;
     }
@@ -306,6 +321,14 @@ class Timer extends PluginBase
     {
         $elapsed = $this->getTimerElapsedTime($timer);
         $output = "";
+
+        if($timer->isCountdown() && $timer->getCountdownAmount() > 0) {
+            $elapsed = $timer->getCountdownAmount() - $elapsed;
+
+            if($elapsed < 0) {
+                $elapsed = 0;
+            }
+        }
         
         $totalSeconds = floor($elapsed);
 

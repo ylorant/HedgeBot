@@ -25,7 +25,7 @@ class Timer implements JsonSerializable
     /** @var bool Wether the timer is a countdown or not. */
     protected $countdown;
     /** @var float The countdown start time (float for microseconds) */
-    protected $countdownStart;
+    protected $countdownAmount;
     /** @var string Trigger event for the timer to start */
     protected $triggerEvent;
 
@@ -198,21 +198,21 @@ class Timer implements JsonSerializable
     }
 
     /**
-     * Get the value of countdownStart
+     * Get the value of countdown
      */ 
-    public function getCountdownStart()
+    public function isCountdown()
     {
-        return $this->countdownStart;
+        return $this->countdown;
     }
 
     /**
-     * Set the value of countdownStart
+     * Set the value of countdown
      *
      * @return Timer self
      */ 
-    public function setCountdownStart($countdownStart)
+    public function setCountdown($countdown)
     {
-        $this->countdownStart = $countdownStart;
+        $this->countdown = $countdown;
 
         return $this;
     }
@@ -243,5 +243,25 @@ class Timer implements JsonSerializable
     public function jsonSerialize()
     {
         return $this->toArray();
+    }
+
+    /**
+     * Get the value of countdownAmount
+     */ 
+    public function getCountdownAmount()
+    {
+        return $this->countdownAmount;
+    }
+
+    /**
+     * Set the value of countdownAmount
+     *
+     * @return  self
+     */ 
+    public function setCountdownAmount($countdownAmount)
+    {
+        $this->countdownAmount = $countdownAmount;
+
+        return $this;
     }
 }
