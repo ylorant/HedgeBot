@@ -4,6 +4,9 @@ namespace HedgeBot\Core\Events;
 
 use HedgeBot\Core\HedgeBot;
 use ReflectionClass;
+use ElephantIO\Client;
+use ElephantIO\Engine\SocketIO\Version2X;
+use RuntimeException;
 
 /**
  * Class EventManager
@@ -18,6 +21,7 @@ class EventManager
 {
     protected $events = []; ///< Events storage
     protected $autoMethods = []; ///< Method prefixes for automatic event recognition
+    protected $relaySocket = null; ///< Relay socket for event dynamic send
 
     /**
      * Adds a custom event listener, with its auto-binding method prefix.
@@ -168,20 +172,31 @@ class EventManager
             return false;
         }
 
-        // Stop if the event does not exist.
-        if (!isset($this->events[$listener][$name]) || !$this->events[$listener][$name]) {
-            return false;
-        }
-
-        //Calling back
-        foreach ($this->events[$listener][$name] as $id => $callback) {
-            if (!$event->propagation) {
-                break;
+        // Process only if there are callbacks bound to the event
+        if (!empty($this->events[$listener][$name])) {
+            foreach ($this->events[$listener][$name] as $id => $callback) {
+                if (!$event->propagation) {
+                    break;
+                }
+            
+                call_user_func_array($callback, [$event]);
             }
-
-            call_user_func_array($callback, [$event]);
         }
 
+
+        // Notifying other programs of the even through the socket if connected
+        if(!empty($this->relaySocket) && $event::isBroadcastable()) {
+            try {
+                $this->relaySocket->emit('event', [
+                    "listener" => $listener,
+                    "event" => $event->toArray()
+                ]);
+            } catch(RuntimeException $e) {
+                HedgeBot::message("Cannot send event notification to SocketIO: $0", $e->getMessage(), E_WARNING);
+            }
+        }
+
+        
         return true;
     }
 
@@ -265,5 +280,55 @@ class EventManager
         }
 
         return null;
+    }
+
+    //// Socket IO relay client ////
+
+    /**
+     * Connects to the given relay socket host via Socket.IO.
+     * 
+     * @param string $host The host to connect to.
+     * @return void 
+     */
+    public function connectRelay($host)
+    {
+        try {
+            $this->relaySocket = new Client(new Version2X($host));
+            $this->relaySocket->initialize();
+        } catch(RuntimeException $e) {
+            $this->relaySocket = null;
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks wether the relay is connected.
+     * 
+     * @return bool True if the relay is connected, false if not.
+     */
+    public function isRelayConnected()
+    {
+        return $this->relaySocket != null;
+    }
+
+    /**
+     * Reads and keeps alive the relay Socket.IO connection.
+     * 
+     * @return void 
+     */
+    public function keepRelayAlive()
+    {
+        $this->relaySocket->getEngine()->keepAlive();
+    }
+
+    /**
+     * Disconnects from the relay.
+     * @return void 
+     */
+    public function disconnectRelay()
+    {
+        $this->relaySocket->close();
     }
 }

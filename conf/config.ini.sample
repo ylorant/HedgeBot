@@ -13,6 +13,7 @@ backups = false
 verbosity = 1
 pluginsDirectory = Plugins
 plugins = Currency
+eventRelayIOHost = http://127.0.0.1:8082
 
 [tikal]
 enabled = true

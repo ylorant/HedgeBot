@@ -10,6 +10,9 @@ use HedgeBot\Core\Events\Event;
  */
 class HttpEvent extends Event
 {
+    /** @inheritDoc */
+    const BROADCAST = false;
+
     /**
      * HttpEvent constructor.
      * @param $eventName

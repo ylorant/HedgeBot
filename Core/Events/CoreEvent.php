@@ -8,6 +8,9 @@ namespace HedgeBot\Core\Events;
  */
 class CoreEvent extends Event
 {
+    /** @inheritDoc */
+    const BROADCAST = false;
+
     /**
      * Builds a core event.
      * @constructor

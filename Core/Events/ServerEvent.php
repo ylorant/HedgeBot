@@ -10,6 +10,9 @@ use HedgeBot\Core\Traits\Hydrator;
  */
 class ServerEvent extends Event
 {
+    /** @inheritDoc */
+    const BROADCAST = false;
+    
     protected $membership;
     protected $nick;
     protected $user;

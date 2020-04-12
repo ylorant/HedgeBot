@@ -9,7 +9,8 @@
         "symfony/console": "^3.3",
         "symfony/event-dispatcher": "^4.0",
         "ylorant/twitch-php-client": "dev-master",
-        "jublonet/codebird-php": "^3.1"
+        "jublonet/codebird-php": "^3.1",
+        "wisembly/elephant.io": "dev-master"
     },
     "suggest": {
         "predis/predis": "^1.1"

@@ -8,6 +8,9 @@ namespace HedgeBot\Core\Events;
  */
 class CommandEvent extends ServerEvent
 {
+    /** @inheritDoc */
+    const BROADCAST = false;
+
     protected $arguments;
 
     /**

@@ -13,6 +13,9 @@ abstract class Event
     protected $propagation;
     protected $name;
 
+    /** @var bool Set this to true to enable the broadcast of the event type through relay sockets */
+    const BROADCAST = true;
+
     abstract public static function getType();
 
     /**
@@ -56,6 +59,22 @@ abstract class Event
     }
 
     /**
+     * Converts the event to its array representation.
+     * 
+     * @return array The event as an array
+     */
+    public function toArray()
+    {
+        $output = [];
+
+        foreach($this as $key => $value) {
+            $output[$key] = $value;
+        }
+
+        return $output;
+    }
+
+    /**
      * Stops the propagation of the event. If this function is called by a callback during execution of events,
      * then the event flow will be stopped (and the caller may also act accordingly with its propagation).
      */
@@ -73,5 +92,15 @@ abstract class Event
     final public static function normalize($name)
     {
         return strtolower($name);
+    }
+
+    /**
+     * Gets whether the event is broadcastable thru relay sockets or not.
+     * 
+     * @return bool True if you can broadcast the event on relay socket, false if you can't.
+     */
+    public static function isBroadcastable()
+    {
+        return static::BROADCAST;
     }
 }
