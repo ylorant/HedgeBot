@@ -1,20 +1,24 @@
 <?php
 namespace HedgeBot\Plugins\StreamControl;
 
-use HedgeBot\Core\Plugins\Plugin;
+use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\Events\CommandEvent;
 use HedgeBot\Core\API\IRC;
+use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\HedgeBot;
+use HedgeBot\Plugins\StreamControl\Event\StreamControlEvent;
 
-class StreamControl extends Plugin
+class StreamControl extends PluginBase
 {
     /**
      * Plugin initialization.
      */
     public function init()
     {
+        Plugin::getManager()->addEventListener(StreamControlEvent::getType(), 'StreamControl');
+
         // Don't load the API endpoint if we're not on the main environment
         if (ENV == "main") {
             Tikal::addEndpoint('/plugin/streamcontrol', new StreamControlEndpoint($this));
@@ -125,6 +129,9 @@ class StreamControl extends Plugin
         }
 
         $update = Twitch::getClient()->channels->update($channel, $updateParams);
+
+        Plugin::getManager()->callEvent(new StreamControlEvent('channelInfo', $update));
+
         return $update;
     }
 
@@ -136,7 +143,13 @@ class StreamControl extends Plugin
      */
     public function startAds(string $channel, int $duration)
     {
-        return Twitch::getClient()->channels->startCommercial($channel, $duration);
+        $started = Twitch::getClient()->channels->startCommercial($channel, $duration);
+
+        if($started) {
+            Plugin::getManager()->callEvent(new StreamControlEvent('ads'));
+        }
+
+        return $started;
     }
 
     /**
@@ -150,6 +163,7 @@ class StreamControl extends Plugin
     public function raidChannel(string $from, string $target)
     {
         IRC::message($from, ".raid ". $target);
+        Plugin::getManager()->callEvent(new StreamControlEvent('raid'));
     }
 
     /**
@@ -163,6 +177,7 @@ class StreamControl extends Plugin
     public function hostChannel(string $from, string $target)
     {
         IRC::message($from, '.host '. $target);
+        Plugin::getManager()->callEvent(new StreamControlEvent('host'));
     }
 
     /**
