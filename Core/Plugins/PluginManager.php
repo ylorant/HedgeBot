@@ -483,12 +483,13 @@ class PluginManager extends EventManager
      * FIXME returns always true ?
      *
      * @param int $time The time in seconds after which the timeout will be triggered.
-     * @param $event The timeout to call. Has to be previously created (with an automatic binding or manually).
+     * @param string $event The timeout to call. Has to be previously created (with an automatic binding or manually).
+     * @param mixed $id The timeout ID that will be assigned. Allows to delete precisely the event or to get an ID ref when needed.
      * @return bool
      */
-    public function setTimeout($time, $event)
+    public function setTimeout($time, $event, $id)
     {
-        $this->timeouts[] = array("time" => time() + $time, "delay" => $time, "event" => $event);
+        $this->timeouts[] = array("time" => time() + $time, "delay" => $time, "event" => $event, "id" => $id);
 
         return true;
     }
@@ -501,15 +502,17 @@ class PluginManager extends EventManager
      * @param $event The event to reset the timer of.
      * @return bool TRUE on success, FALSE on failure.
      */
-    public function resetTimeout($event)
+    public function resetTimeout($event, $id)
     {
-        if (empty($this->timeouts[$event])) {
-            return false;
+        foreach($this->timeouts as $i => $timeout) {
+            if($timeout['event'] == $event && $timeout['id'] == $id) {        
+                $this->timeouts[$i]["time"] = time() + $this->timeouts[$event]["delay"];
+
+                return true;
+            }
         }
 
-        $this->timeouts[$event]["time"] = time() + $this->timeouts[$event]["delay"];
-
-        return true;
+        return false;
     }
 
     /**
@@ -518,15 +521,17 @@ class PluginManager extends EventManager
      * @param $event The event to clear the timeout from.
      * @return bool TRUE on success, FALSE on failure.
      */
-    public function clearTimeout($event)
+    public function clearTimeout($event, $id)
     {
-        if (empty($this->timeouts[$event])) {
-            return false;
+        foreach($this->timeouts as $i => $timeout) {
+            if($timeout['event'] == $event && $timeout['id'] == $id) {
+                unset($this->timeouts[$i]);
+
+                return true;
+            }
         }
 
-        unset($this->timeouts[$event]);
-
-        return true;
+        return false;
     }
 
     /**
@@ -538,9 +543,9 @@ class PluginManager extends EventManager
         $timeoutsToRemove = array();
         $time = time();
         foreach ($this->timeouts as $i => $timeout) {
-            if ($timeout["time"] >= $time) {
+            if ($timeout["time"] <= $time) {
                 $timeoutsToRemove[] = $i;
-                $this->callEvent(new TimeoutEvent($timeout["event"]));
+                $this->callEvent(new TimeoutEvent($timeout["event"], $timeout["id"]));
             }
         }
 

@@ -223,7 +223,7 @@ class TestManager extends PluginBase
             if (empty($this->testQueue)) {
                 $this->finishTests();
             } else {
-                Plugin::getManager()->setTimeout(1, 'testprocess');
+                Plugin::getManager()->setTimeout(1, 'testprocess', "processTestQueue");
             }
         }
     }
