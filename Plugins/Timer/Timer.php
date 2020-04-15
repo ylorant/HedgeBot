@@ -6,6 +6,8 @@ use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Events\CommandEvent;
 use HedgeBot\Core\Events\CoreEvent;
+use HedgeBot\Core\Events\TimeoutEvent;
+use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Plugins\Timer\Entity\Timer as EntityTimer;
 use HedgeBot\Plugins\Timer\Event\TimerEvent;
@@ -27,6 +29,20 @@ class Timer extends PluginBase
         $this->loadData();
     }
     
+    /**
+     * Timeout event: a countdown has elapsed.
+     * @param TimeoutEvent $event 
+     * @return void 
+     */
+    public function TimeoutCountdownElapsed(TimeoutEvent $event)
+    {
+        $timer = $this->getTimerById($event->id);
+
+        if(!empty($timer)) {
+            $this->resetTimer($timer);
+        }
+    }
+
     /**
      * Core event: an event has been called.
      * @param CoreEvent $event 
@@ -196,6 +212,12 @@ class Timer extends PluginBase
             $timer->setStartTime(microtime(true));
             $timer->setStarted(true);
 
+            // If this is a countdown, create a timeout event to reset the timer at the end of the timeout
+            if($timer->isCountdown()) {
+                $remaining = $timer->getCountdownAmount() + 1;
+                Plugin::getManager()->setTimeout($remaining, "countdownElapsed", $timer->getId());
+            }
+
             $event = "start";
         } else {
             // Stopping timer by setting its offset and its stop time.
@@ -235,11 +257,21 @@ class Timer extends PluginBase
             $timer->setStartTime(null);
             $timer->setPaused(true);
 
+            if($timer->isCountdown()) {
+                Plugin::getManager()->clearTimeout('countdownElapsed', $timer->getId());
+            }
+
             $event = "pause";
         } else {
             $timer->setStarted(true);
             $timer->setStartTime(microtime(true));
             $timer->setPaused(false);
+
+            if($timer->isCountdown()) {
+                $elapsed = floor($this->getTimerElapsedTime($timer));
+                $remaining = $timer->getCountdownAmount() - $elapsed + 1;
+                Plugin::getManager()->setTimeout($remaining, "countdownElapsed", $timer->getId());
+            }
 
             $event = "resume";
         }
@@ -268,6 +300,10 @@ class Timer extends PluginBase
         // Stop timer if it is started
         if($timer->isStarted()) {
             $this->startStopTimer($timer, false);
+        }
+
+        if($timer->isCountdown()) {
+            Plugin::getManager()->clearTimeout('countdownElapsed', $timer->getId());
         }
 
         $timer->setStartTime(null);
