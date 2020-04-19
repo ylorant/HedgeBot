@@ -7,7 +7,6 @@ use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Events\CommandEvent;
 use HedgeBot\Core\Events\CoreEvent;
 use HedgeBot\Core\Events\TimeoutEvent;
-use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Plugins\Timer\Entity\Timer as EntityTimer;
 use HedgeBot\Plugins\Timer\Event\TimerEvent;
@@ -205,11 +204,13 @@ class Timer extends PluginBase
 
         // Timer is not started or paused -> we start it
         if((!$timer->isStarted()) || $timer->isPaused()) {
-            if(!$timer->isStarted()) {
-                $this->resetTimer($timer, false);
+            if(!$timer->isStarted() && !empty($timer->getStopTime())) {
+                $timer->setStartTime($timer->getStopTime());
+                $timer->setStopTime(null);
+            } else {
+                $timer->setStartTime(microtime(true));
             }
 
-            $timer->setStartTime(microtime(true));
             $timer->setStarted(true);
 
             // If this is a countdown, create a timeout event to reset the timer at the end of the timeout
@@ -222,6 +223,7 @@ class Timer extends PluginBase
         } else {
             // Stopping timer by setting its offset and its stop time.
             $timer->setOffset($this->getTimerElapsedTime($timer));
+            $timer->setStopTime(microtime(true));
             $timer->setStartTime(null);
             $timer->setStarted(false);
             
@@ -297,16 +299,13 @@ class Timer extends PluginBase
             $timer->setPaused(false);
         }
 
-        // Stop timer if it is started
-        if($timer->isStarted()) {
-            $this->startStopTimer($timer, false);
-        }
-
         if($timer->isCountdown()) {
             Plugin::getManager()->clearTimeout('countdownElapsed', $timer->getId());
         }
 
+        $timer->setStarted(false);
         $timer->setStartTime(null);
+        $timer->setStopTime(null);
         $timer->setOffset(0);
         
         $this->saveData();

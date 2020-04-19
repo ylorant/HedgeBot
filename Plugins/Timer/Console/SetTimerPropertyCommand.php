@@ -64,6 +64,10 @@ class SetTimerPropertyCommand extends Command
             $value = intval($value);
         }
 
+        if($value === "null") {
+            $value = null;
+        }
+
         $setter = 'set'. ucfirst($property);
         $timer->$setter($value);
         $plugin->saveData();

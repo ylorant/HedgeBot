@@ -16,6 +16,8 @@ class Timer implements JsonSerializable
     protected $title;
     /** @var float The timer start time for the last active segment, as microtime() */
     protected $startTime;
+    /** @var float The timer last stop time. Allows to undo a timer stop. */
+    protected $stopTime;
     /** @var float The timer offset in seconds (float for microseconds) */
     protected $offset;
     /** @var bool True if paused, false if not */
@@ -138,6 +140,26 @@ class Timer implements JsonSerializable
     }
 
     /**
+     * Get the value of stopTime
+     */ 
+    public function getStopTime()
+    {
+        return $this->stopTime;
+    }
+
+    /**
+     * Set the value of stopTime
+     *
+     * @return Timer self
+     */ 
+    public function setStopTime($stopTime)
+    {
+        $this->stopTime = $stopTime;
+
+        return $this;
+    }
+
+    /**
      * Get the value of offset
      */ 
     public function getOffset()
@@ -218,6 +240,26 @@ class Timer implements JsonSerializable
     }
 
     /**
+     * Get the value of countdownAmount
+     */ 
+    public function getCountdownAmount()
+    {
+        return $this->countdownAmount;
+    }
+
+    /**
+     * Set the value of countdownAmount
+     *
+     * @return Timer self
+     */ 
+    public function setCountdownAmount($countdownAmount)
+    {
+        $this->countdownAmount = $countdownAmount;
+
+        return $this;
+    }
+
+    /**
      * Get the value of triggerEvent
      */ 
     public function getTriggerEvent()
@@ -243,25 +285,5 @@ class Timer implements JsonSerializable
     public function jsonSerialize()
     {
         return $this->toArray();
-    }
-
-    /**
-     * Get the value of countdownAmount
-     */ 
-    public function getCountdownAmount()
-    {
-        return $this->countdownAmount;
-    }
-
-    /**
-     * Set the value of countdownAmount
-     *
-     * @return  self
-     */ 
-    public function setCountdownAmount($countdownAmount)
-    {
-        $this->countdownAmount = $countdownAmount;
-
-        return $this;
     }
 }

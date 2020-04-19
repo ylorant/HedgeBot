@@ -22,6 +22,7 @@ Core functions :
 - Internal API for quick and easy access to bot functions from plugins
 - Documentation generator for plugin commands (outputs Markdown).
 - Web admin (see [Hedgebot Web Admin](https://github.com/ylorant/HedgeBot-Admin))
+- Live refresh through evented websockets (Socket.IO).
 
 Plugins :
 
@@ -37,6 +38,7 @@ Plugins :
 - **Twitter**: Allows scheduling tweets to automatically send at a specific time or when a specific event is fired.
 - StreamControl : Handle basic stream updates : title, game, ...
 - **AutoHost**: Handles a hosting manager, included priorities (with %), time to switch to another stream and whitelist/blacklist of words into title.
+- **Timer**: Handles timers that can be started, stopped, paused and viewed through a web admin.
 
 (Plugins names in bold **style** means they have also a web-admin interface, see below)
 
