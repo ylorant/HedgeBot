@@ -391,6 +391,7 @@ class Timer extends PluginBase
     public function loadData()
     {
         $timers = $this->data->timers->toArray();
+        $this->timers = [];
 
         if(is_array($timers)) {
             foreach($timers as $timer) {
