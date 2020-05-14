@@ -90,7 +90,7 @@ class Twitter extends PluginBase
      */
     public function CoreEventEvent(CoreEvent $event)
     {
-        $eventFQN = $event->event->getType(). "/". $event->event->name;
+        $eventFQN = strtolower($event->event->getType(). "/". $event->event->name);
 
         if(!in_array($eventFQN, $this->listenedEvents)) {
             return;
@@ -352,7 +352,7 @@ class Twitter extends PluginBase
         /** @var ScheduledTweet $tweet */
         foreach($this->scheduledTweets as $tweet) {
             if($tweet->getTrigger() == ScheduledTweet::TRIGGER_EVENT) {
-                $this->listenedEvents[] = $tweet->getEvent();
+                $this->listenedEvents[] = strtolower($tweet->getEvent());
             }
         }
 
