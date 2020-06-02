@@ -9,6 +9,7 @@ use HedgeBot\Core\Service\Horaro\Horaro as HoraroAPI;
 use HedgeBot\Plugins\Horaro\Entity\Schedule;
 use DateTime;
 use DateInterval;
+use Exception;
 use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\IRC;
 use HedgeBot\Plugins\Horaro\Event\HoraroEvent;
@@ -403,17 +404,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
     {
         // Try to guess the event slug if not given
         if (empty($event->arguments[0])) {
-            $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
-            if (count($currentSchedules) > 1) {
-                return IRC::reply(
-                    $event,
-                    "Couldn't automatically determine which schedule to pause, please specify an ident slug."
-                );
-            } elseif (count($currentSchedules) == 0) {
+            $currentSchedule = $this->getEarliestCurrentlyRunningSchedule($event->channel);
+            if (empty($currentSchedule)) {
                 return IRC::reply($event, "No schedule is currently running.");
             }
 
-            $currentSchedule = reset($currentSchedules);
             $identSlug = $currentSchedule->getIdentSlug();
         } else { // Ident slug is given, we check that it exists
             $identSlug = $event->arguments[0];
@@ -442,17 +437,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
     {
         // Try to guess the event slug if not given
         if (empty($event->arguments[0])) {
-            $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
-            if (count($currentSchedules) > 1) {
-                return IRC::reply(
-                    $event,
-                    "Couldn't automatically determine which schedule to pause, please specify an ident slug."
-                );
-            } elseif (count($currentSchedules) == 0) {
+            $currentSchedule = $this->getEarliestCurrentlyRunningSchedule($event->channel);
+            if (empty($currentSchedule)) {
                 return IRC::reply($event, "No schedule is currently running.");
             }
 
-            $currentSchedule = reset($currentSchedules);
             $identSlug = $currentSchedule->getIdentSlug();
         } else { // Ident slug is given, we check that it exists
             $identSlug = $event->arguments[0];
@@ -480,17 +469,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
     {
         // Try to guess the event slug if not given
         if (empty($event->arguments[0])) {
-            $currentSchedules = $this->getCurrentlyRunningSchedules($event->channel);
-            if (count($currentSchedules) > 1) {
-                return IRC::reply(
-                    $event,
-                    "Couldn't automatically determine which schedule to pause, please specify an ident slug."
-                );
-            } elseif (count($currentSchedules) == 0) {
+            $currentSchedule = $this->getEarliestCurrentlyRunningSchedule($event->channel);
+            if (empty($currentSchedule)) {
                 return IRC::reply($event, "No schedule is currently running.");
             }
 
-            $currentSchedule = reset($currentSchedules);
             $identSlug = $currentSchedule->getIdentSlug();
         } else { // Ident slug is given, we check that it exists
             $identSlug = $event->arguments[0];
@@ -677,7 +660,6 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
             $startTime = $schedule->getStartTime();
             $endTime = $schedule->getEndTime();
-            $addSchedule = false;
 
             // Account for lookaround by broadening the schedule times if the option is enabled
             if ($lookaround) {
@@ -687,12 +669,43 @@ class Horaro extends PluginBase implements StoreSourceInterface
                 $endTime->add($thresholdInterval);
             }
 
-            if ($currentTime > $startTime && $currentTime < $endTime && (empty($channel) || $schedule->getChannel() == $channel)) {
+            if ($currentTime >= $startTime && $currentTime <= $endTime && (empty($channel) || $schedule->getChannel() == $channel)) {
                 $runningSchedules[$identSlug] = $schedule;
             }
         }
 
         return $runningSchedules;
+    }
+
+    /**
+     * Get the currently running schedule. If multiple schedules are running, it returns the earliest one. 
+     * 
+     * @param string $channel    Filter the schedules by channel.
+     * @param bool   $lookaround Set to true to loosen the search by looking for schedules that are around current time
+     *                           by the lookaroundThreshold setting value (default: 1 hour).
+     *
+     * @return Schedule|null The earliest running schedule if there is one, null if not.
+     * @throws Exception 
+     */
+    public function getEarliestCurrentlyRunningSchedule($channel = null, $lookaround = false)
+    {
+        $schedulesStartTimes = [];
+        $currentSchedules = $this->getCurrentlyRunningSchedules($channel, $lookaround);
+
+        if(empty($currentSchedules)) {
+            return null;
+        }
+
+        /** @var Schedule $schedule */
+        foreach($currentSchedules as $schedule) {
+            $schedulesStartTimes[$schedule->getIdentSlug()] = $schedule->getStartTime();
+        }
+
+        asort($schedulesStartTimes);
+        $scheduleSlugs = array_keys($schedulesStartTimes);
+        $earliestScheduleSlug = reset($scheduleSlugs);
+
+        return $currentSchedules[$earliestScheduleSlug];
     }
 
     /**

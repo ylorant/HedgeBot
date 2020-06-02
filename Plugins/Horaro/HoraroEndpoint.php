@@ -31,6 +31,35 @@ class HoraroEndpoint
     }
 
     /**
+     * Gets the currently running schedules.
+     *
+     * @param string $channel    Filter the schedules by channel.
+     * @param bool   $lookaround Set to true to loosen the search by looking for schedules that are around current time
+     *                           by the lookaroundThreshold setting value (default: 1 hour).
+     * 
+     * @return array The list of schedules that are currently running. If none are found, an empty array is returned.
+     */
+    public function getCurrentSchedules($channel = null, $lookaround = false)
+    {
+        return $this->plugin->getCurrentlyRunningSchedules($channel, $lookaround);
+    }
+    
+    /**
+     * Get the currently running schedule. If multiple schedules are running, it returns the earliest one. 
+     * 
+     * @param string $channel    Filter the schedules by channel.
+     * @param bool   $lookaround Set to true to loosen the search by looking for schedules that are around current time
+     *                           by the lookaroundThreshold setting value (default: 1 hour).
+     *
+     * @return Schedule|null The earliest running schedule if there is one, null if not.
+     * @throws Exception 
+     */
+    public function getCurrentSchedule($channel = null, $lookaround = false)
+    {
+        return $this->plugin->getEarliestCurrentlyRunningSchedule($channel, $lookaround);
+    }
+
+    /**
      * Gets a schedule by its ident slug.
      * 
      * @param string $identSlug The ident slug of the schedule.
