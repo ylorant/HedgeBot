@@ -2,7 +2,7 @@
 
 namespace HedgeBot\Plugins\Horaro\Entity;
 
-use HedgeBot\Core\Service\Horaro\Horaro;
+use Horaro\Client as Horaro;
 use DateTime;
 use DateInterval;
 use JsonSerializable;
@@ -17,6 +17,8 @@ class Schedule implements JsonSerializable
     protected $eventId;
     /** @var string The schedule ID. */
     protected $scheduleId;
+    /** @var string Key to trigger hidden columns fetching. */
+    protected $hiddenKey;
     /** @var bool True if the event is enabled, false if not. */
     protected $enabled;
     /** @var bool True if the schedule is currently on pause (run advance is being ignored), false if not. */
@@ -50,6 +52,7 @@ class Schedule implements JsonSerializable
     const EXPORTED_KEYS = [
         "eventId",
         "scheduleId",
+        "hiddenKey",
         "enabled",
         "paused",
         "channel",
@@ -64,13 +67,16 @@ class Schedule implements JsonSerializable
 
     /**
      * Schedule constructor.
-     * @param null $scheduleId
-     * @param null $eventId
+     * 
+     * @param string|null $scheduleId The schedule ID.
+     * @param string|null $eventId The event ID.
+     * @param string|null $hiddenKey The key for hidden columns.
      */
-    public function __construct($scheduleId = null, $eventId = null)
+    public function __construct($scheduleId = null, $eventId = null, $hiddenKey = null)
     {
         $this->scheduleId = $scheduleId;
         $this->eventId = $eventId;
+        $this->hiddenKey = $hiddenKey;
         $this->enabled = false;
         $this->paused = false;
         $this->started = false;
@@ -120,6 +126,26 @@ class Schedule implements JsonSerializable
     public function setScheduleId($scheduleId)
     {
         $this->scheduleId = $scheduleId;
+    }
+
+    /**
+     * Gets the hidden column key.
+     * 
+     * @return string|null The hidden column key.
+     */
+    public function getHiddenKey()
+    {
+        return $this->hiddenKey;
+    }
+
+    /**
+     * Sets the hidden column key.
+     * 
+     * @param string|null $hiddenKey The hidden column key. Set as null to remove it.
+     */
+    public function setHiddenKey($hiddenKey)
+    {
+        $this->hiddenKey = $hiddenKey;
     }
 
     /**

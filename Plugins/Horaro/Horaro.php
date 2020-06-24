@@ -5,7 +5,6 @@ namespace HedgeBot\Plugins\Horaro;
 use HedgeBot\Core\HedgeBot;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Core\Events\CommandEvent;
-use HedgeBot\Core\Service\Horaro\Horaro as HoraroAPI;
 use HedgeBot\Plugins\Horaro\Entity\Schedule;
 use DateTime;
 use DateInterval;
@@ -18,6 +17,7 @@ use HedgeBot\Core\API\Store;
 use HedgeBot\Core\Store\Formatter\TextFormatter;
 use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\API\Tikal;
+use Horaro\Client as HoraroAPI;
 
 /**
  * Class Horaro
@@ -307,13 +307,14 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
             // Get the correct schedule corresponding to the current index with its key.
             $scheduleKeys = array_keys($enabledSchedules);
+            /** @var Schedule $schedule */
             $schedule = $enabledSchedules[$scheduleKeys[$this->refreshScheduleIndex]];
 
             // Finally, fetch the new schedule data
             $newScheduleData = $this->horaro->getScheduleAsync(
                 $schedule->getScheduleId(),
                 $schedule->getEventId(),
-                null,
+                $schedule->getHiddenKey(),
                 [$this, 'onScheduleReceived']
             );
 
@@ -508,27 +509,40 @@ class Horaro extends PluginBase implements StoreSourceInterface
             return false;
         }
 
+        $urlComponents = parse_url($url);
+
         // Get the URL parts to get event & schedule IDs
-        $parts = explode('/', $url);
+        $parts = explode('/', $urlComponents['path']);
 
         $scheduleId = array_pop($parts);
         $eventId = array_pop($parts);
+        $hiddenKey = null;
+
+        if(!empty($urlComponents['query'])) {
+            $query = null;
+            parse_str($urlComponents['query'], $query);
+            
+            if(!empty($query['key'])) {
+                $hiddenKey = $query['key'];
+            }
+        }
 
         // Try to load the schedule
-        return $this->loadSchedule($scheduleId, $eventId);
+        return $this->loadSchedule($scheduleId, $eventId, $hiddenKey);
     }
 
     /**
      * Loads a schedule into the bot.
      *
      * @param string $scheduleId The schedule ID/slug to load.
-     * @param string $eventId The event ID to get the schedule from. Can be omitted.
-     *                        Sometimes is needed if the schedule slug is too generic.
+     * @param string $eventId    The event ID to get the schedule from. Can be omitted.
+     *                           Sometimes is needed if the schedule slug is too generic.
+     * @param string $hiddenKey  The key for hidden columns, can be omitted.
      *
      * @return string|bool The schedule ident slug if the schedule was loaded correctly, false if not.
      *                     Mainly that means that the schedule was not found or that it has already been loaded.
      */
-    public function loadSchedule($scheduleId, $eventId = null)
+    public function loadSchedule($scheduleId, $eventId = null, $hiddenKey = null)
     {
         // Check if the schedule isn't already in our database
         if ($this->hasScheduleId($scheduleId, $eventId)) {
@@ -536,12 +550,12 @@ class Horaro extends PluginBase implements StoreSourceInterface
         }
 
         $scheduleData = null;
-        if (!$this->scheduleExists($scheduleId, $eventId, $scheduleData)) {
+        if (!$this->scheduleExists($scheduleId, $eventId, $hiddenKey, $scheduleData)) {
             return false;
         }
 
         // Create schedule and check if it exists on Horaro
-        $schedule = new Schedule($scheduleId, $eventId);
+        $schedule = new Schedule($scheduleId, $eventId, $hiddenKey);
         $schedule->setData($scheduleData);
 
         $scheduleIdentSlug = $schedule->getIdentSlug();
@@ -794,7 +808,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
      *
      * @return bool True if the schedule exists on Horaro, false if it doesn't.
      */
-    public function scheduleExists($scheduleId, $eventId = null, &$schedule = null)
+    public function scheduleExists($scheduleId, $eventId = null, $hiddenKey = null, &$schedule = null)
     {
         $schedule = $this->horaro->getSchedule($scheduleId, $eventId);
         return $schedule !== false;
@@ -969,14 +983,30 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function updateSchedule($identSlug, array $newData)
     {
         $schedule = $this->getScheduleByIdentSlug($identSlug);
+        $reloadSchedule = false;
 
         // Return false if the schedule doesn't exist
         if (empty($schedule)) {
             return false;
         }
 
+        // Trigger a reload if the hidden column key has changed
+        if(!empty($newData['hiddenKey']) && $schedule->getHiddenKey() != $newData['hiddenKey']) {
+            $reloadSchedule = true;
+        }
+
         $schedule->updateFromArray($newData);
         $this->saveData();
+
+        if($reloadSchedule) {
+            HedgeBot::message("Reloading schedule data for schedule $0", [$schedule->getIdentSlug()], E_DEBUG);
+            $this->horaro->getScheduleAsync(
+                $schedule->getScheduleId(),
+                $schedule->getEventId(),
+                $schedule->getHiddenKey(),
+                [$this, 'onScheduleReceived']
+            );
+        }
 
         return true;
     }
@@ -1050,7 +1080,11 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
             // Fetch schedule data from Horaro and inject it into the object if needed
             if ($loadSchedule) {
-                $scheduleData = $this->horaro->getSchedule($scheduleObj->getScheduleId(), $scheduleObj->getEventId());
+                $scheduleData = $this->horaro->getSchedule(
+                    $scheduleObj->getScheduleId(), 
+                    $scheduleObj->getEventId(),
+                    $scheduleObj->getHiddenKey()
+                );
 
                 if ($scheduleData) {
                     $scheduleObj->setData($scheduleData);
@@ -1071,5 +1105,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         if ($saveData) {
             $this->saveData();
         }
+
+        HedgeBot::message("Loaded schedules.", [], E_DEBUG);
     }
 }

@@ -10,7 +10,8 @@
         "symfony/event-dispatcher": "^4.0",
         "ylorant/twitch-php-client": "dev-master",
         "jublonet/codebird-php": "^3.1",
-        "wisembly/elephant.io": "dev-master"
+        "wisembly/elephant.io": "dev-master",
+        "ylorant/horaro-php-client": "^1.1"
     },
     "suggest": {
         "predis/predis": "^1.1"
