@@ -61,7 +61,7 @@ class TextFormatter extends TraverseFormatter implements FormatterInterface
         );
 
         $hasCompoundMatches = preg_match_all(
-            "#(?<!\\)\$\{((?:(?:[a-zA-Z_\x7f-\xff][ a-zA-Z0-9_\x7f-\xff]*)|\.)+)\}#isU",
+            "#(?<!\\\\)\\$\{((?:(?:[a-zA-Z_\x7f-\xff][ a-zA-Z0-9_\x7f-\xff]*)|\.)+)\}#isU",
             $text,
             $compoundMatches
         );
