@@ -51,20 +51,30 @@ class TextFormatter extends TraverseFormatter implements FormatterInterface
     public function format($text, $channel = null, $root = "")
     {
         // Getting the list of tokens in the text, and checking that there is some, check class doc to see why this regexp is here
-        $matches = null;
-        $hasMatches = preg_match_all(
+        $simpleMatches = null;
+        $compoundMatches = null;
+
+        $hasSimpleMatches = preg_match_all(
             "#(?<!\\\\)\\$((?:(?:[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)|\\.)+)#",
             $text,
-            $matches
+            $simpleMatches
+        );
+
+        $hasCompoundMatches = preg_match_all(
+            "#(?<!\\)\$\{((?:(?:[a-zA-Z_\x7f-\xff][ a-zA-Z0-9_\x7f-\xff]*)|\.)+)\}#isU",
+            $text,
+            $compoundMatches
         );
 
         // No match, we return the verbatim text
-        if (!$hasMatches) {
+        if (!$hasSimpleMatches && !$hasCompoundMatches) {
             return $text;
         }
 
+        $matches = array_merge($simpleMatches[0], $compoundMatches[0]);
+
         // Remove duplicate tokens, since once searched for, we will replace all occurences in the text at once
-        $tokenList = array_unique($matches[1]);
+        $tokenList = array_unique($matches);
         $storeData = $this->store->getData($channel);
 
         // Restricting the data to its subset for the given root if needed
@@ -79,7 +89,7 @@ class TextFormatter extends TraverseFormatter implements FormatterInterface
         // Find token values and replace them in the text
         foreach ($tokenList as $token) {
             $value = $this->traverse($token, $storeData);
-            $text = str_replace('$' . $token, $value, $text);
+            $text = str_replace($token, $value, $text);
         }
 
         return $text;
