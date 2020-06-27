@@ -88,7 +88,8 @@ class TextFormatter extends TraverseFormatter implements FormatterInterface
 
         // Find token values and replace them in the text
         foreach ($tokenList as $token) {
-            $value = $this->traverse($token, $storeData);
+            $path = str_replace(['$', '{', '}'], '', $token);
+            $value = $this->traverse($path, $storeData);
             $text = str_replace($token, $value, $text);
         }
 
