@@ -22,6 +22,7 @@ class EventManager
     protected $events = []; ///< Events storage
     protected $autoMethods = []; ///< Method prefixes for automatic event recognition
     protected $relaySocket = null; ///< Relay socket for event dynamic send
+    protected $relaySocketLastConnect = null;
 
     /**
      * Adds a custom event listener, with its auto-binding method prefix.
@@ -285,16 +286,26 @@ class EventManager
     //// Socket IO relay client ////
 
     /**
-     * Connects to the given relay socket host via Socket.IO.
+     * Initializes a Socket.IO client from the given host.
      * 
      * @param string $host The host to connect to.
      * @return void 
      */
-    public function connectRelay($host)
+    public function initRelay($host)
+    {
+        $this->relaySocket = new Client(new Version2X($host));
+    }
+
+    /**
+     * Connects to the given relay socket via Socket.IO.
+     * 
+     * @return bool True if the connection succeeded, false if not. 
+     */
+    public function connectRelay()
     {
         try {
-            $this->relaySocket = new Client(new Version2X($host));
             $this->relaySocket->initialize();
+            $this->relaySocketLastConnect = time();
         } catch(RuntimeException $e) {
             $this->relaySocket = null;
             return false;
@@ -308,7 +319,7 @@ class EventManager
      * 
      * @return bool True if the relay is connected, false if not.
      */
-    public function isRelayConnected()
+    public function isRelayAvailable()
     {
         return $this->relaySocket != null;
     }
@@ -321,6 +332,13 @@ class EventManager
     public function keepRelayAlive()
     {
         $this->relaySocket->getEngine()->keepAlive();
+
+        // Every day, reconnect to the relay
+        if($this->relaySocketLastConnect + 86400 < time()) {
+            HedgeBot::message("Reconnecting to Socket.IO relay routinely...", [], E_DEBUG);
+            $this->disconnectRelay();
+            $this->connectRelay();
+        }
     }
 
     /**

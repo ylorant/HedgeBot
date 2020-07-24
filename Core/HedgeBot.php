@@ -211,7 +211,8 @@ class HedgeBot
         // Connect to the event relay server if needed
         if(!empty($this->config->general->eventRelayIOHost)) {
             HedgeBot::message('Connecting to the Socket.IO event relay...');
-            $connected = $this->plugins->connectRelay($this->config->general->eventRelayIOHost);
+            $this->plugins->initRelay($this->config->general->eventRelayIOHost);
+            $connected = $this->plugins->connectRelay();
 
             if($connected) {
                 HedgeBot::message('Connected to the Socket.IO relay.', []);
@@ -592,7 +593,7 @@ class HedgeBot
                 $this->tikalServer->process();
             }
 
-            if ($this->plugins->isRelayConnected()) {
+            if ($this->plugins->isRelayAvailable()) {
                 $this->plugins->keepRelayAlive();
             }
             
