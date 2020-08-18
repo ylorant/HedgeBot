@@ -6,6 +6,7 @@ use HedgeBot\Core\HedgeBot;
 use ReflectionClass;
 use ElephantIO\Client;
 use ElephantIO\Engine\SocketIO\Version2X;
+use Exception;
 use RuntimeException;
 
 /**
@@ -22,7 +23,13 @@ class EventManager
     protected $events = []; ///< Events storage
     protected $autoMethods = []; ///< Method prefixes for automatic event recognition
     protected $relaySocket = null; ///< Relay socket for event dynamic send
-    protected $relaySocketLastConnect = null;
+    protected $relaySocketLastConnect = null; ///< Relay socket last connection time, for auto reconnect
+    protected $relayErrorCount = null; ///< Relay socket error count
+    protected $relayConnected = false; ///< Relay connected toggle
+
+    const RELAY_RECONNECT_INTERVAL = 3600 * 12; // Interval between socket IO reconnects
+    const RELAY_MAX_ERROR_COUNT = 5; // Max error count on relay read/write
+    const RELAY_RECONNECT_DELAY = 60; // Relay reconnect delay when disconnected after errors
 
     /**
      * Adds a custom event listener, with its auto-binding method prefix.
@@ -186,14 +193,23 @@ class EventManager
 
 
         // Notifying other programs of the even through the socket if connected
-        if(!empty($this->relaySocket) && $event::isBroadcastable()) {
+        if(!empty($this->relaySocket) && $this->relayConnected && $event::isBroadcastable()) {
             try {
                 $this->relaySocket->emit('event', [
                     "listener" => $listener,
                     "event" => $event->toArray()
                 ]);
-            } catch(RuntimeException $e) {
+
+                $this->relayErrorCount = 0;
+            } catch(Exception $e) {
                 HedgeBot::message("Cannot send event notification to SocketIO: $0", $e->getMessage(), E_WARNING);
+                $this->relayErrorCount++;
+
+                // On 5 errors, we disconnect from the socket altogether and schedule a reconnect
+                if($this->relayErrorCount == self::RELAY_MAX_ERROR_COUNT) {
+                    $this->disconnectRelay();
+                    $this->relaySocketLastConnect = time() - self::RELAY_RECONNECT_INTERVAL + self::RELAY_RECONNECT_DELAY;
+                }
             }
         }
 
@@ -303,9 +319,13 @@ class EventManager
      */
     public function connectRelay()
     {
+        HedgeBot::message("Connecting to Socket.IO relay...", [], E_DEBUG);
         try {
             $this->relaySocket->initialize();
             $this->relaySocketLastConnect = time();
+            $this->relayConnected = true;
+
+            HedgeBot::message("Connected to Socket.IO relay.", [], E_DEBUG);
         } catch(RuntimeException $e) {
             $this->relaySocket = null;
             return false;
@@ -331,10 +351,23 @@ class EventManager
      */
     public function keepRelayAlive()
     {
-        $this->relaySocket->getEngine()->keepAlive();
+        if($this->relayConnected) {
+            try {
+                $this->relaySocket->getEngine()->keepAlive();
+            } catch(Exception $e) {
+                HedgeBot::message("Cannot keep SocketIO alive: $0", $e->getMessage(), E_WARNING);
+                $this->relayErrorCount++;
+
+                // On 5 errors, we disconnect from the socket altogether and schedule a reconnect
+                if($this->relayErrorCount == self::RELAY_MAX_ERROR_COUNT) {
+                    $this->disconnectRelay();
+                    $this->relaySocketLastConnect = time() - self::RELAY_RECONNECT_INTERVAL + self::RELAY_RECONNECT_DELAY;
+                }
+            }
+        }
 
         // Every day, reconnect to the relay
-        if($this->relaySocketLastConnect + 86400 < time()) {
+        if($this->relaySocketLastConnect + self::RELAY_RECONNECT_INTERVAL < time()) {
             HedgeBot::message("Reconnecting to Socket.IO relay routinely...", [], E_DEBUG);
             $this->disconnectRelay();
             $this->connectRelay();
@@ -347,6 +380,13 @@ class EventManager
      */
     public function disconnectRelay()
     {
-        $this->relaySocket->close();
+        HedgeBot::message("Disconnecting from Socket.IO relay...", [], E_DEBUG);
+        try {
+            $this->relaySocket->close();
+        } catch(Exception $e) {
+            HedgeBot::message("Cannot disconnect from SocketIO: $0", $e->getMessage(), E_WARNING);
+        } finally {
+            $this->relayConnected = false;
+        }
     }
 }
