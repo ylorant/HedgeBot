@@ -1,17 +1,16 @@
 <?php
 
-namespace HedgeBot\Core\Data;
+namespace HedgeBot\Core\Storage\KeyValue;
 
-use HedgeBot\Core\HedgeBot;
 use Predis\Client as RedisClient;
 
 /**
  * Class RedisProvider.
  * Provides a storage access for bot data via a Redis server.
  * 
- * @package HedgeBot\Core\Data
+ * @package HedgeBot\Core\Storage\KeyValue
  */
-class RedisProvider extends Provider
+class RedisProvider extends KeyValueProvider
 {
     const STORAGE_NAME = "redis";
     const STORAGE_PARAMETERS = ["url", "host", "port", "database", "scheme"];

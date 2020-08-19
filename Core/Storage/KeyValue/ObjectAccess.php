@@ -1,10 +1,10 @@
 <?php
 
-namespace HedgeBot\Core\Data;
+namespace HedgeBot\Core\Storage\KeyValue;
 
 /**
  * Class ObjectAccess
- * @package HedgeBot\Core\Data
+ * @package HedgeBot\Core\Storage\KeyValue
  */
 class ObjectAccess
 {
@@ -17,7 +17,7 @@ class ObjectAccess
      * @param Provider $provider The provider to use as a data source
      * @param string $path The current path inside the hierarchy. Optional.
      */
-    public function __construct(Provider $provider, $path = "")
+    public function __construct(KeyValueProvider $provider, $path = "")
     {
         $this->provider = $provider;
         $this->currentPath = $path;

@@ -1,14 +1,14 @@
 <?php
 
-namespace HedgeBot\Core\Data;
+namespace HedgeBot\Core\Storage\KeyValue;
 
 use ReflectionClass;
 
 /**
  * Class Provider
- * @package HedgeBot\Core\Data
+ * @package HedgeBot\Core\Storage\KeyValue
  */
-abstract class Provider
+abstract class KeyValueProvider
 {
     public $readonly = false; ///< Boolean, prevents writing to the data storage.
     protected static $classCache = []; ///< Storage class cache
@@ -89,6 +89,11 @@ abstract class Provider
         return array_keys($storageClasses);
     }
 
+    /**
+     * Gets the available storage providers' classes names.
+     * 
+     * @return array The available storages' classes names.
+     */
     protected static function getStorageClasses()
     {
         // Refresh the storage classes cache if needed
@@ -100,7 +105,7 @@ abstract class Provider
             // Classes to be ignored
             $ignoreClasses = array(
                 'ObjectAccess',
-                'Provider'
+                'KeyValueProvider'
             );
 
             // Scanning the directory of this file, which contains the other classes.
@@ -129,9 +134,14 @@ abstract class Provider
      */
     public static function getName()
     {
-        return static::STORAGE_NAME;
+        return "kv-" . static::STORAGE_NAME;
     }
 
+    /**
+     * Gets the defined storage parameters for the current storage provider.
+     * 
+     * @return array The defined storage parameters.
+     */
     public static function getParameters()
     {
         return array_unique(array_merge(self::STORAGE_PARAMETERS, static::STORAGE_PARAMETERS));

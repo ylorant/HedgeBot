@@ -1,14 +1,14 @@
 <?php
 
-namespace HedgeBot\Core\Data;
+namespace HedgeBot\Core\Storage\KeyValue;
 
 use HedgeBot\Core\HedgeBot;
 
 /**
  * Class MemoryProvider
- * @package HedgeBot\Core\Data
+ * @package HedgeBot\Core\Storage\KeyValue
  */
-class MemoryProvider extends Provider
+class MemoryProvider extends KeyValueProvider
 {
     private $data;
 

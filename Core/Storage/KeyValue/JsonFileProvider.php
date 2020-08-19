@@ -1,13 +1,15 @@
 <?php
 
-namespace HedgeBot\Core\Data;
+namespace HedgeBot\Core\Storage\KeyValue;
 
 use HedgeBot\Core\HedgeBot;
 
 /**
  * JSON File provider. Provides a way to store data in an unique JSON file.
+ * 
+ * @package HedgeBot\Core\Storage\KeyValue
  */
-class JsonFileProvider extends Provider
+class JsonFileProvider extends KeyValueProvider
 {
     private $backups; // Wether to do backups or not
     private $dataFile; // Data file location

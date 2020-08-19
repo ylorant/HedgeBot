@@ -11,7 +11,9 @@
         "ylorant/twitch-php-client": "dev-master",
         "jublonet/codebird-php": "^3.1",
         "wisembly/elephant.io": "dev-master",
-        "ylorant/horaro-php-client": "^1.1"
+        "ylorant/horaro-php-client": "^1.1",
+        "ramsey/uuid": "^4.1",
+        "predis/predis": "^1.1"
     },
     "suggest": {
         "predis/predis": "^1.1"

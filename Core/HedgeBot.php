@@ -14,9 +14,6 @@ use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\Plugins\PluginManager;
 use HedgeBot\Core\Server\ServerInstance;
 use HedgeBot\Core\Server\CoreEvents;
-use HedgeBot\Core\Data\IniFileProvider;
-use HedgeBot\Core\Data\Provider;
-use HedgeBot\Core\Data\ObjectAccess;
 use HedgeBot\Core\Security\AccessControlManager;
 use HedgeBot\Core\Tikal\Server as TikalServer;
 use HedgeBot\Core\Tikal\Endpoint\CoreEndpoint as TikalCoreEndpoint;
@@ -29,6 +26,8 @@ use HedgeBot\Core\Store\Store;
 use HedgeBot\Core\API\Store as StoreAPI;
 use HedgeBot\Core\Service\Twitch\TwitchService;
 use HedgeBot\Core\Service\Twitch\TwitchLogger;
+use HedgeBot\Core\Storage\KeyValue\IniFileProvider;
+use HedgeBot\Core\Storage\KeyValue\ObjectAccess;
 
 define('E_DEBUG', 32768);
 
@@ -68,7 +67,7 @@ class HedgeBot
      * @throws \ReflectionException
      * @see StartBotCommand::configure()
      */
-    public function init($configDir = null)
+    public function init($configPath = null)
     {
         HedgeBot::$instance = $this;
 
@@ -86,7 +85,7 @@ class HedgeBot
         // config files in the given configuration directory.
         $fileProvider = new IniFileProvider();
         $this->config = new ObjectAccess($fileProvider);
-        $connected = $fileProvider->connect($configDir ?? self::DEFAULT_CONFIG_DIR);
+        $connected = $fileProvider->connect($configPath ?? self::DEFAULT_CONFIG_DIR);
 
         if (!$connected) {
             return HedgeBot::message('Cannot locate configuration directory', null, E_ERROR);
