@@ -6,6 +6,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use HedgeBot\Core\Console\PluginAwareTrait;
+use HedgeBot\Plugins\Timer\Entity\RaceTimer;
 use HedgeBot\Plugins\Timer\Entity\Timer as TimerEntity;
 use HedgeBot\Plugins\Timer\Timer;
 use Symfony\Component\Console\Command\Command;
@@ -52,8 +53,18 @@ class ShowTimersCommand extends Command
 
             $output->writeln($timer->getId());
             $output->writeln("\tTitle: ". $timer->getTitle());
+            $output->writeln("\tType: ". $timer::TYPE);
             $output->writeln("\tStatus: ". $status);
             $output->writeln("\tTime: ". $plugin->formatTimerTime($timer));
+
+            if($timer instanceof RaceTimer) {
+                $output->writeln('');
+                $output->writeln("\tPlayers:");
+                
+                foreach($timer->getPlayers() as $player) {
+                    $output->writeln("\t\t". $player['player']. ": ". ($player['elapsed'] ? $player['elapsed'] : 'running'));
+                }
+            }
 
             $output->writeln("");
         }

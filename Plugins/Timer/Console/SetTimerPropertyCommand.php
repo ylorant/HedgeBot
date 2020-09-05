@@ -48,7 +48,7 @@ class SetTimerPropertyCommand extends Command
         $timer = $plugin->getTimerById($id);
 
         if(empty($timer)) {
-            throw new RuntimeException("This timer ID already exists.");
+            throw new RuntimeException("This timer ID doesn't exists.");
         }
 
         if(!in_array($property, $this->getEntityProperties())) {

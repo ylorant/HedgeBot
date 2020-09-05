@@ -13,16 +13,19 @@ class TimerEvent extends Event
 {
     /** @var Timer */
     protected $timer;
+    /** @var string */
+    protected $player;
 
     /**
      * TimerEvent constructor.
      * @param $name
      * @param $timer
      */
-    public function __construct($name, Timer $timer)
+    public function __construct($name, Timer $timer, string $player = null)
     {
         parent::__construct($name);
         $this->timer = $timer;
+        $this->player = $player;
     }
 
     /**

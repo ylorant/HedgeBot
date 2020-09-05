@@ -9,6 +9,7 @@ use HedgeBot\Core\Events\CoreEvent;
 use HedgeBot\Core\Events\TimeoutEvent;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Plugins\Timer\Entity\Timer as EntityTimer;
+use HedgeBot\Plugins\Timer\Entity\RaceTimer as EntityRaceTimer;
 use HedgeBot\Plugins\Timer\Event\TimerEvent;
 
 class Timer extends PluginBase
@@ -146,7 +147,7 @@ class Timer extends PluginBase
      * 
      * @return EntityTimer|bool The new timer, or false if it couldn't be created (most likely ID is already taken). 
      */
-    public function createTimer(string $id, $title = null)
+    public function createTimer(string $id, $title = null, $raceTimer = false)
     {
         if(empty($id) || !empty($this->getTimerById($id))) {
             return false;
@@ -157,7 +158,7 @@ class Timer extends PluginBase
             return false;
         }
 
-        $newTimer = new EntityTimer();
+        $newTimer = $raceTimer ? new EntityRaceTimer() : new EntityTimer();
         $newTimer->setId($id);
         $newTimer->setTitle($title);
 
@@ -222,7 +223,7 @@ class Timer extends PluginBase
             $event = "start";
         } else {
             // Stopping timer by setting its offset and its stop time.
-            $timer->setOffset($this->getTimerElapsedTime($timer));
+            $timer->setOffset($timer->getElapsedTime());
             $timer->setStopTime(microtime(true));
             $timer->setStartTime(null);
             $timer->setStarted(false);
@@ -255,7 +256,7 @@ class Timer extends PluginBase
 
         // Can only pause the timer if it's started and not already paused
         if(!$timer->isPaused()) {
-            $timer->setOffset($this->getTimerElapsedTime($timer));
+            $timer->setOffset($timer->getElapsedTime());
             $timer->setStartTime(null);
             $timer->setPaused(true);
 
@@ -270,7 +271,7 @@ class Timer extends PluginBase
             $timer->setPaused(false);
 
             if($timer->isCountdown()) {
-                $elapsed = floor($this->getTimerElapsedTime($timer));
+                $elapsed = floor($timer->getElapsedTime());
                 $remaining = $timer->getCountdownAmount() - $elapsed + 1;
                 Plugin::getManager()->setTimeout($remaining, "countdownElapsed", $timer->getId());
             }
@@ -307,6 +308,12 @@ class Timer extends PluginBase
         $timer->setStartTime(null);
         $timer->setStopTime(null);
         $timer->setOffset(0);
+
+        if($timer instanceof EntityRaceTimer) {
+            foreach($timer->getPlayers() as $playerName => $player) {
+                $timer->resetPlayer($playerName);
+            }
+        }
         
         $this->saveData();
 
@@ -315,6 +322,48 @@ class Timer extends PluginBase
         }
 
         return $timer;
+    }
+
+    public function stopPlayerTimer(EntityRaceTimer $timer, string $player, $sendEvents = true)
+    {
+        // Cannot stop the timer for a player if the timer isn't started.
+        if((!$timer->isStarted()) || $timer->isPaused()) {
+            return false;
+        }
+
+        $playerTimer = $timer->getPlayer($player);
+        if(empty($playerTimer)) {
+            return false;
+        }
+
+        if(empty($playerTimer['elapsed'])) {
+            $timer->stopPlayer($player);
+        } else {
+            $timer->resetPlayer($player);
+        }
+
+        // Stop the timer if every player is stopped
+        $allPlayersFinished = true;
+        $playerTimerList = $timer->getPlayers();
+        
+        foreach($playerTimerList as $playerTimer) {
+            if(empty($playerTimer['elapsed'])) {
+                $allPlayersFinished = false;
+            }
+        }
+
+        if($sendEvents) {
+            Plugin::getManager()->callEvent(new TimerEvent('playerStop', $timer, $player));
+        }
+
+        var_dump($allPlayersFinished);
+        if($allPlayersFinished) {
+            $this->startStopTimer($timer);
+        }
+
+        $this->saveData();
+
+        return true;
     }
 
     /**
@@ -329,23 +378,6 @@ class Timer extends PluginBase
     }
 
     /**
-     * Gets the elapsed time on the given timer.
-     * 
-     * @param EntityTimer $timer The timer to get the elapsed time for.
-     * @return float The timer's elapsed time.
-     */
-    public function getTimerElapsedTime(EntityTimer $timer)
-    {
-        $elapsed = $timer->getOffset();
-
-        if($timer->isStarted() && !$timer->isPaused()) {
-            $elapsed += microtime(true) - $timer->getStartTime();
-        }
-        
-        return $elapsed;
-    }
-
-    /**
      * Formats a timer's current time.
      * 
      * @param EntityTimer $timer The timer to get the formatted time of.
@@ -354,7 +386,7 @@ class Timer extends PluginBase
      */
     public function formatTimerTime(EntityTimer $timer, bool $milliseconds = false)
     {
-        $elapsed = $this->getTimerElapsedTime($timer);
+        $elapsed = $timer->getElapsedTime();
         $output = "";
 
         if($timer->isCountdown() && $timer->getCountdownAmount() > 0) {
@@ -395,7 +427,11 @@ class Timer extends PluginBase
 
         if(is_array($timers)) {
             foreach($timers as $timer) {
-                $this->timers[] = EntityTimer::fromArray($timer);
+                if(!empty($timer['type']) && $timer['type'] == EntityRaceTimer::TYPE) {
+                    $this->timers[] = EntityRaceTimer::fromArray($timer);
+                } else {
+                    $this->timers[] = EntityTimer::fromArray($timer);
+                }
             }
         }
     }

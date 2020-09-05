@@ -1,6 +1,8 @@
 <?php
 namespace HedgeBot\Plugins\Timer;
 
+use HedgeBot\Plugins\Timer\Entity\RaceTimer;
+
 class TimerEndpoint
 {
     /** @var Timer $plugin The plugin reference */
@@ -47,6 +49,17 @@ class TimerEndpoint
         }
 
         return $this->plugin->startStopTimer($timer);
+    }
+
+    public function stopPlayerTimer(string $id, string $player)
+    {
+        $timer = $this->plugin->getTimerById($id);
+
+        if(empty($timer) || !($timer instanceof RaceTimer) || !$timer->hasPlayer($player)) {
+            return false;
+        }
+
+        return $this->plugin->stopPlayerTimer($timer, $player);
     }
 
     public function pauseResumeTimer(string $id)

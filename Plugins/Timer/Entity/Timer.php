@@ -31,6 +31,8 @@ class Timer implements JsonSerializable
     /** @var string Trigger event for the timer to start */
     protected $triggerEvent;
 
+    const TYPE = "timer-simple";
+
     /**
      * Constructor.
      */
@@ -44,6 +46,24 @@ class Timer implements JsonSerializable
         $this->countdownStart = 0;
     }
 
+    /// TIMER OPERATIONS ///
+
+    /**
+     * Gets the elapsed time.
+     * 
+     * @return float The timer's elapsed time.
+     */
+    public function getElapsedTime()
+    {
+        $elapsed = $this->getOffset();
+
+        if($this->isStarted() && !$this->isPaused()) {
+            $elapsed += microtime(true) - $this->getStartTime();
+        }
+        
+        return $elapsed;
+    }
+
     /**
      * Generates a Timer instance from the given data array.
      * 
@@ -52,7 +72,7 @@ class Timer implements JsonSerializable
      */
     public static function fromArray(array $data)
     {
-        $timer = new Timer();
+        $timer = new static();
 
         foreach($timer as $key => $value) {
             if(isset($data[$key])) {
@@ -75,6 +95,8 @@ class Timer implements JsonSerializable
         foreach($this as $key => $value) {
             $output[$key] = $value;
         }
+
+        $output['type'] = static::TYPE;
 
         return $output;
     }
@@ -284,6 +306,6 @@ class Timer implements JsonSerializable
      */
     public function jsonSerialize()
     {
-        return $this->toArray();
+        return array_merge(['type' => static::TYPE], $this->toArray());
     }
 }
