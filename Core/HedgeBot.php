@@ -27,6 +27,7 @@ use HedgeBot\Core\Tikal\Endpoint\TwitchEndpoint as TikalTwitchEndpoint;
 use HedgeBot\Core\Tikal\Endpoint\StoreEndpoint as TikalStoreEndpoint;
 use HedgeBot\Core\Store\Store;
 use HedgeBot\Core\API\Store as StoreAPI;
+use HedgeBot\Core\Events\Relay\RelayClient;
 use HedgeBot\Core\Service\Twitch\TwitchService;
 use HedgeBot\Core\Service\Twitch\TwitchLogger;
 
@@ -48,6 +49,7 @@ class HedgeBot
     public $tikalServer;
     public $accessControl;
     public $store;
+    public $relayClient;
 
     private $run;
 
@@ -209,13 +211,23 @@ class HedgeBot
         }
 
         // Connect to the event relay server if needed
-        if(!empty($this->config->general->eventRelayIOHost)) {
-            HedgeBot::message('Connecting to the Socket.IO event relay...');
-            $this->plugins->initRelay($this->config->general->eventRelayIOHost);
-            $connected = $this->plugins->connectRelay();
+        if(!empty($this->config->relay)) {
+            HedgeBot::message('Connecting to the event relay...');
+
+            $relayType = $this->config->relay->type ?? "";
+            $relayClient = RelayClient::resolveClient($relayType);
+
+            if(empty($relayClient)) {
+                HedgeBot::message("Cannot load event relay client type $0", $relayType, E_WARNING);
+            }
+
+            $relayClient->initialize($this->config->relay->toArray());
+            $connected = $relayClient->connect();
 
             if($connected) {
                 HedgeBot::message('Connected to the Socket.IO relay.', []);
+                $this->relayClient = $relayClient;
+                $this->plugins->setRelayClient($relayClient);
             } else {
                 HedgeBot::message('Cannot connect to Socket.IO relay.', [], E_WARNING);
             }
@@ -593,8 +605,8 @@ class HedgeBot
                 $this->tikalServer->process();
             }
 
-            if ($this->plugins->isRelayAvailable()) {
-                $this->plugins->keepRelayAlive();
+            if (!empty($this->relayClient) && $this->relayClient->isAvailable()) {
+                $this->relayClient->keepAlive();
             }
             
             usleep(1000);

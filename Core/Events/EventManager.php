@@ -6,6 +6,7 @@ use HedgeBot\Core\HedgeBot;
 use ReflectionClass;
 use ElephantIO\Client;
 use ElephantIO\Engine\SocketIO\Version2X;
+use HedgeBot\Core\Events\Relay\RelayClient;
 use RuntimeException;
 
 /**
@@ -21,8 +22,20 @@ class EventManager
 {
     protected $events = []; ///< Events storage
     protected $autoMethods = []; ///< Method prefixes for automatic event recognition
-    protected $relaySocket = null; ///< Relay socket for event dynamic send
-    protected $relaySocketLastConnect = null;
+    protected $relayClient;
+
+    /**
+     * Sets the relay client to use for remote event dispatching.
+     * 
+     * @param RelayClient $relayClient The relay client to use.
+     * @return self 
+     */
+    public function setRelayClient(RelayClient $relayClient)
+    {
+        $this->relayClient = $relayClient;
+
+        return $this;
+    }
 
     /**
      * Adds a custom event listener, with its auto-binding method prefix.
@@ -186,15 +199,8 @@ class EventManager
 
 
         // Notifying other programs of the even through the socket if connected
-        if(!empty($this->relaySocket) && $event::isBroadcastable()) {
-            try {
-                $this->relaySocket->emit('event', [
-                    "listener" => $listener,
-                    "event" => $event->toArray()
-                ]);
-            } catch(RuntimeException $e) {
-                HedgeBot::message("Cannot send event notification to SocketIO: $0", $e->getMessage(), E_WARNING);
-            }
+        if(!empty($this->relayClient) && $event::isBroadcastable()) {
+            $this->relayClient->publish($listener, $event);
         }
 
         
@@ -281,72 +287,5 @@ class EventManager
         }
 
         return null;
-    }
-
-    //// Socket IO relay client ////
-
-    /**
-     * Initializes a Socket.IO client from the given host.
-     * 
-     * @param string $host The host to connect to.
-     * @return void 
-     */
-    public function initRelay($host)
-    {
-        $this->relaySocket = new Client(new Version2X($host));
-    }
-
-    /**
-     * Connects to the given relay socket via Socket.IO.
-     * 
-     * @return bool True if the connection succeeded, false if not. 
-     */
-    public function connectRelay()
-    {
-        try {
-            $this->relaySocket->initialize();
-            $this->relaySocketLastConnect = time();
-        } catch(RuntimeException $e) {
-            $this->relaySocket = null;
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Checks wether the relay is connected.
-     * 
-     * @return bool True if the relay is connected, false if not.
-     */
-    public function isRelayAvailable()
-    {
-        return $this->relaySocket != null;
-    }
-
-    /**
-     * Reads and keeps alive the relay Socket.IO connection.
-     * 
-     * @return void 
-     */
-    public function keepRelayAlive()
-    {
-        $this->relaySocket->getEngine()->keepAlive();
-
-        // Every day, reconnect to the relay
-        if($this->relaySocketLastConnect + 86400 < time()) {
-            HedgeBot::message("Reconnecting to Socket.IO relay routinely...", [], E_DEBUG);
-            $this->disconnectRelay();
-            $this->connectRelay();
-        }
-    }
-
-    /**
-     * Disconnects from the relay.
-     * @return void 
-     */
-    public function disconnectRelay()
-    {
-        $this->relaySocket->close();
     }
 }
