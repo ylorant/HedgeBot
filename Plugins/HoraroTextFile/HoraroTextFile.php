@@ -67,12 +67,23 @@ class HoraroTextFile extends PluginBase
 
 
     /**
-     * Event: Schedule has been updated by the Horaro plugin.
+     * Event: Schedule item has been changed by the Horaro plugin.
      *
      * @param HoraroEvent $event The event.
      * @throws \Exception
      */
     public function HoraroItemChange(HoraroEvent $event)
+    {
+        $this->updateScheduleMapping($event->schedule);
+    }
+
+    /**
+     * Event: Schedule data has been updated by the Horaro plugin.
+     *
+     * @param HoraroEvent $event The event.
+     * @throws \Exception
+     */
+    public function HoraroScheduleRefresh(HoraroEvent $event)
     {
         $this->updateScheduleMapping($event->schedule);
     }

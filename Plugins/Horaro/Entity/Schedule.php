@@ -545,7 +545,7 @@ class Schedule implements JsonSerializable
      *
      * @return array The schedule, represented as an array.
      */
-    public function toArray()
+    public function toArray($exportData = false)
     {
         $out = [];
 
@@ -557,6 +557,10 @@ class Schedule implements JsonSerializable
 
         $out['identSlug'] = $this->getIdentSlug();
 
+        if($exportData) {
+            $out['data'] = $this->getData();
+        }
+
         return $out;
     }
 
@@ -565,7 +569,7 @@ class Schedule implements JsonSerializable
      */
     public function jsonSerialize()
     {
-        return $this->toArray();
+        return $this->toArray(true);
     }
 
     // Other methods

@@ -337,6 +337,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
     {
         $schedule = $this->getScheduleById($scheduleId, $eventId);
         $schedule->setData($scheduleData);
+        Plugin::getManager()->callEvent(new HoraroEvent('scheduleRefresh', $schedule));
     }
 
     /**
@@ -999,13 +1000,40 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $this->saveData();
 
         if($reloadSchedule) {
-            HedgeBot::message("Reloading schedule data for schedule $0", [$schedule->getIdentSlug()], E_DEBUG);
-            $this->horaro->getScheduleAsync(
-                $schedule->getScheduleId(),
-                $schedule->getEventId(),
-                $schedule->getHiddenKey(),
-                [$this, 'onScheduleReceived']
-            );
+            $this->refreshScheduleData($identSlug);
+        }
+
+        return true;
+    }
+
+    /**
+     * Manually triggers a schedule refresh from Horaro.
+     * 
+     * @param mixed $identSlug The ident slug of the schedule to refresh.
+     * @return bool True if the schedule data refresh has been triggered, false if not.
+     */
+    public function refreshScheduleData($identSlug)
+    {
+        $schedule = $this->getScheduleByIdentSlug($identSlug);
+
+        // Return false if the schedule doesn't exist
+        if (empty($schedule)) {
+            return false;
+        }
+
+        HedgeBot::message("Reloading schedule data for schedule $0", [$schedule->getIdentSlug()], E_DEBUG);
+
+        // Fetch the new schedule data
+        $newScheduleData = $this->horaro->getScheduleAsync(
+            $schedule->getScheduleId(),
+            $schedule->getEventId(),
+            $schedule->getHiddenKey(),
+            [$this, 'onScheduleReceived']
+        );
+
+        if (!empty($newScheduleData)) {
+            $schedule->setData($newScheduleData);
+            Plugin::getManager()->callEvent(new HoraroEvent('scheduleRefresh', $schedule));
         }
 
         return true;

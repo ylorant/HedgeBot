@@ -173,6 +173,17 @@ class HoraroEndpoint
     }
 
     /**
+     * Triggers a schedule data refresh from Horaro.
+     * 
+     * @param mixed $identSlug The ident slug of the schedule to refresh.
+     * @return void 
+     */
+    public function refreshScheduleData($identSlug)
+    {
+        return $this->plugin->refreshScheduleData($identSlug);
+    }
+
+    /**
      * Gets the data from a schedule that the plugin fetched from Horaro.
      * 
      * @param string $identSlug The ident slug of the schedule to get the data from.
