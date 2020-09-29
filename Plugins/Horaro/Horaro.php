@@ -551,7 +551,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
         }
 
         $scheduleData = null;
-        if (!$this->scheduleExists($scheduleId, $eventId, $hiddenKey, $scheduleData)) {
+        if (!$this->scheduleExists($scheduleId, $eventId, $scheduleData)) {
             return false;
         }
 
@@ -809,7 +809,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
      *
      * @return bool True if the schedule exists on Horaro, false if it doesn't.
      */
-    public function scheduleExists($scheduleId, $eventId = null, $hiddenKey = null, &$schedule = null)
+    public function scheduleExists($scheduleId, $eventId = null, &$schedule = null)
     {
         $schedule = $this->horaro->getSchedule($scheduleId, $eventId);
         return $schedule !== false;
@@ -943,6 +943,8 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $schedule->setStarted(false); // Set started status as false, that way when we'll resume, 
                                       // it'll fast forward to whatever item it is.
 
+        Plugin::getManager()->callEvent(new HoraroEvent('pause', $schedule));
+        
         // Save the schedule
         $this->saveData();
         return true;
@@ -965,6 +967,8 @@ class Horaro extends PluginBase implements StoreSourceInterface
         }
 
         $schedule->setPaused(false);
+
+        Plugin::getManager()->callEvent(new HoraroEvent('resume', $schedule));
 
         // Save the schedule
         $this->saveData();
