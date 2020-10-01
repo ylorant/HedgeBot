@@ -3,6 +3,7 @@ namespace HedgeBot\Plugins\Twitter;
 
 use HedgeBot\Core\Data\ObjectAccess;
 use Codebird\Codebird;
+use Exception;
 
 /**
  * Class TwitterService
@@ -38,6 +39,22 @@ class TwitterService
         $this->client->setRemoteDownloadTimeout(15000);
 
         $this->reloadAccessTokens();
+    }
+
+    /// SETTINGS ///
+
+    /**
+     * Sets the underlying client timeout when sending a tweet or uploading an image.
+     * 
+     * @param mixed $timeout The timeout to set, in milliseconds.
+     * @return self
+     */
+    public function setTimeout($timeout)
+    {
+        $this->client->setTimeout($timeout);
+        $this->client->setRemoteDownloadTimeout($timeout);
+
+        return $this;
     }
     
     /// OAUTH WORKFLOW ///
@@ -193,15 +210,19 @@ class TwitterService
      */
     public function uploadMedia($mediaUrl)
     {
-        $reply = $this->client->media_upload([
-            'media' => $mediaUrl
-        ]);
+        try {
+            $reply = $this->client->media_upload([
+                'media' => $mediaUrl
+            ]);
 
-        if(empty($reply->media_id_string)) {
+            if(empty($reply->media_id_string)) {
+                return false;
+            }
+
+            return $reply->media_id_string;
+        } catch(Exception $e) {
             return false;
         }
-
-        return $reply->media_id_string;
     }
 
     /**
@@ -215,11 +236,15 @@ class TwitterService
      */
     public function tweet($content, array $media)
     {
-        $params = [
-            'status' => $content,
-            'media_ids' => join(',', $media)
-        ];
+        try {
+            $params = [
+                'status' => $content,
+                'media_ids' => join(',', $media)
+            ];
 
-        return $this->client->statuses_update($params);
+            return $this->client->statuses_update($params);
+        } catch(Exception $e) {
+            return false;
+        }
     }
 }

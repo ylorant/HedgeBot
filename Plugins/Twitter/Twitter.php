@@ -34,6 +34,10 @@ class Twitter extends PluginBase
             $this->data
         );
 
+        if(!empty($this->config['clientTimeout'])) {
+            $this->service->setTimeout($this->config['clientTimeout']);
+        }
+
         $this->loadData();
         Plugin::getManager()->addRoutine($this, "RoutineSendTweets", 10);
 
@@ -169,16 +173,34 @@ class Twitter extends PluginBase
     {
         $this->service->setCurrentAccount($tweet->getAccount());
         $mediaIds = [];
+        $failedUploadingMedia = false;
         
         // Upload the media before sending the tweet
         $tweetMedias = $tweet->getMedia();
         foreach($tweetMedias as $mediaUrl) {
-            $mediaIds[] = $this->service->uploadMedia($mediaUrl);
+            $mediaId = $this->service->uploadMedia($mediaUrl);
+
+            if(!empty($mediaId)) {
+                $mediaIds[] = $mediaId;
+            } else {
+                $failedUploadingMedia = true;
+            }
+        }
+
+        if($failedUploadingMedia) {
+            HedgeBot::message("Failed uploading media when sending tweet $0", [$tweet->getId()], E_ERROR);
+            return false;
         }
 
         // Tweet
-        $this->service->tweet($tweet->getContent(), $mediaIds);
+        $sent = $this->service->tweet($tweet->getContent(), $mediaIds);
         
+        // Log the error if the tweet sending failed
+        if(!$sent) {
+            HedgeBot::message("Failed sending tweet $0", [$tweet->getId()], E_ERROR);
+            return false;
+        }
+
         // Delete the tweet or just mark it as sent
         if($this->config['deleteSentTweets'] == "true") {
             $this->deleteScheduledTweet($tweet->getId());
