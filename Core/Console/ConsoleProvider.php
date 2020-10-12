@@ -24,6 +24,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 /**
  * Console provider, provides the console application with all the commands it can
@@ -96,14 +98,15 @@ class ConsoleProvider
         
         // Set global options
         $application->getDefinition()->addOptions([
-            new InputOption('--log-verbosity', null, InputOption::VALUE_REQUIRED, 'The bot log verbosity'),
             new InputOption('--config', null, InputOption::VALUE_REQUIRED, 'The bot configuration to use')
         ]);
         
         // Get the log verbosity option using low level input reading
         $input = new ArgvInput();
+
+        $this->setVerbosityLevel($input);
+
         $verbosityLevel = $input->getParameterOption('--log-verbosity');
-        HedgeBot::$verbose = $verbosityLevel ?? 0; // Default to a completely silent output
 
         // If we ask to start the bot (a bit of a direct call here), we have to skip loading most of the console environment
         if ($input->getFirstArgument() == StartBotCommand::COMMAND_NAME) {
@@ -112,6 +115,31 @@ class ConsoleProvider
         } else {
             define('ENV', 'console');
         }
+    }
+
+    /**
+     * Sets the verbosity level from the given input arguments.
+     * 
+     * @param InputInterface $input The input providing the arguments.
+     * @return void 
+     * 
+     * @see Application::populateIO() does the same thing, but isn't accessible.
+     */
+    public function setVerbosityLevel(InputInterface $input)
+    {
+        $verbosityLevel = 0; // Default to a completely silent output
+
+        if ($input->hasParameterOption(array('--quiet', '-q'), true) !== true) {
+            if ($input->hasParameterOption('-vvv', true) || $input->hasParameterOption('--verbose=3', true) || 3 === $input->getParameterOption('--verbose', false, true)) {
+                $verbosityLevel = 3;
+            } elseif ($input->hasParameterOption('-vv', true) || $input->hasParameterOption('--verbose=2', true) || 2 === $input->getParameterOption('--verbose', false, true)) {
+                $verbosityLevel = 2;
+            } elseif ($input->hasParameterOption('-v', true) || $input->hasParameterOption('--verbose=1', true) || $input->hasParameterOption('--verbose', true) || $input->getParameterOption('--verbose', false, true)) {
+                $verbosityLevel = 1;
+            }
+        }
+
+        HedgeBot::$verbose = $verbosityLevel;
     }
 
     /**

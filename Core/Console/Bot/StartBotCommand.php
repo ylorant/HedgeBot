@@ -17,8 +17,6 @@ class StartBotCommand extends Command
         $this
             ->setName(self::COMMAND_NAME)
             ->setDescription("Starts the bot.");
-        // $this->addOption('verbose', 'v', InputOption::VALUE_NONE, "Sets the output as verbose.");
-        // $this->addOption('config', 'c', InputOption::VALUE_REQUIRED, "Sets the config dir location.");
     }
 
     public function execute(InputInterface $input, OutputInterface $output)

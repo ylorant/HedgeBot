@@ -113,8 +113,8 @@ class HedgeBot
         Data::setObject($this->data);
         Config::setObject($this->config);
 
-        // Setting verbosity
-        if (HedgeBot::$verbose == 1 && !empty($this->config->general->verbosity)) {
+        // Setting verbosity according to config if not overriden by console
+        if (empty(HedgeBot::$verbose) && isset($this->config->general->verbosity)) {
             HedgeBot::$verbose = $this->config->general->verbosity;
         }
 
