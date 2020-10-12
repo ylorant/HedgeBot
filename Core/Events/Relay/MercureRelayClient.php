@@ -1,9 +1,12 @@
 <?php
 namespace HedgeBot\Core\Events\Relay;
 
+use Exception;
 use Firebase\JWT\JWT;
 use HedgeBot\Core\Events\Event;
+use HedgeBot\Core\HedgeBot;
 use RuntimeException;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\Mercure\Jwt\StaticJwtProvider;
 use Symfony\Component\Mercure\Publisher;
 use Symfony\Component\Mercure\Update;
@@ -55,15 +58,20 @@ class MercureRelayClient extends RelayClient
      */
     public function publish($listener, Event $event)
     {
-        $update = new Update(
-            $this->config['topic'], 
-            json_encode([
-                'listener' => $listener,
-                'event' => $event->toArray()
-            ])
-        );
+        try {
 
-        ($this->publisher)($update);
+            $update = new Update(
+                $this->config['topic'], 
+                json_encode([
+                    'listener' => $listener,
+                    'event' => $event->toArray()
+                    ])
+                );
+                
+            ($this->publisher)($update);
+        } catch(TransportException $e) {
+            HedgeBot::message("Could not send event to event relay: $0", [$e->getMessage()], E_WARNING);
+        }
 
         return true;
     }
