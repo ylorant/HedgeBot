@@ -263,7 +263,9 @@ class Server
             return false;
         }
 
-        $this->endpoints[$endpoint] = $class;
+        HedgeBot::message("Removing Tikal endpoint '". $endpoint);
+
+        unset($this->endpoints[$endpoint]);
     }
 
     /**
@@ -309,11 +311,6 @@ class Server
         $length,
         $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     ) {
-        // If random_int() isn't available, try to load random_compat
-        if (!function_exists('random_int')) {
-            require_once ROOT_DIR . "lib/random_compat/lib/random.php";
-        }
-
         $str = '';
         $max = strlen($keyspace) - 1;
         for ($i = 0; $i < $length; ++$i) {

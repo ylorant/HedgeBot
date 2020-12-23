@@ -65,8 +65,8 @@ class MercureRelayClient extends RelayClient
                 json_encode([
                     'listener' => $listener,
                     'event' => $event->toArray()
-                    ])
-                );
+                ])
+            );
                 
             ($this->publisher)($update);
         } catch(TransportException $e) {
