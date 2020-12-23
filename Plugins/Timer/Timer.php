@@ -324,6 +324,14 @@ class Timer extends PluginBase
         return $timer;
     }
 
+    /**
+     * Stops the timer only for one player.
+     * 
+     * @param EntityRaceTimer $timer The timer to stop.
+     * @param string $player The player to stop the timer of.
+     * @param bool $sendEvents Set to true to propagate the stop event. Defaults to true.
+     * @return bool True if the timer has been correctly stopped, false if not.
+     */
     public function stopPlayerTimer(EntityRaceTimer $timer, string $player, $sendEvents = true)
     {
         // Cannot stop the timer for a player if the timer isn't started.

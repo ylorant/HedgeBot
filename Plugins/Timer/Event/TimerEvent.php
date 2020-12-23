@@ -2,6 +2,8 @@
 
 namespace HedgeBot\Plugins\Timer\Event;
 
+use DateInterval;
+use DateTime;
 use HedgeBot\Core\Events\Event;
 use HedgeBot\Plugins\Timer\Entity\Timer;
 
@@ -15,6 +17,8 @@ class TimerEvent extends Event
     protected $timer;
     /** @var string */
     protected $player;
+    /** @var string */
+    protected $localTime;
 
     /**
      * TimerEvent constructor.
@@ -24,8 +28,12 @@ class TimerEvent extends Event
     public function __construct($name, Timer $timer, string $player = null)
     {
         parent::__construct($name);
+        $now = new DateTime();
+
         $this->timer = $timer;
         $this->player = $player;
+        $this->localTime = $now->format('c');
+        $this->msec = $now->format('v');
     }
 
     /**
