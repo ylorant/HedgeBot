@@ -1,6 +1,8 @@
 <?php
 namespace HedgeBot\Plugins\Timer;
 
+use DateInterval;
+use DateTime;
 use HedgeBot\Plugins\Timer\Entity\RaceTimer;
 
 class TimerEndpoint
@@ -28,6 +30,22 @@ class TimerEndpoint
     public function getTimers()
     {
         return $this->plugin->getTimers();
+    }
+
+    /**
+     * Gets the local time with milliseconds.
+     * 
+     * @return array The local time as an array with the general time in the "time" key using ISO8601,
+     *               and the milliseconds in the "msec" key.
+     */
+    public function getLocalTime()
+    {
+        $now = new DateTime();
+
+        return [
+            "time" => $now->format('c'),
+            "msec" => $now->format('v')
+        ];
     }
 
     /**
