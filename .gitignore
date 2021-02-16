@@ -8,3 +8,4 @@ doc/*
 *.log
 vendor
 .idea
+.phpcs-cache
