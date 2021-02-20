@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1bfc20b3620d916a6307d427288ac9b4",
+    "content-hash": "3c6673e9ca556f1230f70c6c32665aca",
     "packages": [
         {
             "name": "composer/installers",
@@ -1131,16 +1131,16 @@
         },
         {
             "name": "ylorant/twitch-php-client",
-            "version": "dev-master",
+            "version": "1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ylorant/twitch-php-client.git",
-                "reference": "ceb11dbc03dc69041554c99cceb6140a4f6726bd"
+                "reference": "17beb7fbf36f4cf93b16665dc4a8b37bc82f0d08"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/ceb11dbc03dc69041554c99cceb6140a4f6726bd",
-                "reference": "ceb11dbc03dc69041554c99cceb6140a4f6726bd",
+                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/17beb7fbf36f4cf93b16665dc4a8b37bc82f0d08",
+                "reference": "17beb7fbf36f4cf93b16665dc4a8b37bc82f0d08",
                 "shasum": ""
             },
             "require": {
@@ -1167,7 +1167,11 @@
                 "MIT"
             ],
             "description": "PHP client for Twitch's multiple APIs, easily extendable and embeddable.",
-            "time": "2020-07-14T22:54:43+00:00"
+            "support": {
+                "issues": "https://github.com/ylorant/twitch-php-client/issues",
+                "source": "https://github.com/ylorant/twitch-php-client/tree/master"
+            },
+            "time": "2020-06-30T11:33:57+00:00"
         }
     ],
     "packages-dev": [
@@ -1226,7 +1230,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "ylorant/twitch-php-client": 20,
         "wisembly/elephant.io": 20
     },
     "prefer-stable": true,
@@ -1237,5 +1240,6 @@
         "ext-intl": "*",
         "ext-json": "*"
     },
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "2.0.0"
 }
