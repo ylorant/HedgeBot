@@ -5,6 +5,7 @@ use TwitchClient\Authentication\TokenProvider;
 use HedgeBot\Core\Data\Provider;
 use TwitchClient\API\Kraken\Kraken;
 use TwitchClient\API\Auth\Authentication;
+use TwitchClient\API\Helix\Helix;
 
 /**
  * Twitch service class. Allows to create Twitch clients and holds the token provider functionality.
@@ -21,10 +22,14 @@ class TwitchService implements TokenProvider
 
     // Token basepath in the data storage
     const DATA_TOKEN_BASEPATH = 'twitch.auth';
+    // 
+    const DATA_DEFAULT_TOKEN_BASEPATH = 'twitch.default_auth';
     // Client type name: Kraken
     const CLIENT_TYPE_KRAKEN = 'kraken';
     // Client type name: Authentication
     const CLIENT_TYPE_AUTH = 'auth';
+    // Client type name: Helix
+    const CLIENT_TYPE_HELIX = 'helix';
 
     /**
      * Constructor, initializes the service.
@@ -122,6 +127,68 @@ class TwitchService implements TokenProvider
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getDefaultAccessToken()
+    {
+        $tokenObject = $this->dataProvider->get(self::DATA_DEFAULT_TOKEN_BASEPATH);
+
+        if(empty($tokenObject)) {
+            return null;
+        }
+
+        return $tokenObject['token'];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setDefaultAccessToken($accessToken)
+    {
+        $tokenObject = $this->dataProvider->get(self::DATA_DEFAULT_TOKEN_BASEPATH);
+        if(empty($accessToken)) {
+            $tokenObject = [
+                'token' => '',
+                'refresh' => ''
+            ];
+        }
+
+        $tokenObject['token'] = $accessToken;
+        $this->dataProvider->set(self::DATA_DEFAULT_TOKEN_BASEPATH, $tokenObject);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getDefaultRefreshToken()
+    {
+        $tokenObject = $this->dataProvider->get(self::DATA_DEFAULT_TOKEN_BASEPATH);
+
+        if(empty($tokenObject)) {
+            return null;
+        }
+
+        return $tokenObject['refresh'];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setDefaultRefreshToken($refreshToken)
+    {
+        $tokenObject = $this->dataProvider->get(self::DATA_DEFAULT_TOKEN_BASEPATH);
+        if(empty($tokenObject)) {
+            $tokenObject = [
+                'token' => '',
+                'refresh' => ''
+            ];
+        }
+
+        $tokenObject['refresh'] = $refreshToken;
+        $this->dataProvider->set(self::DATA_DEFAULT_TOKEN_BASEPATH, $tokenObject);
+    }
+
+    /**
      * Gets the API client.
      * 
      * @return object The API client.
@@ -133,8 +200,13 @@ class TwitchService implements TokenProvider
                 return new Kraken($this);
                 break;
             
+            case self::CLIENT_TYPE_HELIX:
+                return new Helix($this);
+                break;
+            
             case self::CLIENT_TYPE_AUTH:
                 return new Authentication($this);
+                // no-break
         }
     }
 

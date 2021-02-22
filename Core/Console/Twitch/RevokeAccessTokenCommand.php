@@ -34,7 +34,6 @@ class RevokeAccessTokenCommand extends Command
      */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $config = $this->getConfigStorage();
         $channel = $input->getArgument('channel');
 
         $clientID = $this->config->get('twitch.auth.clientId');

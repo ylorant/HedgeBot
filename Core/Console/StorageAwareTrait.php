@@ -2,7 +2,6 @@
 
 namespace HedgeBot\Core\Console;
 
-use Symfony\Component\Console\Command\Command;
 use HedgeBot\Core\Data\Provider;
 
 /**
