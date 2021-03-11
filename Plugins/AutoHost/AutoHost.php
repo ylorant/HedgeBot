@@ -166,7 +166,7 @@ class AutoHost extends PluginBase
     protected function checkTitleValidity($title, array $host)
     {
         $whiteWordFound = true;
-        
+
         $transliterator = Transliterator::createFromRules(self::TRANSLIT_RULES, Transliterator::FORWARD);
         $title = strtolower($transliterator->transliterate($title));
 
@@ -335,7 +335,7 @@ class AutoHost extends PluginBase
 
         $newHostData = [
             'channel' => $hostName,
-            'enabled' => (bool)$enabled,
+            'enabled' => $enabled,
             'time' => (int)$timeInterval,
             'titleWhiteList' => $newWhiteList,
             'titleBlackList' => $newBlackList,
@@ -486,7 +486,7 @@ class AutoHost extends PluginBase
 
         $this->hosts[$hostName][$filterListName] = array_values($this->hosts[$hostName][$filterListName]);
         $this->saveData();
-        
+
         return true;
     }
 
