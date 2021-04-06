@@ -22,7 +22,7 @@ Core functions :
 - Internal API for quick and easy access to bot functions from plugins
 - Documentation generator for plugin commands (outputs Markdown).
 - Web admin (see [Hedgebot Web Admin](https://github.com/ylorant/HedgeBot-Admin))
-- Live refresh through evented websockets (Socket.IO).
+- Live refresh through servent-sent events (formerly Socket.IO used, abandoned for [Mercure](https://mercure.rocks/docs/hub).
 
 Plugins :
 
@@ -36,7 +36,7 @@ Plugins :
 - HoraroTextFile: Stores the current item of a schedule loaded in the **Horaro** plugin in a text file for other programs to access.
 - TestManager: Development-oriented plugin that allows to test how other plugins are supposed to work.
 - **Twitter**: Allows scheduling tweets to automatically send at a specific time or when a specific event is fired.
-- StreamControl : Handle basic stream updates : title, game, ...
+- **StreamControl** : Handle basic stream updates : title, game, ...
 - **AutoHost**: Handles a hosting manager, included priorities (with %), time to switch to another stream and whitelist/blacklist of words into title.
 - **Timer**: Handles timers that can be started, stopped, paused and viewed through a web admin.
 
@@ -47,12 +47,12 @@ Plugins :
 - [IN PROGRESS] Spam regulation plugin (BannedWords), timing out users for unwanted words in messages, links, walltexts and/or other things
 - Donation alerts, with StreamLabs API
 - Cooldown feature, as a core feature (allowing cooldown per user type and per command).
-- Logger core feature, allowing logging actions from every plugin
+- [IN PROGRESS] Logger core feature, allowing logging actions from every plugin
 - Statistics plugin, gathering real time stats from chat
 - Discord API integration
-- Raffle plugin
+- [IN PROGRESS] Raffle plugin
 - Update all plugins' comments to fit Documentor standards (like on the Currency plugin).
-- Twitter plugin: Allow tweets with multiple images.
+- Enhanced Twitter plugin: Allow tweets with multiple images.
 
 ## I want it !
 
@@ -64,7 +64,7 @@ detailing all the instructions.
 If you want to help improving this bot, you can do it in the following ways :
 
 - Developing plugins. If you want to merge them in the main tree, drop a Pull Request :)
-- Documenting things. 
+- Documenting things.
 - Testing. Tests are done to ensure that the plugins work properly, but nothing beats a real field test.
 
 For all of these things, if you want to discuss about it, feel free to contact me on my Twitter : [@linkboss](https://twitter.com/linkboss).
