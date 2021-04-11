@@ -7,6 +7,7 @@ use HedgeBot\Core\API\Plugin as PluginAPI;
 use HedgeBot\Core\Data\ObjectAccess;
 use ReflectionClass;
 use ReflectionMethod;
+use ReflectionParameter;
 use stdClass;
 
 /**
@@ -186,7 +187,7 @@ class Server
             $orderedParams = array();
             foreach ($reflectionMethod->getParameters() as $reflectionParameter) {
                 if (isset($rpcQuery->params->{$reflectionParameter->name})) {
-                    $orderedParams[] = $rpcQuery->params->{$reflectionParameter->name};
+                    $orderedParams[] = self::formatParameterValue($reflectionParameter, $rpcQuery->params->{$reflectionParameter->name});
                 } elseif ($reflectionParameter->isOptional()) {
                     $orderedParams[] = $reflectionParameter->getDefaultValue();
                 } else {
@@ -195,6 +196,12 @@ class Server
             }
 
             $rpcQuery->params = $orderedParams;
+        } else { // If they're not, just converting them by numeric index
+            foreach ($reflectionMethod->getParameters() as $i => $reflectionParameter) {
+                if($i < count($rpcQuery->params)) {
+                    $rpcQuery->params[$i] = self::formatParameterValue($reflectionParameter, $rpcQuery->params[$i]);
+                }
+            }
         }
 
         $funcResult = $reflectionMethod->invokeArgs($endpointClass, $rpcQuery->params);
@@ -317,5 +324,21 @@ class Server
             $str .= $keyspace[random_int(0, $max)];
         }
         return $str;
+    }
+
+    public static function formatParameterValue(ReflectionParameter $reflectionParameter, $value)
+    {
+        if(empty($reflectionParameter->getType())) {
+            return $value;
+        }
+        
+        switch((string) $reflectionParameter->getType()) {
+            case "array":
+                $value = (array) $value;
+                break;
+            // TODO: Implement other needed translate types ?
+        }
+
+        return $value;
     }
 }
