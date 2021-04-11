@@ -20,6 +20,8 @@ class TwitterService
     protected $callbackUrl;
     /** @var array Access tokens for each user on Twitter */
     protected $accessTokens;
+    /** @var array Last error encountered by the service */
+    protected $lastError;
 
     /** 
      * Constructor.
@@ -55,6 +57,35 @@ class TwitterService
         $this->client->setRemoteDownloadTimeout($timeout);
 
         return $this;
+    }
+
+    /// INFO ///
+
+    /**
+     * Gets the last error that occured in the service.
+     * 
+     * @param bool $asString Set to true to return the error code and message as a string, or false to return 
+     *                       them separately as an array.
+     * 
+     * @return array|string|null The last error, or null if none occured yet.
+     */
+    public function getLastError($asString = true)
+    {
+        if(empty($this->lastError) || !$asString) {
+            return $this->lastError;
+        } else {
+            return "(". $this->lastError['code']. ") ". $this->lastError['message'];
+        }
+    }
+
+    /**
+     * Resets the status of the last error in the service.
+     * 
+     * @return void
+     */
+    public function resetErrors()
+    {
+        $this->lastError = null;
     }
     
     /// OAUTH WORKFLOW ///
@@ -221,6 +252,7 @@ class TwitterService
 
             return $reply->media_id_string;
         } catch(Exception $e) {
+            $this->lastError = ["code" => $e->getCode(), "message" => $e->getMessage()];
             return false;
         }
     }
@@ -244,6 +276,7 @@ class TwitterService
 
             return $this->client->statuses_update($params);
         } catch(Exception $e) {
+            $this->lastError = ["code" => $e->getCode(), "message" => $e->getMessage()];
             return false;
         }
     }

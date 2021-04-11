@@ -74,9 +74,9 @@ class TwitterEndpoint
      * 
      * @see Twitter::getScheduledTweets()
      */
-    public function getScheduledTweets()
+    public function getScheduledTweets(array $filters = [])
     {
-        return $this->plugin->getScheduledTweets();
+        return $this->plugin->getScheduledTweets($filters);
     }
 
     /**
@@ -94,12 +94,12 @@ class TwitterEndpoint
      * 
      * @param array $tweet The tweet data as an array.
      * 
-     * @see Twitter::scheduleTweet()
+     * @see Twitter::saveScheduledTweet()
      * @see ScheduledTweet::fromArray()
      */
     public function saveScheduledTweet($tweet)
     {
-        return $this->plugin->scheduleTweet(ScheduledTweet::fromArray((array) $tweet));
+        return $this->plugin->saveScheduledTweet(ScheduledTweet::fromArray((array) $tweet));
     }
 
     /**

@@ -117,6 +117,6 @@ class ScheduleTweetCommand extends Command
             }
         } while($constraintType != $stopType);
 
-        $plugin->scheduleTweet($tweet);
+        $plugin->saveScheduledTweet($tweet);
     }
 }

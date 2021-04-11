@@ -17,10 +17,12 @@ class ScheduledTweet implements JsonSerializable
     protected $content;
     /** @var array The list of media URLs that are embedded into the tweet (images) */
     protected $media;
-    /** @var bool Wether the tweet has already been sent or not */
-    protected $sent;
-    /** @var DateTime|null The time at which the tweet has been set */
+    /** @var string The tweet sending status */
+    protected $status;
+    /** @var DateTime|null The time at which the tweet has been sent */
     protected $sentTime;
+    /** @var string If the tweet failed sending, the error raised by the library */
+    protected $error;
     /** @var string The trigger type of the event. Value is one of the TRIGGER_* constants. */
     protected $trigger;
     /** @var DateTime|null The time at which the tweet should be sent (in case of a datetime trigger). */
@@ -32,11 +34,19 @@ class ScheduledTweet implements JsonSerializable
     /** @var string The channel this tweet refers to. Used to define the store context in constraints. */
     protected $channel;
 
+    // Trigger types
     const TRIGGER_DATETIME = "datetime";
     const TRIGGER_EVENT = "event";
 
+    // Constraint types
     const CONSTRAINT_STORE = "store";
     const CONSTRAINT_EVENT = "event";
+
+    // Tweet statuses
+    const STATUS_DRAFT = "draft";
+    const STATUS_SCHEDULED = "scheduled";
+    const STATUS_SENT = "sent";
+    const STATUS_ERROR = "error";
 
     /**
      * Constructor.
@@ -161,21 +171,21 @@ class ScheduledTweet implements JsonSerializable
     }
 
     /**
-     * Get the value of sent
+     * Get the value of status
      */ 
-    public function isSent()
+    public function getStatus()
     {
-        return $this->sent;
+        return $this->status;
     }
 
     /**
-     * Set the value of sent
+     * Set the value of status
      *
      * @return  self
      */ 
-    public function setSent($sent)
+    public function setStatus($status)
     {
-        $this->sent = $sent;
+        $this->status = $status;
 
         return $this;
     }
@@ -196,6 +206,26 @@ class ScheduledTweet implements JsonSerializable
     public function setSentTime(DateTime $sentTime = null)
     {
         $this->sentTime = $sentTime;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of error
+     */ 
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    /**
+     * Set the value of error
+     *
+     * @return  self
+     */ 
+    public function setError($error)
+    {
+        $this->error = $error;
 
         return $this;
     }
@@ -354,7 +384,7 @@ class ScheduledTweet implements JsonSerializable
         }
 
         // Handle business logic for the tweet integrity
-        if(!$obj->sent) {
+        if(!in_array($obj->status, [self::STATUS_SENT, self::STATUS_ERROR])) {
             $obj->setSentTime(null);
         }
 
@@ -379,8 +409,9 @@ class ScheduledTweet implements JsonSerializable
             'channel' => $this->channel,
             'content' => $this->content,
             'media' => $this->media,
-            'sent' => $this->sent,
+            'status' => $this->status,
             'sentTime' => $this->sentTime ? $this->sentTime->format('c') : null,
+            'error' => $this->error,
             'trigger' => $this->trigger,
             'sendTime' => $this->sendTime ? $this->sendTime->format('c') : null,
             'event' => $this->event,

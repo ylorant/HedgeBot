@@ -53,32 +53,67 @@ class Twitter extends PluginBase
     public function RoutineSendTweets()
     {
         $now = new DateTime();
-        $tweetsToRemove = [];
 
-        foreach($this->scheduledTweets as &$tweet) {
+        // Anonymous function to check if the tweet is in a sendable state
+        $tweetCanBeSent = function(ScheduledTweet $tweet) use($now) {
             if($tweet->getTrigger() != ScheduledTweet::TRIGGER_DATETIME) {
-                continue;
+                return false;
+            }
+    
+            if($tweet->getStatus() != ScheduledTweet::STATUS_SCHEDULED) {
+                return false;
+            }
+    
+            if($tweet->getSendTime() > $now) {
+                return false;
             }
 
-            if($tweet->getSendTime() < $now && !$tweet->isSent()) {
-                if($this->checkConstraints($tweet)) {
-                    $this->sendTweet($tweet);
-                }
+            return true;
+        };
 
+        /** @var ScheduledTweet $tweet */
+        foreach($this->scheduledTweets as &$tweet) {
+            if($tweetCanBeSent($tweet) && $this->checkConstraints($tweet)) {
+                $this->sendTweet($tweet);
                 continue;
             }
-
-            // Reset the sent status if needed
-            if($tweet->isSent() && $tweet->getTrigger() != ScheduledTweet::TRIGGER_DATETIME) {
+            
+            // Reset the status or delete the tweets after their expiration time
+            if(in_array($tweet->getStatus(), [ScheduledTweet::STATUS_SENT, ScheduledTweet::STATUS_ERROR])) {
                 $sentTime = clone $tweet->getSentTime();
-                $sentTime->add(new DateInterval('PT' . $this->config['resetSentDelay'] . 'S'));
+                $sentTime->add(new DateInterval('PT' . $this->config['cleanupDelay'] . 'S'));
 
+                // Expiration rules: 
+                // - Only delete time based tweets if the delete config option is enabled
+                // - Event-basaed tweets that expire the cleanup delay are put back into the queue
                 if($sentTime <= $now) {
-                    $tweet->setSent(false);
-                    $this->saveData();
+                    if(filter_var($this->config['deleteSentTweets'], FILTER_VALIDATE_BOOLEAN)) {
+                        $deleted = $this->deleteScheduledTweet($tweet->getId());
+
+                        if($deleted) {
+                            HedgeBot::message("Deleted tweet $0.", [$tweet->getId()], E_DEBUG);
+                        } else {
+                            HedgeBot::message("Failed deleting tweet $0.", [$tweet->getId()], E_WARNING);
+                        }
+                    } elseif($tweet->getTrigger() == ScheduledTweet::TRIGGER_EVENT) {
+                        $tweet->setStatus(ScheduledTweet::STATUS_SCHEDULED);
+                        $tweet->setSentTime(null);
+                        $this->saveData();
+
+                        HedgeBot::message("Reset tweet $0 in the scheduled queue.", [$tweet->getId()], E_DEBUG);
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Config has been updated externally.
+     */
+    public function CoreEventConfigUpdate()
+    {
+        // TODO: Find a way to avoid to re-find the configuration manually
+        $this->config = HedgeBot::getInstance()->config->get('plugin.Twitter');
     }
 
     /**
@@ -167,50 +202,67 @@ class Twitter extends PluginBase
      * 
      * @param ScheduledTweet $tweet The scheduled tweet to send.
      * 
-     * TODO: Handle service exceptions from Codebird
+     * TODO: Clean up code duplications here
      */
     public function sendTweet(ScheduledTweet $tweet)
     {
         $this->service->setCurrentAccount($tweet->getAccount());
         $mediaIds = [];
         $failedUploadingMedia = false;
+        $simulatedLastError = null;
+        $isDryRun = filter_var($this->config['dryRun'] ?? null, FILTER_VALIDATE_BOOLEAN);
         
-        // Upload the media before sending the tweet
-        $tweetMedias = $tweet->getMedia();
-        foreach($tweetMedias as $mediaUrl) {
-            $mediaId = $this->service->uploadMedia($mediaUrl);
+        // Upload the media before sending the tweet, only if not in a dry run
+        if(!$isDryRun) {
+            $tweetMedias = $tweet->getMedia();
+            foreach($tweetMedias as $mediaUrl) {
+                $mediaId = $this->service->uploadMedia($mediaUrl);
 
-            if(!empty($mediaId)) {
-                $mediaIds[] = $mediaId;
-            } else {
-                $failedUploadingMedia = true;
+                if(!empty($mediaId)) {
+                    $mediaIds[] = $mediaId;
+                } else {
+                    $failedUploadingMedia = true;
+                }
+            }
+
+            if($failedUploadingMedia) {
+                HedgeBot::message("Failed uploading media when sending tweet $0", [$tweet->getId()], E_ERROR);
+                $tweet->setStatus(ScheduledTweet::STATUS_ERROR);
+                $tweet->setSentTime(new DateTime());
+                $tweet->setError($simulatedLastError ?? $this->service->getLastError()); 
+                $this->saveData();
+                return false;
+            }
+            
+            // Tweet
+            $sent = $this->service->tweet($tweet->getContent(), $mediaIds);
+        } else {
+            // We're in a dry run, we simulate the reply if needed
+            $sent = filter_var($this->config['dryRunSuccess'], FILTER_VALIDATE_BOOLEAN);
+            if(!$sent) {
+                $simulatedLastError = "(XXX) Simulated tweet error";
             }
         }
-
-        if($failedUploadingMedia) {
-            HedgeBot::message("Failed uploading media when sending tweet $0", [$tweet->getId()], E_ERROR);
-            return false;
-        }
-
-        // Tweet
-        $sent = $this->service->tweet($tweet->getContent(), $mediaIds);
         
         // Log the error if the tweet sending failed
         if(!$sent) {
             HedgeBot::message("Failed sending tweet $0", [$tweet->getId()], E_ERROR);
+            if(!empty($this->service->getLastError())) {
+                HedgeBot::message('Error $code: $message', $this->service->getLastError(), E_ERROR);
+            }
+            $tweet->setStatus(ScheduledTweet::STATUS_ERROR);
+            $tweet->setError($simulatedLastError ?? $this->service->getLastError());
+            $tweet->setSentTime(new DateTime());
+            $this->saveData();
+
             return false;
         }
 
         // Delete the tweet or just mark it as sent
-        if($this->config['deleteSentTweets'] == "true") {
-            $this->deleteScheduledTweet($tweet->getId());
-        } else {
-            $tweet->setSent(true);
-            $tweet->setSentTime(new DateTime());
-        }
-        
-        $this->saveData();
+        $tweet->setStatus(ScheduledTweet::STATUS_SENT);
+        $tweet->setSentTime(new DateTime());
 
+        $this->saveData();
         HedgeBot::message("Tweeted scheduled tweet $0", [$tweet->getId()], E_DEBUG);
 
         return true;
@@ -226,7 +278,7 @@ class Twitter extends PluginBase
      * 
      * @return string The new tweet ID. Uses uniqid().
      */
-    public function scheduleTweet(ScheduledTweet $tweet)
+    public function saveScheduledTweet(ScheduledTweet $tweet)
     {
         if(!$this->service->hasAccessToken($tweet->getAccount())) {
             return false;
@@ -270,13 +322,40 @@ class Twitter extends PluginBase
 
     /**
      * Gets the scheduled tweets saved in the list.
-     * TODO: allow to filter by account ?
+     * 
+     * @param array $filters Allows to filter tweets with, by key:
+     *                       - account: The account that will tweet
+     *                       - channel: The bound channel
+     *                       - status: The tweet status(es) 
      * 
      * @return array an associative array of all the scheduled tweets, with their ID as key.
      */
-    public function getScheduledTweets()
+    public function getScheduledTweets(array $filters = [])
     {
-        return $this->scheduledTweets;
+        $output = $this->scheduledTweets;
+
+        if(!empty($filters)) {
+            /** @var ScheduledTweet $tweet */
+            $output = array_filter($output, function($tweet) use($filters) {
+                $filterMatch = true;
+                
+                if(!empty($filters['account'])) {
+                    $filterMatch = $filterMatch && $tweet->getAccount() == $filters['account'];
+                }
+
+                if(!empty($filters['channel'])) {
+                    $filterMatch = $filterMatch && $tweet->getChannel() == $filters['channel'];
+                }
+
+                if(!empty($filters['status'])) {
+                    $filterMatch = $filterMatch && in_array($tweet->getStatus(), (array) $filters['status']);
+                }
+
+                return $filterMatch;
+            });
+        }
+
+        return $output;
     }
 
     /**
