@@ -22,6 +22,7 @@ class CoreEvents
 {
     private $names;
     private $lastMessages = [];
+    private $channelsToJoin = [];
 
     public function __construct()
     {
@@ -134,7 +135,10 @@ class CoreEvents
             }
         }
 
-        IRC::joinChannels($config['channels']);
+        $this->channelsToJoin = explode(',', str_replace(' ', '', $config['channels']));
+        $firstChannel = array_shift($this->channelsToJoin);
+
+        IRC::joinChannels($firstChannel);
         HedgeBot::getInstance()->initialized = true;
     }
 
@@ -166,6 +170,9 @@ class CoreEvents
                 $ev->channel = $ev->message;
             }
             IRC::userJoin($ev->channel, $ev->nick);
+        } elseif(!empty($this->channelsToJoin)) {
+            $nextChannel = array_shift($this->channelsToJoin);
+            IRC::joinChannels($nextChannel);
         }
     }
 
