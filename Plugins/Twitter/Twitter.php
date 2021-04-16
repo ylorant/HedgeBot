@@ -141,7 +141,7 @@ class Twitter extends PluginBase
                 continue;
             }
 
-            if($tweet->getEvent() == $eventFQN && !$tweet->isSent()) {
+            if($tweet->getEvent() == $eventFQN && $tweet->getStatus() == ScheduledTweet::STATUS_SCHEDULED) {
                 HedgeBot::message("Catched event $0 for tweet $1", [$eventFQN, $tweet->getId()], E_DEBUG);
                 if($this->checkConstraints($tweet, $event->event)) {
                     $this->sendTweet($tweet);
