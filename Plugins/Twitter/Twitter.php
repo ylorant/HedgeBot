@@ -248,7 +248,7 @@ class Twitter extends PluginBase
         if(!$sent) {
             HedgeBot::message("Failed sending tweet $0", [$tweet->getId()], E_ERROR);
             if(!empty($this->service->getLastError())) {
-                HedgeBot::message('Error $code: $message', $this->service->getLastError(), E_ERROR);
+                HedgeBot::message('Error $code: $message', $this->service->getLastError(false), E_ERROR);
             }
             $tweet->setStatus(ScheduledTweet::STATUS_ERROR);
             $tweet->setError($simulatedLastError ?? $this->service->getLastError());
