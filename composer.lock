@@ -1091,20 +1091,20 @@
         },
         {
             "name": "ylorant/horaro-php-client",
-            "version": "1.1",
+            "version": "1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ylorant/horaro-php-client.git",
-                "reference": "71239f0cabcc4e71e758c717575c91e356d04b8a"
+                "reference": "d27742238d4c2988691951f5e1f3b7a3555d3acf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ylorant/horaro-php-client/zipball/71239f0cabcc4e71e758c717575c91e356d04b8a",
-                "reference": "71239f0cabcc4e71e758c717575c91e356d04b8a",
+                "url": "https://api.github.com/repos/ylorant/horaro-php-client/zipball/d27742238d4c2988691951f5e1f3b7a3555d3acf",
+                "reference": "d27742238d4c2988691951f5e1f3b7a3555d3acf",
                 "shasum": ""
             },
             "require": {
-                "ext-curl": "^7.0"
+                "ext-curl": "*"
             },
             "require-dev": {
                 "phpunit/phpunit": "^9.1"
@@ -1127,7 +1127,11 @@
                 }
             ],
             "description": "Horaro API PHP client library",
-            "time": "2020-06-23T07:04:56+00:00"
+            "support": {
+                "issues": "https://github.com/ylorant/horaro-php-client/issues",
+                "source": "https://github.com/ylorant/horaro-php-client/tree/1.2"
+            },
+            "time": "2021-05-27T14:03:31+00:00"
         },
         {
             "name": "ylorant/twitch-php-client",
