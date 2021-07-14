@@ -54,11 +54,13 @@ class Announcements extends PluginBase
      */
     public function getMessagesByChannel($channelName)
     {
-        foreach ($this->messages as $key => $message) {
-            return array_filter($this->messages, function ($message) use ($channelName) {
+        return array_filter($this->messages, function ($message) use ($channelName) {
+            if(isset($message['channels'])) {
                 return in_array($channelName, $message['channels']);
-            });
-        }
+            } else {
+                return false;
+            }
+        });
     }
 
     /**
