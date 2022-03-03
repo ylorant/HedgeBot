@@ -834,10 +834,20 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $channelTitle = $textFormatter->format($titleTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
         $channelGame = $textFormatter->format($gameTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
 
-        HedgeBot::message("New title: $0", [$channelTitle], E_DEBUG);
-        HedgeBot::message("New game: $0", [$channelGame], E_DEBUG);
+        // Updating the game/category needs from us to provide its ID, so we need to look it up
+        HedgeBot::message("Searching ID for game named $0", [$channelGame]);
+        $gameSearch = Twitch::getClient()->search->categories($channelGame, false);
+        $gameId = 0; // Default to no category/game.
 
-        Twitch::getClient()->channels->update($channel, ['status' => $channelTitle, 'game' => $channelGame]);
+        if(count($gameSearch) > 0) {
+            $gameId = reset($gameSearch)->id;
+            $channelGame = reset($gameSearch)->name;
+        }
+
+        HedgeBot::message("New title: $0", [$channelTitle], E_DEBUG);
+        HedgeBot::message("New game: $0 (ID: $1)", [$channelGame, $gameId], E_DEBUG);
+
+        Twitch::getClient()->channels->update($channel, ['title' => $channelTitle, 'game_id' => $gameId]);
     }
 
     /**

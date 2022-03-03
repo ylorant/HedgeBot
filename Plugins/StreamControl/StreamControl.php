@@ -121,11 +121,11 @@ class StreamControl extends PluginBase
                 return false;
             }
 
-            $updateParams['game'] = $resolvedCategory;
+            $updateParams['game_id'] = $resolvedCategory;
         }
 
         if(!empty($title)) {
-            $updateParams['status'] = $title;
+            $updateParams['title'] = $title;
         }
 
         $update = Twitch::getClient()->channels->update($channel, $updateParams);
@@ -187,7 +187,7 @@ class StreamControl extends PluginBase
      */
     protected function resolveGameName(string $gameSearch)
     {
-        $gamesMatches = Twitch::getClient()->search->games($gameSearch);
+        $gamesMatches = Twitch::getClient()->search->categories($gameSearch);
 
         if(empty($gamesMatches)) {
             HedgeBot::message("No match.");
@@ -196,8 +196,10 @@ class StreamControl extends PluginBase
 
         // Try to find the closest game to the given title
         $gamesLevenshtein = [];
+        $gameIds = [];
 
         foreach($gamesMatches as $game) {
+            $gameIds[$game->name] = $game->id;
             $gamesLevenshtein[$game->name] = levenshtein($game->name, $gameSearch);
         }
 
@@ -212,6 +214,6 @@ class StreamControl extends PluginBase
             HedgeBot::message("$0 => $1", [$game, $score], E_DEBUG);
         }
 
-        return $closest;
+        return $gameIds[$closest];
     }
 }

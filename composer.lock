@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3747aa346a338590e22d91972b9b0bca",
+    "content-hash": "ae6f6cc082d79d0b6f3a6406ede3bbff",
     "packages": [
         {
             "name": "composer/installers",
@@ -132,6 +132,73 @@
                 "zikula"
             ],
             "time": "2020-04-07T06:57:05+00:00"
+        },
+        {
+            "name": "fakerphp/faker",
+            "version": "v1.19.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/FakerPHP/Faker.git",
+                "reference": "d7f08a622b3346766325488aa32ddc93ccdecc75"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/FakerPHP/Faker/zipball/d7f08a622b3346766325488aa32ddc93ccdecc75",
+                "reference": "d7f08a622b3346766325488aa32ddc93ccdecc75",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.1 || ^8.0",
+                "psr/container": "^1.0 || ^2.0",
+                "symfony/deprecation-contracts": "^2.2 || ^3.0"
+            },
+            "conflict": {
+                "fzaninotto/faker": "*"
+            },
+            "require-dev": {
+                "bamarni/composer-bin-plugin": "^1.4.1",
+                "doctrine/persistence": "^1.3 || ^2.0",
+                "ext-intl": "*",
+                "symfony/phpunit-bridge": "^4.4 || ^5.2"
+            },
+            "suggest": {
+                "doctrine/orm": "Required to use Faker\\ORM\\Doctrine",
+                "ext-curl": "Required by Faker\\Provider\\Image to download images.",
+                "ext-dom": "Required by Faker\\Provider\\HtmlLorem for generating random HTML.",
+                "ext-iconv": "Required by Faker\\Provider\\ru_RU\\Text::realText() for generating real Russian text.",
+                "ext-mbstring": "Required for multibyte Unicode string functionality."
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "v1.19-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Faker\\": "src/Faker/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "François Zaninotto"
+                }
+            ],
+            "description": "Faker is a PHP library that generates fake data for you.",
+            "keywords": [
+                "data",
+                "faker",
+                "fixtures"
+            ],
+            "support": {
+                "issues": "https://github.com/FakerPHP/Faker/issues",
+                "source": "https://github.com/FakerPHP/Faker/tree/v1.19.0"
+            },
+            "time": "2022-02-02T17:38:57+00:00"
         },
         {
             "name": "firebase/php-jwt",
@@ -456,6 +523,73 @@
             "description": "Symfony Debug Component",
             "homepage": "https://symfony.com",
             "time": "2020-10-28T20:42:29+00:00"
+        },
+        {
+            "name": "symfony/deprecation-contracts",
+            "version": "v2.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/deprecation-contracts.git",
+                "reference": "6f981ee24cf69ee7ce9736146d1c57c2780598a8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/6f981ee24cf69ee7ce9736146d1c57c2780598a8",
+                "reference": "6f981ee24cf69ee7ce9736146d1c57c2780598a8",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "2.5-dev"
+                },
+                "thanks": {
+                    "name": "symfony/contracts",
+                    "url": "https://github.com/symfony/contracts"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "function.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "A generic function and convention to trigger deprecation notices",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/deprecation-contracts/tree/v2.5.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2021-07-12T14:48:14+00:00"
         },
         {
             "name": "symfony/event-dispatcher",
@@ -1135,29 +1269,29 @@
         },
         {
             "name": "ylorant/twitch-php-client",
-            "version": "1.2",
+            "version": "1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ylorant/twitch-php-client.git",
-                "reference": "ceb11dbc03dc69041554c99cceb6140a4f6726bd"
+                "reference": "066e6a00038d420da7972c6e08863a65540074af"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/ceb11dbc03dc69041554c99cceb6140a4f6726bd",
-                "reference": "ceb11dbc03dc69041554c99cceb6140a4f6726bd",
+                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/066e6a00038d420da7972c6e08863a65540074af",
+                "reference": "066e6a00038d420da7972c6e08863a65540074af",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
+                "fakerphp/faker": "^1.19",
                 "php": ">=7.0.0",
                 "psr/log": "^1.0"
             },
             "require-dev": {
-                "fzaninotto/faker": "^1.7",
-                "league/climate": "^3.4",
+                "league/climate": "^3.8",
                 "monolog/monolog": "^1.23",
-                "phpunit/php-code-coverage": "^6.0",
-                "phpunit/phpunit": "^7.2"
+                "phpunit/php-code-coverage": "^9",
+                "phpunit/phpunit": "^9"
             },
             "type": "library",
             "autoload": {
@@ -1173,9 +1307,9 @@
             "description": "PHP client for Twitch's multiple APIs, easily extendable and embeddable.",
             "support": {
                 "issues": "https://github.com/ylorant/twitch-php-client/issues",
-                "source": "https://github.com/ylorant/twitch-php-client/tree/master"
+                "source": "https://github.com/ylorant/twitch-php-client/tree/1.3"
             },
-            "time": "2020-07-14T22:54:43+00:00"
+            "time": "2022-02-27T04:45:26+00:00"
         }
     ],
     "packages-dev": [
@@ -1245,5 +1379,5 @@
         "ext-json": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.2.0"
 }

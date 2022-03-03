@@ -193,16 +193,16 @@ class TwitchService implements TokenProvider
      * 
      * @return object The API client.
      */
-    public function getClient($clientType = self::CLIENT_TYPE_KRAKEN)
+    public function getClient($clientType = self::CLIENT_TYPE_HELIX)
     {
         switch ($clientType) {
             case self::CLIENT_TYPE_KRAKEN:
                 return new Kraken($this);
-                break;
+                // no-break
             
             case self::CLIENT_TYPE_HELIX:
                 return new Helix($this);
-                break;
+                // no-break
             
             case self::CLIENT_TYPE_AUTH:
                 return new Authentication($this);

@@ -133,7 +133,7 @@ class HedgeBot
         $clientSecret = $this->config->get('twitch.auth.clientSecret');
 
         $twitchService = new TwitchService($clientID, $clientSecret, $this->data->getProvider());
-        $twitchService->getClient(TwitchService::CLIENT_TYPE_KRAKEN)->setLogger(new TwitchLogger());
+        $twitchService->getClient(TwitchService::CLIENT_TYPE_HELIX)->setLogger(new TwitchLogger());
         $twitchService->getClient(TwitchService::CLIENT_TYPE_AUTH)->setLogger(new TwitchLogger());
         Twitch::setObject($twitchService);
 
