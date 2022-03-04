@@ -836,7 +836,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         // Updating the game/category needs from us to provide its ID, so we need to look it up
         HedgeBot::message("Searching ID for game named $0", [$channelGame]);
-        $gameSearch = Twitch::getClient()->search->categories($channelGame, false);
+        $gameSearch = Twitch::getClient()->search->categories($channelGame, 20, false);
         $gameId = 0; // Default to no category/game.
 
         if(count($gameSearch) > 0) {
