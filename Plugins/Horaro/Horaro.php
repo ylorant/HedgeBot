@@ -840,8 +840,9 @@ class Horaro extends PluginBase implements StoreSourceInterface
         $gameId = 0; // Default to no category/game.
 
         if(count($gameSearch) > 0) {
-            $gameId = reset($gameSearch)->id;
-            $channelGame = reset($gameSearch)->name;
+            $gameInfo = reset($gameSearch);
+            $gameId = $gameInfo->id;
+            $channelGame = $gameInfo->name;
         }
 
         HedgeBot::message("New title: $0", [$channelTitle], E_DEBUG);

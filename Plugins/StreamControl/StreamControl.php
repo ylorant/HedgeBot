@@ -109,13 +109,15 @@ class StreamControl extends PluginBase
     public function setChannelInfo(string $channel, string $title = null, string $category = null)
     {
         $updateParams = [];
+        $resolvedCategoryName = null;
+        $resolvedCategory = null;
         
         if(empty($title) && empty($category)) {
             return false;
         }
         
         if(!empty($category)) {
-            $resolvedCategory = $this->resolveGameName($category);
+            $resolvedCategory = $this->resolveGameName($category, $resolvedCategoryName);
 
             if(empty($resolvedCategory)) {
                 return false;
@@ -128,11 +130,20 @@ class StreamControl extends PluginBase
             $updateParams['title'] = $title;
         }
 
-        $update = Twitch::getClient()->channels->update($channel, $updateParams);
+        $updated = Twitch::getClient()->channels->update($channel, $updateParams);
 
-        Plugin::getManager()->callEvent(new StreamControlEvent('channelInfo', $update));
+        if($updated) {
+            $updatedData = [
+                'title' => $title,
+                'game_id' => $resolvedCategory,
+                'game_name' => $resolvedCategoryName
+            ];
 
-        return $update;
+            Plugin::getManager()->callEvent(new StreamControlEvent('channelInfo', $updatedData));
+            return $updatedData;
+        }
+
+        return false;
     }
 
     /**
@@ -183,9 +194,10 @@ class StreamControl extends PluginBase
     /**
      * Tries to resolve the game name from the Twitch API.
      * @param string $gameSearch The game to search for.
+     * @param mixed $categoryName Reference to the found category adjusted name, to be filled by the function.
      * @return string|null The resolved game name or null if no game is found. 
      */
-    protected function resolveGameName(string $gameSearch)
+    protected function resolveGameName(string $gameSearch, &$categoryName = null)
     {
         $gamesMatches = Twitch::getClient()->search->categories($gameSearch);
 
@@ -206,6 +218,7 @@ class StreamControl extends PluginBase
         asort($gamesLevenshtein);
         $gamesOrdered = array_keys($gamesLevenshtein);
         $closest = reset($gamesOrdered);
+        $categoryName = $closest;
 
         Hedgebot::message("Most pertinent game name found: $0 ($1)", [$closest, $gamesLevenshtein[$closest]]);
 
