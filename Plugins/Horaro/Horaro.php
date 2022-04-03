@@ -17,6 +17,7 @@ use HedgeBot\Core\API\Store;
 use HedgeBot\Core\Store\Formatter\TextFormatter;
 use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\API\Tikal;
+use HedgeBot\Core\Service\Twitch\TwitchHelper;
 use Horaro\Client as HoraroAPI;
 
 /**
@@ -832,17 +833,16 @@ class Horaro extends PluginBase implements StoreSourceInterface
         // Format the title and the game with the text formatter, providing a root namespace to avoid
         $textFormatter = Store::getFormatter(TextFormatter::getName());
         $channelTitle = $textFormatter->format($titleTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
-        $channelGame = $textFormatter->format($gameTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
+        $gameQuery = $textFormatter->format($gameTemplate, $channel, self::CURRENT_DATA_SOURCE_PATH);
+        $channelGame = null;
 
         // Updating the game/category needs from us to provide its ID, so we need to look it up
-        HedgeBot::message("Searching ID for game named $0", [$channelGame]);
-        $gameSearch = Twitch::getClient()->search->categories($channelGame, 20, false);
-        $gameId = 0; // Default to no category/game.
-
-        if(count($gameSearch) > 0) {
-            $gameInfo = reset($gameSearch);
-            $gameId = $gameInfo->id;
-            $channelGame = $gameInfo->name;
+        HedgeBot::message("Searching ID for game named $0", [$gameQuery]);
+        $gameId = TwitchHelper::resolveGameName($gameQuery, $channelGame);
+        
+        // Default to no category/game if none is found.
+        if(is_null($gameId)) {
+            $gameId = 0;
         }
 
         HedgeBot::message("New title: $0", [$channelTitle], E_DEBUG);

@@ -8,6 +8,7 @@ use HedgeBot\Core\API\Plugin;
 use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\API\Twitch;
 use HedgeBot\Core\HedgeBot;
+use HedgeBot\Core\Service\Twitch\TwitchHelper;
 use HedgeBot\Plugins\StreamControl\Event\StreamControlEvent;
 
 class StreamControl extends PluginBase
@@ -117,7 +118,7 @@ class StreamControl extends PluginBase
         }
         
         if(!empty($category)) {
-            $resolvedCategory = $this->resolveGameName($category, $resolvedCategoryName);
+            $resolvedCategory = TwitchHelper::resolveGameName($category, $resolvedCategoryName);
 
             if(empty($resolvedCategory)) {
                 return false;
@@ -189,44 +190,5 @@ class StreamControl extends PluginBase
     {
         IRC::message($from, '.host '. $target);
         Plugin::getManager()->callEvent(new StreamControlEvent('host'));
-    }
-
-    /**
-     * Tries to resolve the game name from the Twitch API.
-     * @param string $gameSearch The game to search for.
-     * @param mixed $categoryName Reference to the found category adjusted name, to be filled by the function.
-     * @return string|null The resolved game name or null if no game is found. 
-     */
-    protected function resolveGameName(string $gameSearch, &$categoryName = null)
-    {
-        $gamesMatches = Twitch::getClient()->search->categories($gameSearch);
-
-        if(empty($gamesMatches)) {
-            HedgeBot::message("No match.");
-            return null;
-        }
-
-        // Try to find the closest game to the given title
-        $gamesLevenshtein = [];
-        $gameIds = [];
-
-        foreach($gamesMatches as $game) {
-            $gameIds[$game->name] = $game->id;
-            $gamesLevenshtein[$game->name] = levenshtein($game->name, $gameSearch);
-        }
-
-        asort($gamesLevenshtein);
-        $gamesOrdered = array_keys($gamesLevenshtein);
-        $closest = reset($gamesOrdered);
-        $categoryName = $closest;
-
-        Hedgebot::message("Most pertinent game name found: $0 ($1)", [$closest, $gamesLevenshtein[$closest]]);
-
-        HedgeBot::message("Results order:", [], E_DEBUG);
-        foreach($gamesOrdered as $game => $score) {
-            HedgeBot::message("$0 => $1", [$game, $score], E_DEBUG);
-        }
-
-        return $gameIds[$closest];
     }
 }
