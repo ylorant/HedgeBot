@@ -31,7 +31,7 @@ class AutoHost extends PluginBase
     const FILTER_TYPES = ['titleWhiteList', 'titleBlackList'];
 
     /**
-     * @return bool|void
+     * @return void
      */
     public function init()
     {
@@ -138,7 +138,7 @@ class AutoHost extends PluginBase
      * @param string $channelName The hosting channel info.
      * @return array|boolean
      */
-    public function getChannelToHost($channelName)
+    public function getChannelToHost(string $channelName)
     {
         if (!isset($this->hosts[$channelName])) {
             return false;
@@ -163,7 +163,7 @@ class AutoHost extends PluginBase
      * @param array $host The hoster info, namely the whitelist and the blacklist.
      * @return bool True if it is a valid title, false if it isn't.
      */
-    protected function checkTitleValidity($title, array $host)
+    protected function checkTitleValidity(string $title, array $host): bool
     {
         $whiteWordFound = true;
 
@@ -194,9 +194,9 @@ class AutoHost extends PluginBase
      * Return a channel name depending on its priority and the number of times this channel has already been hosted.
      *
      * @param array $hostedChannels The list of channels to sort through.
-     * @return mixed
+     * @return false|int|string
      */
-    protected function computeWeights($hostedChannels)
+    protected function computeWeights(array $hostedChannels)
     {
         $hostStatsPerChannel = array_column($hostedChannels, 'totalHosted');
         $totalHosts = array_sum($hostStatsPerChannel);
@@ -230,14 +230,14 @@ class AutoHost extends PluginBase
      *
      * @return bool True if the channel is streaming, false if not.
      */
-    protected function isChannelStreaming($channel, $useCache = true)
+    protected function isChannelStreaming(string $channel, bool $useCache = true): bool
     {
         // Use the cache if possible and not asked otherwise
         if ($useCache && !empty($this->channelStatus[$channel])) {
             return $this->channelStatus[$channel];
         }
 
-        $streamInfo = Twitch::getClient()->streams->info($channel);
+        $streamInfo = Twitch::getClient()->channels->info($channel);
         $this->channelStatus[$channel] = !empty($streamInfo);
 
         return $this->channelStatus[$channel];
@@ -252,7 +252,7 @@ class AutoHost extends PluginBase
      *
      * @return bool True.
      */
-    public function setHost($hostName, $timeInterval = 600, $enabled = true)
+    public function setHost(string $hostName, int $timeInterval = 600, bool $enabled = true): bool
     {
         HedgeBot::message("Saving hosting infos for channel '" . $hostName . "' ...", [], E_DEBUG);
 
@@ -266,9 +266,10 @@ class AutoHost extends PluginBase
                 'titleWhiteList' => [],
                 'titleBlackList' => [],
             ];
+        } else {
+            $this->hosts[$hostName]['time'] = $timeInterval;
         }
 
-        $this->hosts[$hostName]['time'] = $timeInterval;
         $this->saveData();
 
         return true;
@@ -281,7 +282,7 @@ class AutoHost extends PluginBase
      *
      * @return array|bool
      */
-    public function getHost($hostName)
+    public function getHost(string $hostName)
     {
         if (!isset($this->hosts[$hostName])) {
             return false;
@@ -314,7 +315,7 @@ class AutoHost extends PluginBase
      * @param array $blackList
      * @return bool
      */
-    public function editHostConfiguration($hostName, $enabled, $timeInterval, $whiteList, $blackList)
+    public function editHostConfiguration(string $hostName, bool $enabled, int $timeInterval, array $whiteList, array $blackList): bool
     {
         if (!isset($this->hosts[$hostName])) {
             return false;
@@ -360,7 +361,7 @@ class AutoHost extends PluginBase
      *
      * @return boolean
      */
-    public function addHostedChannel($hostName, $channelName, $priority, $enabled = true)
+    public function addHostedChannel(string $hostName, string $channelName, float $priority, bool $enabled = true): bool
     {
         $this->hosts[$hostName]['hostedChannels'][$channelName] = [
             'channel' => $channelName,
@@ -383,7 +384,7 @@ class AutoHost extends PluginBase
      *
      * @return boolean
      */
-    public function editHostedChannel($hostName, $channelName, $priority, $enabled)
+    public function editHostedChannel(string $hostName, string $channelName, float $priority, bool $enabled): bool
     {
         if (!isset($this->hosts[$hostName]) || !isset($this->hosts[$hostName]['hostedChannels'][$channelName])) {
             return false;
@@ -411,7 +412,7 @@ class AutoHost extends PluginBase
      * @param string $channelName
      * @return boolean
      */
-    public function removeHostedChannel($hostName, $channelName)
+    public function removeHostedChannel(string $hostName, string $channelName): bool
     {
         if (!isset($this->hosts[$hostName]) || !isset($this->hosts[$hostName]['hostedChannels'][$channelName])) {
             return false;
@@ -432,7 +433,7 @@ class AutoHost extends PluginBase
      *
      * @return boolean
      */
-    public function addFilterWord($hostName, $filterListName, $word)
+    public function addFilterWord(string $hostName, string $filterListName, string $word): bool
     {
         if (!isset($this->hosts[$hostName]) || !in_array($filterListName, self::FILTER_TYPES)) {
             return false;
@@ -464,7 +465,7 @@ class AutoHost extends PluginBase
      *
      * @return boolean
      */
-    public function removeFilterWord($hostName, $filterListName, $word)
+    public function removeFilterWord(string $hostName, string $filterListName, string $word): bool
     {
         if (!isset($this->hosts[$hostName]) || !in_array($filterListName, self::FILTER_TYPES)) {
             return false;

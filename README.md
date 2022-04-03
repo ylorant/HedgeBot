@@ -22,7 +22,7 @@ Core functions :
 - Internal API for quick and easy access to bot functions from plugins
 - Documentation generator for plugin commands (outputs Markdown).
 - Web admin (see [Hedgebot Web Admin](https://github.com/ylorant/HedgeBot-Admin))
-- Live refresh through servent-sent events (formerly Socket.IO used, abandoned for [Mercure](https://mercure.rocks/docs/hub).
+- Live refresh through servent-sent events (formerly Socket.IO used, abandoned for [Mercure](https://mercure.rocks/docs/hub/install).
 
 Plugins :
 

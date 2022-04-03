@@ -21,6 +21,7 @@ class IRCConnection
     private $floodLimit = false;
     private $currentAddress = null;
     private $currentPort = null;
+    private $hostname = null;
 
     /**
      * @param $addr
@@ -119,6 +120,22 @@ class IRCConnection
     }
 
     /**
+     * @param $hostname
+     */
+    public function setHostname($hostname)
+    {
+        $this->hostname = $hostname;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHostname()
+    {
+        return $this->hostname ? $this->hostname : gethostname();
+    }
+
+    /**
      * @param $nick
      * @param $user
      */
@@ -212,7 +229,7 @@ class IRCConnection
      */
     public function ping($hostname = null)
     {
-        $hostname = $hostname ? $hostname : gethostname();
+        $hostname = $hostname ? $hostname : $this->getHostname();
         $this->send("PING :" . $hostname);
     }
 

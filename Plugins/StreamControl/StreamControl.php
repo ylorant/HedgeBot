@@ -1,4 +1,5 @@
 <?php
+
 namespace HedgeBot\Plugins\StreamControl;
 
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
@@ -24,7 +25,6 @@ class StreamControl extends PluginBase
         if (ENV == "main") {
             Tikal::addEndpoint('/plugin/streamcontrol', new StreamControlEndpoint($this));
         }
-
     }
 
     /**
@@ -39,9 +39,9 @@ class StreamControl extends PluginBase
 
         $title = join(' ', $args);
         $updatedInfo = $this->setChannelInfo($ev->channel, $title);
-        
-        if(!empty($updatedInfo)) {
-            IRC::reply($ev, "Stream title changed to: ". $title);
+
+        if (!empty($updatedInfo)) {
+            IRC::reply($ev, "Stream title changed to: " . $title);
         } else {
             IRC::reply($ev, "Failed updating stream title.");
         }
@@ -61,11 +61,11 @@ class StreamControl extends PluginBase
         $gameSearch = join(' ', $args);
         $updatedInfo = $this->setChannelInfo($ev->channel, null, $gameSearch);
 
-        if(!empty($updatedInfo)) {
-            IRC::reply($ev, "Stream game changed to: ". $updatedInfo->game);
+        if (!empty($updatedInfo)) {
+            IRC::reply($ev, "Stream game changed to: " . $updatedInfo->game);
         } else {
             IRC::reply($ev, "Failed updating stream game.");
-        }        
+        }
     }
 
     /**
@@ -77,21 +77,21 @@ class StreamControl extends PluginBase
         if (count($args) < 1) {
             return IRC::reply($ev, "Insufficient parameters.");
         }
-        
+
         $this->raidChannel($ev->channel, $args[0]);
     }
 
     /**
      * Gets the stream info for the given channel from the Twitch API.
-     * 
+     *
      * @param string $channel The channel to get info from.
      * @return array|null The channel info, as an array, or null if an error occured.
      */
     public function getChannelInfo(string $channel)
     {
         $channelInfo = Twitch::getClient()->channels->info($channel);
-        
-        if($channelInfo != false) {   
+
+        if ($channelInfo != false) {
             return (array) $channelInfo;
         }
 
@@ -101,7 +101,7 @@ class StreamControl extends PluginBase
     /**
      * Sets the stream info for the given channel via the Twitch API.
      * The caller must at least mention either a new title or a new category.
-     * 
+     *
      * @param string $channel The channel to update the info of.
      * @param string $title The new strean title.
      * @param string $category The new stream category.
@@ -112,28 +112,28 @@ class StreamControl extends PluginBase
         $updateParams = [];
         $resolvedCategoryName = null;
         $resolvedCategory = null;
-        
-        if(empty($title) && empty($category)) {
+
+        if (empty($title) && empty($category)) {
             return false;
         }
         
         if(!empty($category)) {
             $resolvedCategory = TwitchHelper::resolveGameName($category, $resolvedCategoryName);
 
-            if(empty($resolvedCategory)) {
+            if (empty($resolvedCategory)) {
                 return false;
             }
 
             $updateParams['game_id'] = $resolvedCategory;
         }
 
-        if(!empty($title)) {
+        if (!empty($title)) {
             $updateParams['title'] = $title;
         }
 
         $updated = Twitch::getClient()->channels->update($channel, $updateParams);
 
-        if($updated) {
+        if ($updated) {
             $updatedData = [
                 'title' => $title,
                 'game_id' => $resolvedCategory,
@@ -157,7 +157,7 @@ class StreamControl extends PluginBase
     {
         $started = Twitch::getClient()->channels->startCommercial($channel, $duration);
 
-        if($started) {
+        if ($started) {
             Plugin::getManager()->callEvent(new StreamControlEvent('ads'));
         }
 
@@ -166,29 +166,29 @@ class StreamControl extends PluginBase
 
     /**
      * Starts a raid on the given channel. The raid will be launched 90s after this call.
-     * 
+     *
      * @param string $from    The channel to raid from.
      * @param string $target  The channel to start a raid on.
-     * 
+     *
      * @return void
      */
     public function raidChannel(string $from, string $target)
     {
-        IRC::message($from, ".raid ". $target);
+        IRC::message($from, ".raid " . $target);
         Plugin::getManager()->callEvent(new StreamControlEvent('raid'));
     }
 
     /**
      * Starts hosting the given channel.
-     * 
+     *
      * @param string $from    The channel to host from.
      * @param string $target  The channel to host.
-     * 
-     * @return void 
+     *
+     * @return void
      */
     public function hostChannel(string $from, string $target)
     {
-        IRC::message($from, '.host '. $target);
+        IRC::message($from, '.host ' . $target);
         Plugin::getManager()->callEvent(new StreamControlEvent('host'));
     }
 }

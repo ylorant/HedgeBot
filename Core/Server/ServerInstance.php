@@ -35,6 +35,10 @@ class ServerInstance
      */
     public function connect()
     {
+        if(!empty($this->config['hostname'])) {
+            $this->IRC->setHostname($this->config['hostname']);
+        }
+
         $this->connected = $this->IRC->connect($this->config['address'], $this->config['port']);
 
         if (!$this->connected) {
