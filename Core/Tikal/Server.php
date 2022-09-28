@@ -169,6 +169,7 @@ class Server
 
         // Raise an error if the required JSON-RPC fields aren't present
         if (!isset($rpcQuery->jsonrpc) || !isset($rpcQuery->method) || !isset($rpcQuery->params)) {
+            HedgeBot::message("JSON-RPC request malformed, expected [jsonrpc,method,query] found [$0]", [join(',', array_keys((array) $rpcQuery))], E_DEBUG);
             return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
         }
 
@@ -191,6 +192,7 @@ class Server
                 } elseif ($reflectionParameter->isOptional()) {
                     $orderedParams[] = $reflectionParameter->getDefaultValue();
                 } else {
+                    Hedgebot::message("Mandatory parameter for method $0 not found: $1", [$rpcQuery->method, $reflectionParameter->name], E_DEBUG);
                     return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
                 }
             }
