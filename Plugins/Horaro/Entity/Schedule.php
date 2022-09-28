@@ -559,6 +559,8 @@ class Schedule implements JsonSerializable
 
         if($exportData) {
             $out['data'] = $this->getData();
+            $out['currentItem'] = $this->getCurrentItem();
+            $out['nextItem'] = $this->getNextItem();
         }
 
         return $out;

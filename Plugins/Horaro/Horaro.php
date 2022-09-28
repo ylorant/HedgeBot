@@ -1013,6 +1013,7 @@ class Horaro extends PluginBase implements StoreSourceInterface
 
         $schedule->updateFromArray($newData);
         $this->saveData();
+        Plugin::getManager()->callEvent(new HoraroEvent('scheduleUpdate', $schedule));
 
         if($reloadSchedule) {
             $this->refreshScheduleData($identSlug);
