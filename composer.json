@@ -13,7 +13,7 @@
         "wisembly/elephant.io": "dev-master",
         "ylorant/horaro-php-client": "^1.1",
         "symfony/mercure": "^0.4.0",
-        "firebase/php-jwt": "^5.2"
+        "firebase/php-jwt": "^6.0"
     },
     "suggest": {
         "predis/predis": "^1.1"
