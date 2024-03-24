@@ -143,7 +143,7 @@ class IniFileProvider extends Provider
         $out = "";
 
         if ($data === null) {
-            $data = $this->config;
+            $data = $this->data;
         }
 
         $arrays = array();
