@@ -12,11 +12,14 @@ use HedgeBot\Core\API\Plugin as PluginAPI;
 class HttpServer
 {
     private $socket; ///< Server socket
+    /** @var string $address */
     private $address = '127.0.0.1'; ///< Bound address
+    /** @var int $port */
     private $port = 80; ///< Bound port
     private $timeout = 20; ///< Timeout interval
     private $freedIDs = [];
     private $clients = [];
+    private $buffers = [];
     private $times = [];
 
     const PACKET_LENGTH = 65535;
@@ -70,10 +73,10 @@ class HttpServer
     {
         //Some client want to connect
         if (($tempSocket = @socket_accept($this->socket)) !== false) {
-            if (isset($this->freedID[0])) {
+            if (isset($this->freedIDs[0])) {
                 $id = $this->freedIDs[0];
                 unset($this->freedIDs[0]);
-                sort($this->freedID);
+                sort($this->freedIDs);
             } else {
                 $id = count($this->clients);
             }
@@ -98,8 +101,30 @@ class HttpServer
                 $buffer = socket_read($this->clients[$id], self::PACKET_LENGTH);
                 if ($buffer) {
                     $this->times[$id] = time();
+
+                    if (!empty($this->buffers[$id])) {
+                        $buffer = $this->buffers[$id] . $buffer;
+                    }
+
                     $request = new HttpRequest($id, $buffer);
-                    PluginAPI::getManager()->callEvent(new HttpEvent('Request', ['request' => $request]));
+                    $requestComplete = false;
+
+                    // Handle incomplete requests by basing ourselves on the content length header
+                    if (!empty($request->contentLength)) {
+                        if ($request->contentLength <= strlen($request->rawData)) {
+                            $requestComplete = true;
+                        } else { // Store content data into the buffer for the given connection ID
+                            $this->buffers[$id] = $buffer;
+                        }
+                    } else { // No content-length header specified, we consider the request as complete
+                        $requestComplete = true;
+                    }
+                    
+                    if ($requestComplete) {
+                        PluginAPI::getManager()->callEvent(new HttpEvent('Request', ['request' => $request]));
+                    } elseif (!empty($request->expect) && $request->expect == "100-Continue") {
+                        $this->send(HttpResponse::make($request, HttpResponse::CONTINUE));
+                    }
                 }
             }
         }

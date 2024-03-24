@@ -115,7 +115,11 @@ class IniFileProvider extends Provider
                     $edit = &$edit[$el];
                 }
 
-                $edit = str_replace('\\"', '"', $content);
+                foreach($content as &$element) {
+                    $element = str_replace('\\"', '"', $element);
+                }
+                
+                $edit = $content;
             } else {
                 HedgeBot::message('Orphan config parameter : $0', array($section), E_WARNING);
             }

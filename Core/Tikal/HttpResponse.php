@@ -15,6 +15,7 @@ class HttpResponse
     public $data;
 
     // Some common status codes
+    const CONTINUE = 100;
     const OK = 200;
     const BAD_REQUEST = 400;
     const UNAUTHORIZED = 401;
@@ -24,6 +25,7 @@ class HttpResponse
 
     // Status strings for these codes
     const STATUS_MESSAGES = [
+        100 => "Continue",
         200 => "OK",
         400 => "Bad Request",
         401 => "Unauthorized",
@@ -39,6 +41,26 @@ class HttpResponse
     public function __construct(HttpRequest $request)
     {
         $this->request = $request;
+    }
+
+    /**
+     * Generates an HttpResponse object from a given status code, given headers and/or given data.
+     * 
+     * @param HttpRequest $request The source request
+     * @param int $statusCode The status code
+     * @param array $headers The headers. Optional.
+     * @param mixed $data The data. Optional.
+     * 
+     * @return HttpResponse The new object. 
+     */
+    public static function make(HttpRequest $request, $statusCode, $headers = [], $data = null)
+    {
+        $response = new HttpResponse($request);
+        $response->statusCode = $statusCode;
+        $response->headers = $headers;
+        $response->data = $data;
+
+        return $response;
     }
 
     /**
@@ -61,8 +83,8 @@ class HttpResponse
             }
         }
 
-        if (empty($this->headers['Content-Type'])) {
-            $this->contentType = "text/plain";
+        if (empty($this->headers['Content-Type']) && is_string($data)) {
+            $this->headers['Content-Type'] = "text/plain";
         }
 
         if (empty($this->statusCode)) {

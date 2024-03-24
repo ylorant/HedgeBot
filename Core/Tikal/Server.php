@@ -18,6 +18,7 @@ class Server
 {
     private $httpServer;
     private $endpoints = [];
+    private $publicEndpoinds = [];
 
     private $baseUrl;
     private $token;
@@ -91,6 +92,14 @@ class Server
         $request = $event->request;
 
         $response = new HttpResponse($request);
+        
+        // Handle public calls
+        $handledPublic = $this->handlePublicEndpointCall($request, $response);
+        
+        if ($handledPublic) {
+            return;
+        }
+
         $url = $request->requestURI;
 
         if (!$this->tokenlessMode && (empty($request->headers['X-Token']) || $request->headers['X-Token'] != $this->token)) {
@@ -103,7 +112,7 @@ class Server
 
         if ($request->method == "POST") { // Only handle POST requests as JSON-RPC requests
             // Checking that we have JSON.
-            if ($request->contentType != "application/json") {
+            if (strpos($request->contentType, "application/json") === false) {
                 return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
             }
 
@@ -119,6 +128,30 @@ class Server
             $response->data = $this->getMethodList($url);
             $this->httpServer->send($response);
         }
+    }
+
+    private function handlePublicEndpointCall(HttpRequest $request, HttpResponse $response)
+    {
+        $url = $request->requestURI;
+
+        if ($request->method != "POST" || !$this->hasPublicEndpoint($url)) { // Bad method or endpoint not found
+            return false;
+        }
+
+        // Checking that we have JSON.
+        if (strpos($request->contentType, "application/json") === false) {
+            $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
+            return true;
+        }
+
+        $request->setRequestURI($url); // Putting back formatted URL into request URI to avoid an extra parameter
+        $result = $this->RPCExec($request, $response, true);
+
+        if ($result) {
+            $this->httpServer->send($response);
+        }
+
+        return true;
     }
 
     /**
@@ -160,10 +193,11 @@ class Server
      *
      * @param HttpRequest $request The HTTP Request containing the RPC.
      * @param HttpResponse $response The HTTP Response object to put the returned value into.
+     * @param bool $public Set to true to lookup endpoint class in public endpoints.
      * @return bool
      * @throws \ReflectionException
      */
-    public function RPCExec(HttpRequest $request, HttpResponse $response)
+    public function RPCExec(HttpRequest $request, HttpResponse $response, bool $public = false)
     {
         $rpcQuery = $request->data;
 
@@ -173,7 +207,12 @@ class Server
             return $this->sendErrorResponse($response, HttpResponse::BAD_REQUEST);
         }
 
-        $endpointClass = $this->getEndpoint($request->requestURI);
+        if ($public) {
+            $endpointClass = $this->getPublicEndpoint($request->requestURI);
+        } else {
+            $endpointClass = $this->getEndpoint($request->requestURI);
+        }
+
         $reflectionClass = new ReflectionClass($endpointClass);
 
         // Check that the method exists and it isn't a magic method
@@ -262,6 +301,25 @@ class Server
     }
 
     /**
+     * Registers a public endpoint for the API. It works the same as addEndpoint, but the endpoint is made inherently
+     * public.
+     * 
+     * @param  string $endpoint Endpoint part URL.
+     * @param  object $class The object to bind to the endpoint
+     * @return boolean True if the endpoint bound successfully, False otherwise (mainly, endpoint already exists).
+     */
+    public function addPublicEndpoint($endpoint, $class)
+    {
+        if ($this->hasPublicEndpoint($endpoint)) {
+            return false;
+        }
+
+        HedgeBot::message("Adding Tikal public endpoint '" . $endpoint . "' on class " . get_class($class));
+
+        $this->publicEndpoinds[$endpoint] = $class;
+    }
+
+    /**
      * Unregisters the endpoint from the API.
      * @param  string $endpoint The endpoint to release
      * @return boolean True if it has been released successfully, False otherwise (mainly endpoint doesn't exist).
@@ -278,6 +336,22 @@ class Server
     }
 
     /**
+     * Unregisters the public endpoint from the API.
+     * @param  string $endpoint The public endpoint to release
+     * @return boolean True if it has been released successfully, False otherwise (mainly endpoint doesn't exist).
+     */
+    public function removePublicEndpoint($endpoint)
+    {
+        if (!$this->hasPublicEndpoint($endpoint)) {
+            return false;
+        }
+
+        HedgeBot::message("Removing Tikal public endpoint '". $endpoint);
+
+        unset($this->publicEndpoinds[$endpoint]);
+    }
+
+    /**
      * Checks if an endpoint exists.
      * @param  string $endpoint The endpoint to check.
      * @return boolean          True if the endpoint exists, false otherwise.
@@ -285,6 +359,16 @@ class Server
     public function hasEndpoint($endpoint)
     {
         return isset($this->endpoints[$endpoint]);
+    }
+
+    /**
+     * Checks if a public endpoint exists.
+     * @param  string $endpoint The public endpoint to check.
+     * @return boolean          True if the public endpoint exists, false otherwise.
+     */
+    public function hasPublicEndpoint($endpoint)
+    {
+        return isset($this->publicEndpoinds[$endpoint]);
     }
 
     /**
@@ -299,6 +383,20 @@ class Server
         }
 
         return $this->endpoints[$endpoint];
+    }
+
+    /**
+     * Gets a public endpoint's class.
+     * @param string $endpoint The public endpoint to get the class of.
+     * @return mixed           The class linked to the public endpoint if it exists, False otherwise.
+     */
+    public function getPublicEndpoint($endpoint)
+    {
+        if (!$this->hasPublicEndpoint($endpoint)) {
+            return false;
+        }
+
+        return $this->publicEndpoinds[$endpoint];
     }
 
     //// UTILS ////

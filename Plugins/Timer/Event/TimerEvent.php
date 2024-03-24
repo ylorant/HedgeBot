@@ -19,6 +19,8 @@ class TimerEvent extends Event
     protected $player;
     /** @var string */
     protected $localTime;
+    /** @var int */
+    protected $msec;
 
     /**
      * TimerEvent constructor.

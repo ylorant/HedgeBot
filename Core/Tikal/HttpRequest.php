@@ -18,7 +18,9 @@ class HttpRequest
     private $completeURL; // Requested path with the host appended
     private $requestURI; // Requested path from the query as-is
     private $contentType;
+    private $contentLength = 0;
     private $keepAlive;
+    private $expect;
 
     private $data;
     private $raw;
@@ -53,6 +55,17 @@ class HttpRequest
     }
 
     /**
+     * Magic method checking that properties exist.
+     * 
+     * @param string $name
+     * @return bool
+     */
+    public function __isset($name)
+    {
+        return isset($this->$name);
+    }
+
+    /**
      * @param $url
      */
     public function setRequestURI($url)
@@ -78,6 +91,7 @@ class HttpRequest
             $saveHeader = true;
 
             $row = explode(' ', $row, 2);
+            $row[0] = rtrim($row[0], ":");
             switch ($row[0]) {
                 case 'POST':
                     $this->rawData = $this->data = $query[1];
@@ -88,18 +102,24 @@ class HttpRequest
                     $this->requestURI = $uri[0];
                     $saveHeader = false;
                     break;
-                case 'Host:':
+                case 'Host':
                     $host = explode(':', $row[1], 2);
                     $this->host = $host[0];
                     $this->port = isset($host[1]) ? $host[1] : null;
                     break;
-                case 'Connection:':
+                case 'Connection':
                     if ($row[1] == 'keep-alive') {
                         $this->keepAlive = true;
                     }
                     break;
-                case 'Content-Type:':
+                case 'Content-Type':
                     $this->contentType = $row[1];
+                    break;
+                case 'Expect':
+                    $this->expect = $row[1];
+                    break;
+                case 'Content-Length':
+                    $this->contentLength = intval($row[1]);
                     break;
             }
 
@@ -109,7 +129,7 @@ class HttpRequest
         }
 
         // Parse data if needed
-        if (!empty($this->contentType) && $this->contentType == 'application/json') {
+        if (!empty($this->contentType) && strpos($this->contentType, 'application/json') !== false) {
             $this->data = json_decode($this->data);
         }
 

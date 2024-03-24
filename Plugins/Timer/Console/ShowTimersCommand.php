@@ -12,7 +12,7 @@ use HedgeBot\Plugins\Timer\Timer;
 use Symfony\Component\Console\Command\Command;
 
 /**
- * Class NewTimerCommand
+ * Class ShowTimersCommand
  * @package HedgeBot\Plugins\Timer\Console
  */
 class ShowTimersCommand extends Command
