@@ -176,7 +176,7 @@ class Timer extends PluginBase
     {
         return $this->timers;
     }
-
+    
     /**
      * Gets a timer by its ID.
      * @param string $id The ID of the timer.
@@ -191,6 +191,26 @@ class Timer extends PluginBase
         }
 
         return null;
+    }
+
+    /**
+     * Deletes an existing timer.
+     * 
+     * @param string $id The ID of the timer to delete.
+     * 
+     * @return bool True if the timer has been successfully deleted, false otherwise (usually the timer doesn't exist).
+     */
+    public function deleteTimer(string $id)
+    {
+        foreach($this->timers as $index => $timer) {
+            if($timer->getId() == $id) {
+                unset($this->timers[$index]);
+                $this->saveData();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
