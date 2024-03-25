@@ -28,6 +28,14 @@ class RemoteTimer extends PluginBase
     }
 
     /**
+     * Data has been updated externally, reload the timers.
+     */
+    public function CoreEventDataUpdate()
+    {
+        $this->loadData();
+    }
+
+    /**
      * Creates a time with the given name.
      * 
      * @param string $name The name to give to the timer.
@@ -107,13 +115,13 @@ class RemoteTimer extends PluginBase
     }
 
     /**
-     * Removes the timer identified by the given key, if it exists.
+     * Deletes the timer identified by the given key, if it exists.
      * 
-     * @param string $key The key of the timer to remove.
+     * @param string $key The key of the timer to delete.
      * 
-     * @return bool True if the timer has been removed, false if not (timer doesn't exist).
+     * @return bool True if the timer has been deleted, false if not (timer doesn't exist).
      */
-    public function removeTimer(string $key)
+    public function deleteTimer(string $key)
     {
         foreach ($this->timers as $index => $timer) {
             if ($timer->getKey() == $key) {
