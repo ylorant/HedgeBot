@@ -51,7 +51,7 @@ class RemoteTimer extends PluginBase
         $this->timers[] = $timer;
         $this->saveData();
 
-        Plugin::getManager()->callEvent(new RemoteTimerEvent('newTimer', $timer));
+        Plugin::getManager()->callEvent(new RemoteTimerEvent('new', $timer));
 
         return $timer;
     }
@@ -109,7 +109,9 @@ class RemoteTimer extends PluginBase
                 $timer->$setter($value);
             }
         }
+        
         $this->saveData();
+        Plugin::getManager()->callEvent(new RemoteTimerEvent("update", $timer));
 
         return $timer;
     }
@@ -127,6 +129,7 @@ class RemoteTimer extends PluginBase
             if ($timer->getKey() == $key) {
                 unset($this->timers[$index]);
                 $this->saveData();
+                Plugin::getManager()->callEvent(new RemoteTimerEvent("delete", $timer));
                 return true;
             }
         }
