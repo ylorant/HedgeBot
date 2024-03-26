@@ -8,6 +8,7 @@ use HedgeBot\Core\API\Tikal;
 use HedgeBot\Core\Plugins\Plugin as PluginBase;
 use HedgeBot\Plugins\RemoteTimer\Event\RemoteTimerEvent;
 use HedgeBot\Plugins\RemoteTimer\Entity\RemoteTimer as RemoteTimerEntity;
+use HedgeBot\Plugins\RemoteTimer\Event\RemoteTimerListEvent;
 
 class RemoteTimer extends PluginBase
 {
@@ -17,6 +18,7 @@ class RemoteTimer extends PluginBase
     public function init()
     {
         Plugin::getManager()->addEventListener(RemoteTimerEvent::getType(), 'RemoteTimer');
+        Plugin::getManager()->addEventListener(RemoteTimerListEvent::getType(), 'RemoteTimerList');
 
         // Don't load the API endpoint if we're not on the main environment
         if (ENV == "main") {
@@ -181,6 +183,8 @@ class RemoteTimer extends PluginBase
             foreach ($timers as $timer) {
                 $this->timers[] = RemoteTimerEntity::fromArray($timer);
             }
+
+            Plugin::getManager()->callEvent(new RemoteTimerListEvent('reload', $this->timers));
         }
     }
 
