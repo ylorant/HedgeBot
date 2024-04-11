@@ -26,6 +26,8 @@ class RemoteTimer implements JsonSerializable
     protected $currentSplitName;
     /** @var float Current split start time (timestamp to the ms) */
     protected $currentSplitStartTime;
+    /** @var float Current split reference start time (timestamp to the ms) */
+    protected $currentSplitReferenceStartTime;
     /** @var float Current split length Reference length (interval in sec.ms) */
     protected $currentSplitReferenceLength;
     /** @var float Sum of Bests (interval in sec.ms) */
@@ -278,6 +280,26 @@ class RemoteTimer implements JsonSerializable
     public function setCurrentSplitStartTime($currentSplitStartTime)
     {
         $this->currentSplitStartTime = $currentSplitStartTime;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of currentSplitReferenceStartTime
+     */ 
+    public function getCurrentSplitReferenceStartTime()
+    {
+        return $this->currentSplitReferenceStartTime;
+    }
+
+    /**
+     * Set the value of currentSplitReferenceStartTime
+     *
+     * @return RemoteTimer self
+     */ 
+    public function setCurrentSplitReferenceStartTime($currentSplitReferenceStartTime)
+    {
+        $this->currentSplitReferenceStartTime = $currentSplitReferenceStartTime;
 
         return $this;
     }
