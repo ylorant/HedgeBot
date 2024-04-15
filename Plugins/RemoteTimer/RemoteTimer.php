@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace HedgeBot\Plugins\RemoteTimer;
 
@@ -114,6 +114,35 @@ class RemoteTimer extends PluginBase
         
         $this->saveData();
         Plugin::getManager()->callEvent(new RemoteTimerEvent("update", $timer));
+
+        return $timer;
+    }
+
+    /**
+     * Regenerates a timer's key.
+     * 
+     * @param string $key The key of the timer to renegerate the key of.
+     * 
+     * @return RemoteTimerEntity|bool The new key or false if the renewal failed (usually the timer has not been found).
+     */
+    public function renewTimerKey(string $key)
+    {
+        /** @var RemoteTimerEntity $timer */
+        $timer = null;
+
+        foreach ($this->timers as $currentTimer) {
+            if ($currentTimer->getKey() == $key) {
+                $timer = $currentTimer;
+                break;
+            }
+        }
+
+        if (empty($timer)) {
+            return false;
+        }
+
+        $timer->renewKey();
+        $this->saveData();
 
         return $timer;
     }

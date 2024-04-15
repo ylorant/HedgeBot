@@ -43,7 +43,7 @@ class RemoteTimer implements JsonSerializable
 
     public function __construct()
     {
-        $this->key = $this->generateKey();
+        $this->renewKey();
     }
 
     /**
@@ -120,6 +120,14 @@ class RemoteTimer implements JsonSerializable
     protected function generateKey()
     {
         return str_replace(['/', '+', '='], '', base64_encode(random_bytes(48)));
+    }
+
+    /**
+     * Renew the timer's key.
+     */
+    public function renewKey()
+    {
+        $this->key = $this->generateKey();
     }
 
     //// GETTERS AND SETTERS ////
