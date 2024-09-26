@@ -24,8 +24,6 @@ class TwitchService implements TokenProvider
     const DATA_TOKEN_BASEPATH = 'twitch.auth';
     // 
     const DATA_DEFAULT_TOKEN_BASEPATH = 'twitch.default_auth';
-    // Client type name: Kraken
-    const CLIENT_TYPE_KRAKEN = 'kraken';
     // Client type name: Authentication
     const CLIENT_TYPE_AUTH = 'auth';
     // Client type name: Helix
@@ -195,11 +193,7 @@ class TwitchService implements TokenProvider
      */
     public function getClient($clientType = self::CLIENT_TYPE_HELIX)
     {
-        switch ($clientType) {
-            case self::CLIENT_TYPE_KRAKEN:
-                return new Kraken($this);
-                // no-break
-            
+        switch ($clientType) {            
             case self::CLIENT_TYPE_HELIX:
                 return new Helix($this);
                 // no-break

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ae6f6cc082d79d0b6f3a6406ede3bbff",
+    "content-hash": "54234d89f10e04885e169f2a646c66e7",
     "packages": [
         {
             "name": "composer/installers",
@@ -1269,16 +1269,16 @@
         },
         {
             "name": "ylorant/twitch-php-client",
-            "version": "1.3",
+            "version": "2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ylorant/twitch-php-client.git",
-                "reference": "066e6a00038d420da7972c6e08863a65540074af"
+                "reference": "9cb039dbe105d5a1db9e722543547f3dd70c04fb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/066e6a00038d420da7972c6e08863a65540074af",
-                "reference": "066e6a00038d420da7972c6e08863a65540074af",
+                "url": "https://api.github.com/repos/ylorant/twitch-php-client/zipball/9cb039dbe105d5a1db9e722543547f3dd70c04fb",
+                "reference": "9cb039dbe105d5a1db9e722543547f3dd70c04fb",
                 "shasum": ""
             },
             "require": {
@@ -1307,9 +1307,9 @@
             "description": "PHP client for Twitch's multiple APIs, easily extendable and embeddable.",
             "support": {
                 "issues": "https://github.com/ylorant/twitch-php-client/issues",
-                "source": "https://github.com/ylorant/twitch-php-client/tree/1.3"
+                "source": "https://github.com/ylorant/twitch-php-client/tree/2.2"
             },
-            "time": "2022-02-27T04:45:26+00:00"
+            "time": "2024-09-26T00:15:44+00:00"
         }
     ],
     "packages-dev": [
@@ -1379,5 +1379,5 @@
         "ext-json": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.6.0"
 }
