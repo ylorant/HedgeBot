@@ -2,6 +2,8 @@
 
 namespace HedgeBot\Core\API;
 
+use HedgeBot\Core\Plugins\PluginManager;
+
 /**
  * Class Plugin
  * @package HedgeBot\Core\API
@@ -21,7 +23,7 @@ class Plugin
     }
 
     /**
-     * @return mixed
+     * @return PluginManager
      */
     public static function getManager()
     {
