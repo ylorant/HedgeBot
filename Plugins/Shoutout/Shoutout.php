@@ -69,4 +69,14 @@ class Shoutout extends PluginBase
             }
         }
     }
+
+    /**
+     * Config has been updated externally, we reload the refresh interval.
+     */
+    public function CoreEventConfigUpdate()
+    {
+        // TODO: Find a way to avoid to re-find the configuration manually
+        $this->config = HedgeBot::getInstance()->config->get('plugin.Shoutout');
+    }
+
 }
