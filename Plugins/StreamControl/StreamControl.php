@@ -105,7 +105,7 @@ class StreamControl extends PluginBase
      * @param string $channel The channel to update the info of.
      * @param string $title The new strean title.
      * @param string $category The new stream category.
-     * @return array|bool The new channel info, or False if the request didn't succeed.
+     * @return object|bool The new channel info, or False if the request didn't succeed.
      */
     public function setChannelInfo(string $channel, string $title = null, string $category = null)
     {
