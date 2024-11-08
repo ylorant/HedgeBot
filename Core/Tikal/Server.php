@@ -101,8 +101,9 @@ class Server
         }
 
         $url = $request->requestURI;
+        $headers = array_change_key_case($request->headers, CASE_LOWER);
 
-        if (!$this->tokenlessMode && (empty($request->headers['X-Token']) || $request->headers['X-Token'] != $this->token)) {
+        if (!$this->tokenlessMode && (empty($headers['x-token']) || $headers['x-token'] != $this->token)) {
             return $this->sendErrorResponse($response, HttpResponse::UNAUTHORIZED);
         }
 
