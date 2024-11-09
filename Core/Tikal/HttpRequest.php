@@ -26,6 +26,8 @@ class HttpRequest
     private $raw;
     private $rawData;
 
+    const HTTP_METHODS = ['GET', 'POST'];
+
     /**
      * HttpRequest constructor.
      * @param $clientId
@@ -92,33 +94,39 @@ class HttpRequest
 
             $row = explode(' ', $row, 2);
             $row[0] = rtrim($row[0], ":");
-            switch ($row[0]) {
-                case 'POST':
-                    $this->rawData = $this->data = $query[1];
-                    // no break
-                case 'GET': //It's a GET request (main parameter)
-                    $this->method = $row[0];
-                    $uri = explode(' ', $row[1]);
-                    $this->requestURI = $uri[0];
-                    $saveHeader = false;
-                    break;
-                case 'Host':
+
+            if (in_array($row[0], self::HTTP_METHODS)) {
+                switch($row[0]) {
+                    case 'POST':
+                        $this->rawData = $this->data = $query[1];
+                        // no break
+                    case 'GET': //It's a GET request (main parameter)
+                        $this->method = $row[0];
+                        $uri = explode(' ', $row[1]);
+                        $this->requestURI = $uri[0];
+                        $saveHeader = false;
+                        break;
+                }
+            }
+
+            switch (strtolower($row[0])) {
+                case 'host':
                     $host = explode(':', $row[1], 2);
                     $this->host = $host[0];
                     $this->port = isset($host[1]) ? $host[1] : null;
                     break;
-                case 'Connection':
+                case 'connection':
                     if ($row[1] == 'keep-alive') {
                         $this->keepAlive = true;
                     }
                     break;
-                case 'Content-Type':
+                case 'content-type':
                     $this->contentType = $row[1];
                     break;
-                case 'Expect':
+                case 'expect':
                     $this->expect = $row[1];
                     break;
-                case 'Content-Length':
+                case 'content-length':
                     $this->contentLength = intval($row[1]);
                     break;
             }
