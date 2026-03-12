@@ -507,7 +507,8 @@ class Horaro extends PluginBase implements StoreSourceInterface
     public function loadScheduleFromURL($url)
     {
         // Check that the URL is a well-formed URL
-        if (!filter_var($url, FILTER_VALIDATE_URL) || strpos($url, HoraroAPI::HORARO_HOST) !== 0) {
+        if (!filter_var($url, FILTER_VALIDATE_URL) 
+        || (strpos($url, HoraroAPI::HORARO_HOST[HoraroAPI::HOST_NEW]) !== 0 && strpos($url, HoraroAPI::HORARO_HOST[HoraroAPI::HOST_LEGACY]) !== 0)) {
             return false;
         }
 

@@ -109,7 +109,7 @@ class HoraroTextFile extends PluginBase
         if (!empty($channelMapping) || !empty($slugMapping)) {
             // Get current item
             $item = $schedule->getCurrentItem();
-            $itemFileContent = join("\n", $item->data);
+            $itemFileContent = implode("\n", $item->data);
 
             // Add estimate, see to replace with provider stuff
             $dateInterval = new DateInterval($item->length);

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "54234d89f10e04885e169f2a646c66e7",
+    "content-hash": "6861435fd7c6206ef0e465aea4b0a99b",
     "packages": [
         {
             "name": "composer/installers",
@@ -1225,16 +1225,16 @@
         },
         {
             "name": "ylorant/horaro-php-client",
-            "version": "1.2",
+            "version": "1.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ylorant/horaro-php-client.git",
-                "reference": "d27742238d4c2988691951f5e1f3b7a3555d3acf"
+                "reference": "24a62f3ef6eabac4eeaaf70ce6cdfa47555b526a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ylorant/horaro-php-client/zipball/d27742238d4c2988691951f5e1f3b7a3555d3acf",
-                "reference": "d27742238d4c2988691951f5e1f3b7a3555d3acf",
+                "url": "https://api.github.com/repos/ylorant/horaro-php-client/zipball/24a62f3ef6eabac4eeaaf70ce6cdfa47555b526a",
+                "reference": "24a62f3ef6eabac4eeaaf70ce6cdfa47555b526a",
                 "shasum": ""
             },
             "require": {
@@ -1263,9 +1263,9 @@
             "description": "Horaro API PHP client library",
             "support": {
                 "issues": "https://github.com/ylorant/horaro-php-client/issues",
-                "source": "https://github.com/ylorant/horaro-php-client/tree/1.2"
+                "source": "https://github.com/ylorant/horaro-php-client/tree/1.3.1"
             },
-            "time": "2021-05-27T14:03:31+00:00"
+            "time": "2026-03-11T08:36:58+00:00"
         },
         {
             "name": "ylorant/twitch-php-client",
@@ -1378,6 +1378,6 @@
         "ext-intl": "*",
         "ext-json": "*"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.9.0"
 }

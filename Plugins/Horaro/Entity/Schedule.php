@@ -391,12 +391,17 @@ class Schedule implements JsonSerializable
     {
         $scheduleUrl = $this->getData('link');
 
-        // Remove the Horaro hostname from the URL
-        if (strpos($scheduleUrl, Horaro::HORARO_HOST) === 0) {
-            $scheduleUrl = substr($scheduleUrl, strlen(Horaro::HORARO_HOST));
+        // Remove the Horaro hostname from the URL (new website)
+        if (strpos($scheduleUrl, Horaro::HORARO_HOST[Horaro::HOST_NEW]) === 0) {
+            $scheduleUrl = substr($scheduleUrl, strlen(Horaro::HORARO_HOST[Horaro::HOST_NEW]));
         }
 
-        // Replace the slashes by dashes, as Fatboy Slim told us
+        // Remove the Horaro hostname from the URL (old website)
+        if (strpos($scheduleUrl, Horaro::HORARO_HOST[Horaro::HOST_LEGACY]) === 0) {
+            $scheduleUrl = substr($scheduleUrl, strlen(Horaro::HORARO_HOST[Horaro::HOST_LEGACY]));
+        }
+
+        // Replace the slashes by dashes, as Fatboy] Slim told us
         $scheduleIdentSlug = str_replace('/', '-', trim($scheduleUrl, '/'));
 
         return $scheduleIdentSlug;
